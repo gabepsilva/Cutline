@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; }
+  body{ background:#0b0b0d; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; color:#f3f2f0; }
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb{ background:#2a2a2f; border-radius:6px; border:2px solid #0b0b0d; }
+  ::-webkit-scrollbar-thumb:hover{ background:#3a3a40; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  input{ font-family:inherit; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes pulseRec{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+</style>
+</helmet>
+
+<div style="--accent:{{ accent }}; width:100%; height:100vh; overflow:hidden; background:radial-gradient(120% 80% at 50% -10%, #131316 0%, #0b0b0d 55%); color:#f3f2f0; position:relative;">
+
+  <!-- ================= DASHBOARD ================= -->
+  <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex; width:100%; height:100vh;">
+    <!-- sidebar -->
+    <div style="width:240px; flex:0 0 240px; background:#0e0e10; border-right:1px solid #1d1d21; display:flex; flex-direction:column; padding:22px 16px;">
+      <div style="display:flex; align-items:center; gap:10px; padding:0 6px 24px;">
+        <div style="width:26px; height:26px; border-radius:7px; background:var(--accent,#ff6a3d); display:flex; align-items:center; justify-content:center;">
+          <div style="width:10px; height:10px; border-radius:2px; background:#0b0b0d;"></div>
+        </div>
+        <div style="font-size:16px; font-weight:600; letter-spacing:-.01em;">Cutline</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:8px; background:#1a1a1e; color:#f3f2f0; font-size:13.5px; font-weight:500;"><div style="width:7px;height:7px;border-radius:2px;background:var(--accent,#ff6a3d);"></div>Home</div>
+        <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:8px; color:#8b8a90; font-size:13.5px;"><div style="width:7px;height:7px;border-radius:2px;border:1.5px solid #45454c;"></div>All projects</div>
+        <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:8px; color:#8b8a90; font-size:13.5px;"><div style="width:7px;height:7px;border-radius:50%;border:1.5px solid #45454c;"></div>Templates</div>
+        <div style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:8px; color:#8b8a90; font-size:13.5px;"><div style="width:7px;height:7px;border-radius:1px;background:#45454c;transform:rotate(45deg);"></div>Trash</div>
+      </div>
+      <div style="margin-top:auto; padding:14px 11px; border:1px solid #1f1f24; border-radius:10px; background:#101013;">
+        <div style="font-size:11px; color:#7b7a81; margin-bottom:8px; display:flex; justify-content:space-between;"><span>Storage</span><span style="font-family:'JetBrains Mono',monospace;">62%</span></div>
+        <div style="height:5px; background:#1f1f24; border-radius:3px; overflow:hidden;"><div style="width:62%; height:100%; background:var(--accent,#ff6a3d); border-radius:3px;"></div></div>
+        <div style="font-size:10.5px; color:#5f5e66; margin-top:8px;">38.4 GB of 60 GB used</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; padding:12px 6px 0;">
+        <div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#3a3a42,#222226); display:flex;align-items:center;justify-content:center; font-size:12px; font-weight:600; color:#d6d5da;">AC</div>
+        <div style="line-height:1.25;"><div style="font-size:12.5px; font-weight:500;">Alex Chen</div><div style="font-size:10.5px; color:#6f6e75;">Pro plan</div></div>
+      </div>
+    </div>
+
+    <!-- main -->
+    <div style="flex:1; overflow-y:auto; padding:30px 40px 60px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:26px;">
+        <div>
+          <div style="font-size:13px; color:#6f6e75; margin-bottom:4px;">Welcome back, Alex</div>
+          <div style="font-size:26px; font-weight:600; letter-spacing:-.02em;">Home</div>
+        </div>
+        <div onClick="{{ openProject }}" style="display:flex; align-items:center; gap:9px; background:var(--accent,#ff6a3d); color:#0b0b0d; font-weight:600; font-size:13.5px; padding:11px 18px; border-radius:9px; cursor:pointer;">
+          <div style="width:13px; height:13px; position:relative;"><div style="position:absolute; inset:0; margin:auto; width:13px; height:2px; background:#0b0b0d; border-radius:2px;"></div><div style="position:absolute; inset:0; margin:auto; width:2px; height:13px; background:#0b0b0d; border-radius:2px;"></div></div>
+          New project
+        </div>
+      </div>
+
+      <!-- continue editing hero -->
+      <div onClick="{{ openProject }}" style="display:flex; gap:22px; padding:18px; background:linear-gradient(100deg,#16161a,#101013); border:1px solid #232328; border-radius:16px; margin-bottom:34px; cursor:pointer;">
+        <div style="width:300px; flex:0 0 300px; aspect-ratio:16/9; border-radius:11px; overflow:hidden; position:relative; background:repeating-linear-gradient(135deg,#1c1c20 0 12px,#191920 12px 24px);">
+          <div style="position:absolute; inset:0; background:radial-gradient(60% 80% at 35% 40%, rgba(255,106,61,.16), transparent 70%);"></div>
+          <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:52px; height:52px; border-radius:50%; background:rgba(11,11,13,.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.14);">
+            <div style="width:0;height:0;border-left:15px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px;"></div>
+          </div>
+          <div style="position:absolute; bottom:10px; right:10px; font-family:'JetBrains Mono',monospace; font-size:11px; background:rgba(0,0,0,.6); padding:3px 7px; border-radius:5px;">4:32</div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent,#ff6a3d); font-weight:600; margin-bottom:9px;">Continue editing</div>
+          <div style="font-size:21px; font-weight:600; letter-spacing:-.01em; margin-bottom:8px;">How I edit videos 3x faster</div>
+          <div style="font-size:13px; color:#8b8a90; line-height:1.5; max-width:520px;">Talking-head tutorial · 1080p · transcript ready. Pick up where you left off — 8 sentences, 2 filler words flagged.</div>
+          <div style="display:flex; gap:18px; margin-top:16px; font-size:12px; color:#6f6e75; font-family:'JetBrains Mono',monospace;">
+            <span>Edited 2h ago</span><span>·</span><span>1,142 words</span><span>·</span><span>MP4</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:13px; font-weight:600; color:#b9b8bd; margin-bottom:14px;">Recent projects</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(228px,1fr)); gap:18px;">
+        <sc-for list="{{ projects }}" as="p" hint-placeholder-count="6">
+          <div onClick="{{ p.onClick }}" style="cursor:pointer; border:1px solid #1f1f24; border-radius:13px; overflow:hidden; background:#101013;">
+            <div style="aspect-ratio:16/9; position:relative; background:{{ p.bg }};">
+              <div style="position:absolute; inset:0; background:radial-gradient(70% 90% at 40% 35%, rgba(255,255,255,.05), transparent 70%);"></div>
+              <div style="position:absolute; bottom:8px; right:8px; font-family:'JetBrains Mono',monospace; font-size:10.5px; background:rgba(0,0,0,.6); padding:2px 6px; border-radius:4px;">{{ p.dur }}</div>
+              <div style="position:absolute; top:8px; left:8px; font-family:'JetBrains Mono',monospace; font-size:9.5px; color:#9a9aa0; background:rgba(0,0,0,.45); padding:2px 6px; border-radius:4px;">{{ p.kind }}</div>
+            </div>
+            <div style="padding:12px 13px 14px;">
+              <div style="font-size:13.5px; font-weight:500; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ p.title }}</div>
+              <div style="font-size:11px; color:#6f6e75;">{{ p.meta }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ================= EDITOR ================= -->
+  <sc-if value="{{ isEditor }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex; flex-direction:column; width:100%; height:100vh;">
+
+    <!-- top bar -->
+    <div style="height:54px; flex:0 0 54px; background:#0e0e10; border-bottom:1px solid #1d1d21; display:flex; align-items:center; padding:0 16px; gap:14px;">
+      <div onClick="{{ back }}" style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#a3a2a8; font-size:13px; padding:6px 9px; border-radius:7px;">
+        <div style="width:0;height:0;border-right:7px solid currentColor;border-top:5px solid transparent;border-bottom:5px solid transparent;"></div>
+        Projects
+      </div>
+      <div style="width:1px; height:22px; background:#26262b;"></div>
+      <div style="display:flex; flex-direction:column; line-height:1.2;">
+        <div style="font-size:13.5px; font-weight:600;">How I edit videos 3x faster</div>
+        <div style="font-size:10.5px; color:#5f5e66; font-family:'JetBrains Mono',monospace;">Auto-saved · MP4 1080p</div>
+      </div>
+
+      <!-- transport -->
+      <div style="margin:0 auto; display:flex; align-items:center; gap:6px; background:#141417; border:1px solid #222227; border-radius:11px; padding:5px 10px;">
+        <div onClick="{{ toStart }}" style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#bdbcc2;">
+          <svg width="15" height="15" viewBox="0 0 16 16"><rect x="3" y="3" width="2" height="10" fill="currentColor"/><polygon points="13,3 13,13 6,8" fill="currentColor"/></svg>
+        </div>
+        <div onClick="{{ togglePlay }}" style="width:38px; height:38px; border-radius:9px; background:var(--accent,#ff6a3d); display:flex; align-items:center; justify-content:center; cursor:pointer; color:#0b0b0d;">
+          <sc-if value="{{ playing }}" hint-placeholder-val="{{ false }}">
+            <svg width="16" height="16" viewBox="0 0 16 16"><rect x="3.5" y="2.5" width="3.2" height="11" rx="1" fill="currentColor"/><rect x="9.3" y="2.5" width="3.2" height="11" rx="1" fill="currentColor"/></svg>
+          </sc-if>
+          <sc-if value="{{ paused }}" hint-placeholder-val="{{ true }}">
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="4,2.5 13,8 4,13.5" fill="currentColor"/></svg>
+          </sc-if>
+        </div>
+        <div onClick="{{ toEnd }}" style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#bdbcc2;">
+          <svg width="15" height="15" viewBox="0 0 16 16"><polygon points="3,3 3,13 10,8" fill="currentColor"/><rect x="11" y="3" width="2" height="10" fill="currentColor"/></svg>
+        </div>
+        <div style="width:1px; height:20px; background:#26262b; margin:0 4px;"></div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12.5px; color:#d6d5da;">{{ currentTC }}<span style="color:#5f5e66;"> / {{ totalTC }}</span></div>
+      </div>
+
+      <div onClick="{{ toggleCaptions }}" style="display:flex; align-items:center; gap:7px; cursor:pointer; font-size:12.5px; color:#a3a2a8; padding:7px 11px; border:1px solid #232328; border-radius:8px;">
+        <div style="width:15px; height:11px; border-radius:2px; border:1.4px solid currentColor; display:flex; align-items:flex-end; justify-content:center; padding-bottom:1px; gap:1px;"><div style="width:6px;height:1.4px;background:currentColor;"></div></div>
+        Captions
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#cfcdd2; padding:8px 14px; border:1px solid #2a2a30; border-radius:8px; cursor:pointer;">Share</div>
+      <div onClick="{{ startExport }}" style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#0b0b0d; background:var(--accent,#ff6a3d); padding:9px 17px; border-radius:8px; cursor:pointer;">Export</div>
+    </div>
+
+    <!-- workspace: rail + transcript + preview -->
+    <div style="flex:1; display:flex; min-height:0;">
+
+      <!-- icon rail -->
+      <div style="width:54px; flex:0 0 54px; background:#0c0c0e; border-right:1px solid #1a1a1e; display:flex; flex-direction:column; align-items:center; padding:14px 0; gap:6px;">
+        <div style="width:36px; height:36px; border-radius:9px; background:#1a1a1e; display:flex; align-items:center; justify-content:center; border:1px solid #28282e;"><div style="width:13px;height:9px;border-radius:1px;border:1.5px solid var(--accent,#ff6a3d);"></div></div>
+        <div style="width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#5f5e66;"><div style="width:13px;height:13px;border-radius:50%;border:1.5px solid currentColor;"></div></div>
+        <div style="width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#5f5e66;"><div style="display:flex; gap:2px; align-items:flex-end;"><div style="width:2px;height:7px;background:currentColor;"></div><div style="width:2px;height:12px;background:currentColor;"></div><div style="width:2px;height:9px;background:currentColor;"></div></div></div>
+        <div style="width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#5f5e66;"><div style="width:13px;height:13px;border-radius:3px;border:1.5px solid currentColor;"></div></div>
+        <div style="margin-top:auto; width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#5f5e66;"><div style="width:12px;height:12px;border-radius:50%;border:1.5px solid currentColor;"></div></div>
+      </div>
+
+      <!-- transcript -->
+      <div style="flex:1.25; min-width:0; display:flex; flex-direction:column; border-right:1px solid #1a1a1e; background:#0d0d0f;">
+        <div style="padding:14px 22px; border-bottom:1px solid #1a1a1e; display:flex; align-items:center; gap:12px;">
+          <div style="font-size:13.5px; font-weight:600;">Transcript</div>
+          <div style="display:flex; align-items:center; gap:8px; background:#141417; border:1px solid #232328; border-radius:8px; padding:6px 10px; flex:1; max-width:260px;">
+            <div style="width:12px; height:12px; border-radius:50%; border:1.5px solid #5f5e66; position:relative;"><div style="position:absolute; right:-4px; bottom:-3px; width:5px; height:1.5px; background:#5f5e66; transform:rotate(45deg);"></div></div>
+            <input value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search transcript" style="background:transparent; border:none; outline:none; color:#f3f2f0; font-size:12.5px; width:100%;" />
+          </div>
+          <div onClick="{{ removeFillers }}" style="margin-left:auto; display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; color:var(--accent,#ff6a3d); border:1px solid rgba(255,106,61,.32); background:rgba(255,106,61,.08); padding:6px 11px; border-radius:8px;">
+            <div style="width:6px; height:6px; border-radius:50%; background:var(--accent,#ff6a3d);"></div>
+            Remove fillers · {{ fillerCount }}
+          </div>
+        </div>
+
+        <!-- selection bar -->
+        <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:9px 22px; border-bottom:1px solid #1a1a1e; background:#101013; display:flex; align-items:center; gap:12px;">
+            <div style="font-size:12px; color:#8b8a90;">Selected <span style="color:#f3f2f0; font-family:'JetBrains Mono',monospace;">“{{ selectedText }}”</span></div>
+            <div onClick="{{ deleteSelected }}" style="margin-left:auto; display:flex; align-items:center; gap:7px; cursor:pointer; font-size:12px; color:#f0d6cd; background:rgba(255,106,61,.14); border:1px solid rgba(255,106,61,.3); padding:5px 11px; border-radius:7px;">{{ deleteLabel }} <span style="font-family:'JetBrains Mono',monospace; color:#9a9aa0; font-size:10.5px;">⌫</span></div>
+          </div>
+        </sc-if>
+
+        <div style="flex:1; overflow-y:auto; padding:24px 22px 80px;">
+          <!-- speaker block -->
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+            <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#3a3a42,#222226); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#d6d5da;">AC</div>
+            <div style="line-height:1.25;"><div style="font-size:13px; font-weight:600;">Alex Chen</div><div style="font-size:10.5px; color:#6f6e75; font-family:'JetBrains Mono',monospace;">Creator · single speaker</div></div>
+          </div>
+
+          <sc-for list="{{ sentences }}" as="sen" hint-placeholder-count="8">
+            <div style="display:flex; gap:16px; margin-bottom:13px;">
+              <div onClick="{{ sen.onClick }}" style="flex:0 0 46px; padding-top:3px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#56555c; cursor:pointer; user-select:none;">{{ sen.time }}</div>
+              <div style="flex:1; font-size:16.5px; line-height:1.95; color:#cfcdd2; letter-spacing:-.005em;">
+                <sc-for list="{{ sen.words }}" as="word" hint-placeholder-count="10">
+                  <span onClick="{{ word.onClick }}" style="{{ word.style }}">{{ word.display }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- preview -->
+      <div style="flex:1; min-width:0; display:flex; flex-direction:column; background:#0a0a0c; padding:22px; overflow-y:auto;">
+        <div style="position:relative; width:100%; aspect-ratio:16/9; border-radius:13px; overflow:hidden; background:repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px); border:1px solid #1f1f24;">
+          <div style="position:absolute; inset:0; background:radial-gradient(58% 75% at 38% 42%, rgba(255,106,61,.13), transparent 68%);"></div>
+          <!-- faux subject framing -->
+          <div style="position:absolute; left:32%; top:46%; transform:translate(-50%,-50%); width:120px; height:120px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #2a2a30, #161619); border:1px solid #2c2c32;"></div>
+          <div style="position:absolute; left:8px; top:8px; display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:#c7c6cc; background:rgba(0,0,0,.4); padding:3px 8px; border-radius:5px;"><div style="width:6px;height:6px;border-radius:50%;background:#ff5a4d; animation:pulseRec 1.6s infinite;"></div>REC 1080p</div>
+          <div style="position:absolute; right:8px; top:8px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#d6d5da; background:rgba(0,0,0,.45); padding:3px 8px; border-radius:5px;">{{ currentTC }}</div>
+
+          <!-- captions -->
+          <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+            <div style="position:absolute; left:0; right:0; bottom:18px; display:flex; justify-content:center; padding:0 26px;">
+              <div style="max-width:88%; text-align:center; font-size:19px; font-weight:600; line-height:1.4; letter-spacing:-.01em; text-shadow:0 2px 14px rgba(0,0,0,.85);">
+                <sc-for list="{{ captionWords }}" as="cw" hint-placeholder-count="6">
+                  <span style="{{ cw.style }}">{{ cw.display }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- center play -->
+          <div onClick="{{ togglePlay }}" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:60px; height:60px; border-radius:50%; background:rgba(11,11,13,.5); backdrop-filter:blur(5px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+            <sc-if value="{{ paused }}" hint-placeholder-val="{{ true }}"><div style="width:0;height:0;border-left:17px solid #fff;border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:4px;"></div></sc-if>
+            <sc-if value="{{ playing }}" hint-placeholder-val="{{ false }}"><div style="display:flex; gap:5px;"><div style="width:4px;height:18px;background:#fff;border-radius:2px;"></div><div style="width:4px;height:18px;background:#fff;border-radius:2px;"></div></div></sc-if>
+          </div>
+        </div>
+
+        <!-- preview meta -->
+        <div style="margin-top:16px; display:flex; gap:10px;">
+          <div style="flex:1; background:#101013; border:1px solid #1f1f24; border-radius:11px; padding:13px 15px;">
+            <div style="font-size:10.5px; color:#6f6e75; text-transform:uppercase; letter-spacing:.07em; margin-bottom:7px;">Clip length</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:19px; color:#f3f2f0;">{{ totalTC }}</div>
+            <div style="font-size:11px; color:var(--accent,#ff6a3d); margin-top:5px;">{{ savedLabel }}</div>
+          </div>
+          <div style="flex:1; background:#101013; border:1px solid #1f1f24; border-radius:11px; padding:13px 15px;">
+            <div style="font-size:10.5px; color:#6f6e75; text-transform:uppercase; letter-spacing:.07em; margin-bottom:7px;">Edits</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:19px; color:#f3f2f0;">{{ deletedCount }} <span style="font-size:12px; color:#6f6e75;">cut</span></div>
+            <div style="font-size:11px; color:#8b8a90; margin-top:5px;">{{ wordCount }} words remain</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; padding:13px 15px; background:#101013; border:1px solid #1f1f24; border-radius:11px;">
+          <div style="font-size:10.5px; color:#6f6e75; text-transform:uppercase; letter-spacing:.07em; margin-bottom:9px;">Caption style</div>
+          <div style="display:flex; gap:8px;">
+            <div onClick="{{ setKaraoke }}" style="{{ karaokeChip }}">Karaoke</div>
+            <div onClick="{{ setClean }}" style="{{ cleanChip }}">Clean</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- timeline -->
+    <div style="height:252px; flex:0 0 252px; background:#0c0c0e; border-top:1px solid #1d1d21; display:flex; flex-direction:column;">
+      <div style="height:42px; flex:0 0 42px; display:flex; align-items:center; gap:14px; padding:0 18px; border-bottom:1px solid #18181c;">
+        <div style="font-size:12px; font-weight:600; color:#b9b8bd;">Timeline</div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <div style="display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:7px; border:1px solid #26262b; color:#a3a2a8; font-size:14px; cursor:pointer;">−</div>
+          <div style="width:84px; height:4px; background:#1f1f24; border-radius:3px; position:relative;"><div style="position:absolute; left:38%; top:50%; transform:translate(-50%,-50%); width:11px; height:11px; border-radius:50%; background:#cfcdd2;"></div></div>
+          <div style="display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:7px; border:1px solid #26262b; color:#a3a2a8; font-size:14px; cursor:pointer;">+</div>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:9px;">
+          <div onClick="{{ openRecord }}" style="display:flex; align-items:center; gap:8px; padding:7px 13px; border-radius:8px; background:rgba(255,90,77,.12); border:1px solid rgba(255,90,77,.42); color:#ff8478; font-size:12px; font-weight:500; cursor:pointer;">
+            <div style="width:8px; height:8px; border-radius:50%; background:#ff5a4d;"></div>Record
+          </div>
+          <div onClick="{{ toggleMedia }}" style="display:flex; align-items:center; gap:8px; padding:7px 13px; border-radius:8px; background:#141417; border:1px solid #26262b; color:#cfcdd2; font-size:12px; cursor:pointer;">
+            <div style="width:11px; height:11px; position:relative;"><div style="position:absolute; inset:0; margin:auto; width:11px; height:1.6px; background:currentColor; border-radius:2px;"></div><div style="position:absolute; inset:0; margin:auto; width:1.6px; height:11px; background:currentColor; border-radius:2px;"></div></div>Media · {{ resourceCount }}
+          </div>
+          <div style="width:1px; height:20px; background:#26262b;"></div>
+          <div style="display:flex; align-items:center; gap:9px; font-family:'JetBrains Mono',monospace; font-size:11px; color:#6f6e75;"><span>Snap</span><div style="width:30px; height:17px; border-radius:9px; background:var(--accent,#ff6a3d); position:relative;"><div style="position:absolute; right:2px; top:2px; width:13px; height:13px; border-radius:50%; background:#0b0b0d;"></div></div></div>
+        </div>
+      </div>
+
+      <div style="flex:1; display:flex; min-height:0;">
+        <!-- track labels -->
+        <div style="width:78px; flex:0 0 78px; border-right:1px solid #18181c; display:flex; flex-direction:column;">
+          <div style="height:22px; flex:0 0 22px; border-bottom:1px solid #161619;"></div>
+          <div style="flex:1; display:flex; align-items:center; gap:6px; padding-left:14px; font-size:11px; color:#ff8478; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #161619;"><div style="width:5px; height:5px; border-radius:50%; background:#ff5a4d;"></div>B-ROLL</div>
+          <div style="flex:1; display:flex; align-items:center; padding-left:14px; font-size:11px; color:#7b7a81; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #161619;">V1</div>
+          <div style="flex:1; display:flex; align-items:center; padding-left:14px; font-size:11px; color:#7b7a81; font-family:'JetBrains Mono',monospace; border-bottom:1px solid #161619;">A1</div>
+          <div style="flex:1; display:flex; align-items:center; padding-left:14px; font-size:11px; color:#7b7a81; font-family:'JetBrains Mono',monospace;">CC</div>
+        </div>
+
+        <!-- track lanes -->
+        <div onClick="{{ onTimelineClick }}" style="flex:1; position:relative; cursor:text; display:flex; flex-direction:column;">
+          <!-- ruler -->
+          <div style="height:22px; flex:0 0 22px; position:relative; border-bottom:1px solid #161619;">
+            <sc-for list="{{ ticks }}" as="tk" hint-placeholder-count="8">
+              <div style="position:absolute; top:0; bottom:0; left:{{ tk.left }}; border-left:1px solid #232328; padding-left:5px; display:flex; align-items:center; font-family:'JetBrains Mono',monospace; font-size:9.5px; color:#56555c;">{{ tk.label }}</div>
+            </sc-for>
+          </div>
+
+          <!-- B-ROLL overlays -->
+          <div style="flex:1; position:relative; padding:5px; border-bottom:1px solid #161619; overflow:hidden;">
+            <sc-if value="{{ noOverlays }}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute; inset:0; display:flex; align-items:center; padding-left:10px; font-size:11px; color:#3f3e45;">Record or add B-roll — clips drop here at the playhead</div>
+            </sc-if>
+            <sc-for list="{{ overlays }}" as="o" hint-placeholder-count="0">
+              <div onClick="{{ o.onClick }}" style="{{ o.style }}">
+                <div style="position:absolute; left:0; right:0; bottom:0; padding:2px 7px; background:linear-gradient(transparent,rgba(0,0,0,.65)); font-size:9.5px; font-weight:500; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ o.name }}</div>
+                <div onClick="{{ o.remove }}" style="position:absolute; top:3px; right:3px; width:15px; height:15px; border-radius:4px; background:rgba(0,0,0,.55); color:#fff; font-size:9px; display:flex; align-items:center; justify-content:center; cursor:pointer;">✕</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- V1 thumbnails -->
+          <div style="flex:1; position:relative; padding:5px; border-bottom:1px solid #161619; overflow:hidden;">
+            <sc-for list="{{ clips }}" as="c" hint-placeholder-count="8">
+              <div style="position:absolute; top:5px; bottom:5px; left:{{ c.left }}; width:{{ c.width }}; border-radius:4px; overflow:hidden; background:repeating-linear-gradient(135deg,#202024 0 8px,#1a1a1f 8px 16px); border:1px solid #2a2a30;">
+                <div style="position:absolute; inset:0; background:radial-gradient(60% 90% at 40% 40%, rgba(255,106,61,.1), transparent 70%);"></div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- A1 waveform -->
+          <div style="flex:1; position:relative; border-bottom:1px solid #161619; background:#0e0e11;">
+            <div style="position:absolute; inset:6px 0;">
+              <sc-for list="{{ bars }}" as="b" hint-placeholder-count="40">
+                <div style="position:absolute; bottom:50%; left:{{ b.left }}; width:{{ b.width }}; height:{{ b.height }}; transform:translateY(50%); background:#39393f; border-radius:1px;"></div>
+              </sc-for>
+              <!-- played overlay -->
+              <div style="position:absolute; top:0; bottom:0; left:0; width:{{ playheadPct }}; overflow:hidden;">
+                <sc-for list="{{ bars }}" as="b" hint-placeholder-count="40">
+                  <div style="position:absolute; bottom:50%; left:{{ b.left }}; width:{{ b.width }}; height:{{ b.height }}; transform:translateY(50%); background:var(--accent,#ff6a3d); border-radius:1px;"></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <!-- CC blocks -->
+          <div style="flex:1; position:relative; padding:5px; overflow:hidden;">
+            <sc-for list="{{ clips }}" as="c" hint-placeholder-count="8">
+              <div style="position:absolute; top:5px; bottom:5px; left:{{ c.left }}; width:{{ c.width }}; border-radius:4px; background:rgba(255,106,61,.1); border:1px solid rgba(255,106,61,.28); overflow:hidden; padding:0 7px; display:flex; align-items:center;">
+                <div style="font-size:10px; color:#d8c2b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- playhead -->
+          <div style="position:absolute; top:0; bottom:0; left:{{ playheadPct }}; width:2px; background:var(--accent,#ff6a3d); pointer-events:none; z-index:5;">
+            <div style="position:absolute; top:-1px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:8px solid var(--accent,#ff6a3d);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- media shelf -->
+    <sc-if value="{{ showMedia }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:60px; right:18px; bottom:262px; background:#101013; border:1px solid #2a2a30; border-radius:14px; box-shadow:0 20px 50px rgba(0,0,0,.55); z-index:42; padding:14px 16px; display:flex; flex-direction:column; gap:11px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="font-size:13px; font-weight:600;">Media library</div>
+          <div style="font-size:11px; color:#6f6e75;">Click a clip to drop it on the B-roll track at the playhead</div>
+          <div onClick="{{ toggleMedia }}" style="margin-left:auto; width:24px; height:24px; border-radius:6px; border:1px solid #26262b; color:#8b8a90; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px;">✕</div>
+        </div>
+        <div style="display:flex; gap:11px; overflow-x:auto; padding-bottom:3px;">
+          <div onClick="{{ openRecord }}" style="flex:0 0 150px; width:150px; border:1px dashed #3a3a42; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; cursor:pointer; color:#a3a2a8; min-height:128px;">
+            <div style="width:34px; height:34px; border-radius:50%; background:rgba(255,90,77,.14); border:1px solid rgba(255,90,77,.45); display:flex; align-items:center; justify-content:center;"><div style="width:13px; height:13px; border-radius:50%; background:#ff5a4d;"></div></div>
+            <div style="font-size:12px;">Record new</div>
+          </div>
+          <sc-for list="{{ resources }}" as="r" hint-placeholder-count="3">
+            <div onClick="{{ r.onClick }}" style="flex:0 0 150px; width:150px; border:1px solid #232328; border-radius:10px; overflow:hidden; background:#141417; cursor:pointer;">
+              <div style="aspect-ratio:16/9; position:relative; background:{{ r.thumb }};">
+                <div style="position:absolute; inset:0; background:radial-gradient(70% 90% at 40% 35%, rgba(255,255,255,.06), transparent 70%);"></div>
+                <div style="position:absolute; bottom:6px; right:6px; font-family:'JetBrains Mono',monospace; font-size:9.5px; color:#e6e5ea; background:rgba(0,0,0,.55); padding:2px 6px; border-radius:4px;">{{ r.durTC }}</div>
+                <div style="position:absolute; top:6px; left:6px; font-size:8.5px; letter-spacing:.05em; color:#cfcdd2; background:rgba(0,0,0,.5); padding:2px 6px; border-radius:4px; text-transform:uppercase;">{{ r.kind }}</div>
+              </div>
+              <div style="padding:9px 10px; display:flex; align-items:center; gap:8px;">
+                <div style="font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">{{ r.name }}</div>
+                <div style="flex:0 0 auto; width:20px; height:20px; border-radius:6px; background:rgba(255,106,61,.14); border:1px solid rgba(255,106,61,.4); color:var(--accent,#ff6a3d); display:flex; align-items:center; justify-content:center; font-size:13px; line-height:1;">+</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- record modal -->
+    <sc-if value="{{ showRecord }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; background:rgba(6,6,8,.74); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; z-index:55;">
+        <div style="width:540px; background:#131316; border:1px solid #2a2a30; border-radius:18px; padding:24px; box-shadow:0 30px 80px rgba(0,0,0,.6);">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+            <div style="display:flex; align-items:center; gap:10px; font-size:18px; font-weight:600;"><div style="width:9px; height:9px; border-radius:50%; background:#ff5a4d;"></div>Record</div>
+            <div onClick="{{ closeRecord }}" style="width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#8b8a90; border:1px solid #26262b;">✕</div>
+          </div>
+
+          <sc-if value="{{ recReview }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; gap:16px; align-items:center; margin-bottom:20px;">
+              <div style="flex:0 0 180px; aspect-ratio:16/9; border-radius:11px; position:relative; overflow:hidden; background:{{ lastThumb }}; border:1px solid #2a2a30;">
+                <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:42px; height:42px; border-radius:50%; background:rgba(11,11,13,.5); display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.16);"><div style="width:0;height:0;border-left:12px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:3px;"></div></div>
+              </div>
+              <div>
+                <div style="font-size:11px; color:var(--accent,#ff6a3d); font-weight:600; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;">Clip captured</div>
+                <div style="font-size:16px; font-weight:600; margin-bottom:5px;">{{ lastName }}</div>
+                <div style="font-size:12px; color:#6f6e75; font-family:'JetBrains Mono',monospace;">{{ lastDur }} · added to media library</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <div onClick="{{ closeRecord }}" style="flex:1; text-align:center; padding:12px; border:1px solid #2a2a30; border-radius:10px; color:#cfcdd2; font-size:13px; cursor:pointer;">Keep in library</div>
+              <div onClick="{{ addLastToTimeline }}" style="flex:1.4; text-align:center; padding:12px; background:var(--accent,#ff6a3d); color:#0b0b0d; font-weight:600; border-radius:10px; font-size:13px; cursor:pointer;">Add to timeline at playhead</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ recPreview }}" hint-placeholder-val="{{ true }}">
+            <div style="position:relative; width:100%; aspect-ratio:16/9; border-radius:13px; overflow:hidden; background:#000; border:1px solid #1f1f24; margin-bottom:16px;">
+              <video ref="{{ recRef }}" autoplay muted playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;"></video>
+              <!-- simulated feed (shown when no live camera) -->
+              <sc-if value="{{ camDenied }}" hint-placeholder-val="{{ true }}">
+                <div style="position:absolute; inset:0; background:repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px);">
+                  <div style="position:absolute; inset:0; background:radial-gradient(58% 75% at 42% 44%, rgba(255,106,61,.14), transparent 68%);"></div>
+                  <div style="position:absolute; left:42%; top:48%; transform:translate(-50%,-50%); width:120px; height:120px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #2a2a30, #161619); border:1px solid #2c2c32;"></div>
+                  <div style="position:absolute; left:0; right:0; bottom:14px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#7b7a81;">simulated camera preview · grant camera access for live</div>
+                </div>
+              </sc-if>
+              <!-- REC indicator -->
+              <sc-if value="{{ recActive }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute; left:10px; top:10px; display:flex; align-items:center; gap:7px; font-family:'JetBrains Mono',monospace; font-size:12px; color:#fff; background:rgba(0,0,0,.5); padding:5px 11px; border-radius:7px;"><div style="width:8px; height:8px; border-radius:50%; background:#ff5a4d; animation:pulseRec 1.4s infinite;"></div>REC {{ recElapsedTC }}</div>
+              </sc-if>
+              <!-- countdown -->
+              <sc-if value="{{ recCounting }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; font-size:84px; font-weight:700; color:#fff; font-family:'JetBrains Mono',monospace;">{{ recCount }}</div>
+              </sc-if>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:9px; margin-bottom:18px;">
+              <div style="font-size:11px; color:#6f6e75; text-transform:uppercase; letter-spacing:.06em;">Source</div>
+              <div style="padding:6px 13px; border-radius:8px; background:rgba(255,106,61,.1); border:1px solid var(--accent,#ff6a3d); color:#f3f2f0; font-size:12px; cursor:pointer;">Camera</div>
+              <div style="padding:6px 13px; border-radius:8px; background:#17171a; border:1px solid #26262b; color:#a3a2a8; font-size:12px; cursor:pointer;">Screen</div>
+              <div style="padding:6px 13px; border-radius:8px; background:#17171a; border:1px solid #26262b; color:#a3a2a8; font-size:12px; cursor:pointer;">Camera + Screen</div>
+            </div>
+
+            <sc-if value="{{ recIdle }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ beginRecording }}" style="display:flex; align-items:center; justify-content:center; gap:10px; padding:13px; background:#ff5a4d; color:#160808; font-weight:600; font-size:14px; border-radius:11px; cursor:pointer;"><div style="width:12px; height:12px; border-radius:50%; background:#160808;"></div>Start recording</div>
+            </sc-if>
+            <sc-if value="{{ recCounting }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center; padding:13px; background:#17171a; border:1px solid #26262b; color:#8b8a90; font-size:14px; border-radius:11px;">Get ready…</div>
+            </sc-if>
+            <sc-if value="{{ recActive }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ stopRecording }}" style="display:flex; align-items:center; justify-content:center; gap:10px; padding:13px; background:var(--accent,#ff6a3d); color:#0b0b0d; font-weight:600; font-size:14px; border-radius:11px; cursor:pointer;"><div style="width:12px; height:12px; border-radius:3px; background:#0b0b0d;"></div>Stop &amp; save · {{ recElapsedTC }}</div>
+            </sc-if>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- export modal -->
+    <sc-if value="{{ showExport }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; background:rgba(6,6,8,.72); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; z-index:50;">
+        <div style="width:440px; background:#131316; border:1px solid #2a2a30; border-radius:18px; padding:26px; box-shadow:0 30px 80px rgba(0,0,0,.6);">
+          <sc-if value="{{ exportConfig }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+              <div style="font-size:18px; font-weight:600;">Export video</div>
+              <div onClick="{{ closeExport }}" style="width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#8b8a90; border:1px solid #26262b;">✕</div>
+            </div>
+            <div style="font-size:11px; color:#6f6e75; text-transform:uppercase; letter-spacing:.07em; margin-bottom:9px;">Format</div>
+            <div style="display:flex; gap:8px; margin-bottom:18px;">
+              <div style="flex:1; text-align:center; padding:10px; border-radius:9px; background:rgba(255,106,61,.1); border:1px solid var(--accent,#ff6a3d); color:#f3f2f0; font-size:13px; font-weight:600; cursor:pointer;">MP4</div>
+              <div style="flex:1; text-align:center; padding:10px; border-radius:9px; background:#17171a; border:1px solid #26262b; color:#a3a2a8; font-size:13px; cursor:pointer;">MOV</div>
+              <div style="flex:1; text-align:center; padding:10px; border-radius:9px; background:#17171a; border:1px solid #26262b; color:#a3a2a8; font-size:13px; cursor:pointer;">GIF</div>
+            </div>
+            <div style="font-size:11px; color:#6f6e75; text-transform:uppercase; letter-spacing:.07em; margin-bottom:9px;">Resolution</div>
+            <div style="display:flex; gap:8px; margin-bottom:18px;">
+              <div style="flex:1; text-align:center; padding:10px; border-radius:9px; background:#17171a; border:1px solid #26262b; color:#a3a2a8; font-size:13px; cursor:pointer;">720p</div>
+              <div style="flex:1; text-align:center; padding:10px; border-radius:9px; background:rgba(255,106,61,.1); border:1px solid var(--accent,#ff6a3d); color:#f3f2f0; font-size:13px; font-weight:600; cursor:pointer;">1080p</div>
+              <div style="flex:1; text-align:center; padding:10px; border-radius:9px; background:#17171a; border:1px solid #26262b; color:#a3a2a8; font-size:13px; cursor:pointer;">4K</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 15px; background:#101013; border:1px solid #1f1f24; border-radius:10px; margin-bottom:22px;">
+              <div><div style="font-size:13px; font-weight:500;">Burn in captions</div><div style="font-size:11px; color:#6f6e75; margin-top:2px;">Render subtitles into the video</div></div>
+              <div style="width:38px; height:22px; border-radius:11px; background:var(--accent,#ff6a3d); position:relative;"><div style="position:absolute; right:2px; top:2px; width:18px; height:18px; border-radius:50%; background:#0b0b0d;"></div></div>
+            </div>
+            <div onClick="{{ runExport }}" style="text-align:center; padding:13px; background:var(--accent,#ff6a3d); color:#0b0b0d; font-weight:600; font-size:14px; border-radius:10px; cursor:pointer;">Export · {{ totalTC }}</div>
+          </sc-if>
+
+          <sc-if value="{{ exporting }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center; padding:14px 0;">
+              <div style="width:46px; height:46px; margin:0 auto 18px; border-radius:50%; border:3px solid #26262b; border-top-color:var(--accent,#ff6a3d); animation:spin .8s linear infinite;"></div>
+              <div style="font-size:16px; font-weight:600; margin-bottom:6px;">Exporting…</div>
+              <div style="font-size:12px; color:#6f6e75; margin-bottom:18px; font-family:'JetBrains Mono',monospace;">Rendering {{ totalTC }} at 1080p · MP4</div>
+              <div style="height:7px; background:#1f1f24; border-radius:4px; overflow:hidden;"><div style="height:100%; width:{{ exportPct }}; background:var(--accent,#ff6a3d); border-radius:4px; transition:width .15s;"></div></div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#8b8a90; margin-top:9px;">{{ exportPct }}</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ exportDone }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center; padding:14px 0;">
+              <div style="width:54px; height:54px; margin:0 auto 16px; border-radius:50%; background:rgba(255,106,61,.14); border:1px solid var(--accent,#ff6a3d); display:flex; align-items:center; justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24"><polyline points="5,12 10,17 19,7" fill="none" stroke="var(--accent,#ff6a3d)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div style="font-size:17px; font-weight:600; margin-bottom:6px;">Export complete</div>
+              <div style="font-size:12px; color:#6f6e75; margin-bottom:20px; font-family:'JetBrains Mono',monospace;">how-i-edit-3x-faster.mp4 · 1080p</div>
+              <div style="display:flex; gap:10px;">
+                <div onClick="{{ closeExport }}" style="flex:1; text-align:center; padding:11px; border:1px solid #2a2a30; border-radius:9px; color:#cfcdd2; font-size:13px; cursor:pointer;">Done</div>
+                <div onClick="{{ closeExport }}" style="flex:1; text-align:center; padding:11px; background:var(--accent,#ff6a3d); color:#0b0b0d; font-weight:600; border-radius:9px; font-size:13px; cursor:pointer;">Download</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 1440, &quot;height&quot;: 900 },
+  &quot;accentColor&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;#ff6a3d&quot;, &quot;options&quot;: [&quot;#ff6a3d&quot;, &quot;#7c5cff&quot;, &quot;#2ad1a3&quot;, &quot;#3d7bff&quot;], &quot;tsType&quot;: &quot;string&quot; },
+  &quot;captionStyle&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;karaoke&quot;, &quot;options&quot;: [&quot;karaoke&quot;, &quot;clean&quot;], &quot;tsType&quot;: &quot;string&quot; },
+  &quot;showFillerHints&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; }
+}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const t = this.buildTranscript();
+    this.state = {
+      screen: 'dashboard',
+      words: t.words,
+      sentences: t.sentences,
+      currentTime: 0,
+      playing: false,
+      selectedId: null,
+      showCaptions: true,
+      captionStyle: (props && props.captionStyle) || 'karaoke',
+      query: '',
+      exportPhase: 'none', // none | config | exporting | done
+      exportProgress: 0,
+      recordPhase: 'none', // none | live | countdown | recording | review
+      recElapsed: 0,
+      recCount: 3,
+      camDenied: false,
+      recCounter: 0,
+      lastResId: null,
+      showMedia: false,
+      resources: [
+        { id: 'r1', name: 'City timelapse', dur: 6, kind: 'B-roll', thumb: 'repeating-linear-gradient(135deg,#1c2330 0 11px,#171d28 11px 22px)' },
+        { id: 'r2', name: 'Keyboard close-up', dur: 4, kind: 'B-roll', thumb: 'repeating-linear-gradient(135deg,#2a2017 0 11px,#221a12 11px 22px)' },
+        { id: 'r3', name: 'Logo sting', dur: 2, kind: 'Graphic', thumb: 'repeating-linear-gradient(135deg,#241a2c 0 11px,#1d1524 11px 22px)' },
+      ],
+      overlays: [],
+    };
+    this._startMap = {};
+    this._raf = null;
+    this._last = 0;
+    this._expTimer = null;
+    this._cd = null;
+    this._rt = null;
+    this._stream = null;
+    this._recRef = React.createRef();
+    this.loop = this.loop.bind(this);
+    this.onKey = this.onKey.bind(this);
+  }
+
+  buildTranscript(){
+    const SCRIPT = [
+      "Okay so, um, this is the part where most people completely overthink it.",
+      "You don't need a thousand cuts to make a video feel fast.",
+      "Honestly, you just have to cut the dead air and the, uh, filler words.",
+      "Watch what happens when I delete this entire sentence right here.",
+      "The whole rhythm tightens up and suddenly it just, you know, flows.",
+      "That is the entire secret that nobody really wants to tell you about.",
+      "Let me drop down to the timeline so you can see the waveform too.",
+      "Every word you delete just disappears from the edit. No re-rendering.",
+    ];
+    let words = [], sentences = [], t = 0, wid = 0, seed = 7;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return (seed % 1000) / 1000; };
+    SCRIPT.forEach((line, si) => {
+      const toks = line.split(' ');
+      const sWords = [];
+      toks.forEach((tok) => {
+        const clean = tok.replace(/[^a-zA-Z']/g, '').toLowerCase();
+        const dur = 0.17 + clean.length * 0.05 + (/[.,?]$/.test(tok) ? 0.13 : 0);
+        const n = Math.max(2, Math.min(5, Math.round(clean.length / 2)));
+        const bars = [];
+        for (let b = 0; b < n; b++) bars.push(0.22 + rnd() * 0.78);
+        const filler = (clean === 'um' || clean === 'uh');
+        const w = { id: 'w' + (wid++), text: tok, clean, dur, bars, filler, deleted: false, sid: 's' + si };
+        words.push(w); sWords.push(w);
+        t += dur + 0.02;
+      });
+      sentences.push({ id: 's' + si, words: sWords, t0: t });
+      t += 0.2;
+    });
+    for (let i = 0; i < words.length - 1; i++){
+      if (words[i].clean === 'you' && words[i + 1].clean === 'know'){ words[i].filler = true; words[i + 1].filler = true; }
+    }
+    return { words, sentences };
+  }
+
+  componentDidMount(){
+    this._raf = requestAnimationFrame(this.loop);
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount(){
+    cancelAnimationFrame(this._raf);
+    window.removeEventListener('keydown', this.onKey);
+    if (this._expTimer) clearInterval(this._expTimer);
+    if (this._cd) clearInterval(this._cd);
+    if (this._rt) clearInterval(this._rt);
+    this.stopCamera();
+  }
+
+  componentDidUpdate(){
+    if (this._stream && this._recRef.current && this._recRef.current.srcObject !== this._stream){
+      this._recRef.current.srcObject = this._stream;
+    }
+  }
+
+  // ---- recording / media ----
+  openRecord(){ this.setState({ recordPhase: 'live', recElapsed: 0, camDenied: false, showMedia: false }); this.startCamera(); }
+  startCamera(){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ this.setState({ camDenied: true }); return; }
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(st => {
+      this._stream = st;
+      this.setState({ camDenied: false });
+      if (this._recRef.current) this._recRef.current.srcObject = st;
+    }).catch(() => this.setState({ camDenied: true }));
+  }
+  stopCamera(){
+    if (this._stream){ this._stream.getTracks().forEach(t => t.stop()); this._stream = null; }
+    if (this._recRef.current) this._recRef.current.srcObject = null;
+  }
+  beginRecording(){
+    this.setState({ recordPhase: 'countdown', recCount: 3 });
+    if (this._cd) clearInterval(this._cd);
+    this._cd = setInterval(() => {
+      const c = this.state.recCount - 1;
+      if (c <= 0){
+        clearInterval(this._cd); this._cd = null;
+        this.setState({ recordPhase: 'recording', recElapsed: 0 });
+        this._rt = setInterval(() => this.setState({ recElapsed: this.state.recElapsed + 0.1 }), 100);
+      } else this.setState({ recCount: c });
+    }, 1000);
+  }
+  stopRecording(){
+    if (this._rt){ clearInterval(this._rt); this._rt = null; }
+    const n = this.state.recCounter + 1;
+    const dur = Math.max(1, Math.round(this.state.recElapsed));
+    const res = { id: 'rec' + Date.now(), name: 'Recording ' + n, dur, kind: 'Recording', thumb: 'repeating-linear-gradient(135deg,#2a1715 0 11px,#221210 11px 22px)' };
+    this.stopCamera();
+    this.setState({ resources: [res, ...this.state.resources], recordPhase: 'review', recCounter: n, lastResId: res.id });
+  }
+  closeRecord(){
+    if (this._cd){ clearInterval(this._cd); this._cd = null; }
+    if (this._rt){ clearInterval(this._rt); this._rt = null; }
+    this.stopCamera();
+    this.setState({ recordPhase: 'none' });
+  }
+  toggleMedia(){ this.setState({ showMedia: !this.state.showMedia }); }
+  addOverlay(res){
+    const o = { id: 'o' + Date.now() + Math.floor(Math.random()*999), resId: res.id, name: res.name, start: this.state.currentTime, dur: res.dur, thumb: res.thumb };
+    this.setState({ overlays: [...this.state.overlays, o], showMedia: false });
+  }
+  addLastToTimeline(){
+    const res = this.state.resources.find(r => r.id === this.state.lastResId);
+    if (res) this.addOverlay(res);
+    this.setState({ recordPhase: 'none' });
+  }
+  removeOverlay(id){ this.setState({ overlays: this.state.overlays.filter(o => o.id !== id) }); }
+
+  loop(ts){
+    if (!this._last) this._last = ts;
+    const dt = (ts - this._last) / 1000;
+    this._last = ts;
+    if (this.state.playing){
+      const total = this.totalDuration();
+      let nt = this.state.currentTime + dt;
+      if (nt >= total){ this.setState({ currentTime: total, playing: false }); }
+      else this.setState({ currentTime: nt });
+    }
+    this._raf = requestAnimationFrame(this.loop);
+  }
+
+  onKey(e){
+    if (this.state.screen !== 'editor') return;
+    const tag = (e.target && e.target.tagName) || '';
+    const typing = tag === 'INPUT' || tag === 'TEXTAREA';
+    if (e.key === ' ' && !typing){ e.preventDefault(); this.togglePlay(); }
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && !typing && this.state.selectedId){ e.preventDefault(); this.deleteSelected(); }
+  }
+
+  totalDuration(){
+    let acc = 0;
+    this.state.words.forEach(w => { if (!w.deleted) acc += w.dur + 0.02; });
+    return Math.max(0.001, acc);
+  }
+
+  togglePlay(){
+    let ct = this.state.currentTime;
+    if (ct >= this.totalDuration() - 0.05) ct = 0;
+    this.setState({ playing: !this.state.playing, currentTime: ct });
+  }
+  toStart(){ this.setState({ currentTime: 0 }); }
+  toEnd(){ this.setState({ currentTime: this.totalDuration(), playing: false }); }
+
+  openProject(){ this.setState({ screen: 'editor' }); }
+  back(){ this.setState({ screen: 'dashboard', playing: false }); }
+
+  wordClick(w){
+    if (w.deleted){
+      this.setState({ words: this.state.words.map(x => x.id === w.id ? { ...x, deleted: false } : x), selectedId: w.id });
+      return;
+    }
+    const st = this._startMap[w.id] || 0;
+    this.setState({ selectedId: w.id, currentTime: st + 0.0005 });
+  }
+  sentenceClick(sen){
+    const first = sen.words.find(x => !x.deleted);
+    if (first) this.setState({ currentTime: (this._startMap[first.id] || 0) + 0.0005 });
+  }
+  deleteSelected(){
+    const id = this.state.selectedId;
+    if (!id) return;
+    this.setState({ words: this.state.words.map(x => x.id === id ? { ...x, deleted: !x.deleted } : x) });
+  }
+  removeFillers(){
+    this.setState({ words: this.state.words.map(x => (x.filler && !x.deleted) ? { ...x, deleted: true } : x) });
+  }
+  onSearch(e){ this.setState({ query: e.target.value }); }
+  toggleCaptions(){ this.setState({ showCaptions: !this.state.showCaptions }); }
+  onTimelineClick(e){
+    const r = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    this.setState({ currentTime: ratio * this.totalDuration() });
+  }
+
+  startExport(){ this.setState({ exportPhase: 'config' }); }
+  closeExport(){ if (this._expTimer) clearInterval(this._expTimer); this._expTimer = null; this.setState({ exportPhase: 'none', exportProgress: 0 }); }
+  runExport(){
+    this.setState({ exportPhase: 'exporting', exportProgress: 0 });
+    if (this._expTimer) clearInterval(this._expTimer);
+    this._expTimer = setInterval(() => {
+      const p = this.state.exportProgress + 0.012 + Math.random() * 0.03;
+      if (p >= 1){ clearInterval(this._expTimer); this._expTimer = null; this.setState({ exportProgress: 1, exportPhase: 'done' }); }
+      else this.setState({ exportProgress: p });
+    }, 40);
+  }
+
+  fmt(s){
+    s = Math.max(0, s);
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return m + ':' + String(sec).padStart(2, '0');
+  }
+
+  renderVals(){
+    const s = this.state;
+    const accent = (this.props && this.props.accentColor) || '#ff6a3d';
+    const showFiller = (this.props && this.props.showFillerHints) !== undefined ? this.props.showFillerHints : true;
+    const capStyle = (this.props && this.props.captionStyle) || s.captionStyle;
+    const q = s.query.trim().toLowerCase();
+
+    // edited timeline
+    const active = s.words.filter(w => !w.deleted);
+    const startMap = {};
+    let acc = 0;
+    active.forEach(w => { startMap[w.id] = acc; acc += w.dur + 0.02; });
+    const total = Math.max(0.001, acc);
+    this._startMap = startMap;
+    const ct = Math.min(s.currentTime, total);
+
+    let currentId = null;
+    for (const w of active){ const st = startMap[w.id]; if (ct >= st && ct < st + w.dur + 0.02){ currentId = w.id; break; } }
+    if (!currentId && active.length){ currentId = ct <= 0 ? active[0].id : active[active.length - 1].id; }
+
+    // group live words by sentence id (state.words is the source of truth)
+    const bySid = {};
+    const sidOrder = [];
+    s.words.forEach(w => { if (!bySid[w.sid]){ bySid[w.sid] = []; sidOrder.push(w.sid); } bySid[w.sid].push(w); });
+
+    // word VMs grouped by sentence
+    const sentences = sidOrder.map(sid => {
+      const sw = bySid[sid];
+      const firstActive = sw.find(w => !w.deleted);
+      return {
+      id: sid,
+      time: this.fmt(firstActive ? (startMap[firstActive.id] || 0) : 0),
+      onClick: () => { if (firstActive) this.setState({ currentTime: (startMap[firstActive.id] || 0) + 0.0005 }); },
+      words: sw.map(w => {
+        const isCur = w.id === currentId && !w.deleted;
+        const isSel = w.id === s.selectedId;
+        const isMatch = q && w.clean.includes(q);
+        const st = { cursor:'pointer', borderRadius:'5px', padding:'1px 2px', transition:'background .1s, color .1s, box-shadow .1s', color:'#cdccd1', textDecoration:'none', boxDecorationBreak:'clone', WebkitBoxDecorationBreak:'clone' };
+        if (isMatch){ st.background = 'rgba(255,214,102,.22)'; st.color = '#f6f5f2'; }
+        if (w.filler && showFiller && !w.deleted){ st.color = '#e6936b'; st.textDecoration = 'underline dotted'; st.textDecorationColor = accent; st.textUnderlineOffset = '3px'; }
+        if (isSel && !isCur && !w.deleted){ st.boxShadow = 'inset 0 0 0 1.5px ' + accent; st.background = 'rgba(255,106,61,.08)'; }
+        if (isCur){ st.background = accent; st.color = '#0b0b0d'; st.fontWeight = '600'; st.textDecoration = 'none'; }
+        if (w.deleted){ st.textDecoration = 'line-through'; st.textDecorationColor = 'rgba(255,255,255,.45)'; st.color = '#54535b'; st.background = 'transparent'; st.fontWeight = '400'; st.boxShadow = 'none'; }
+        return { id: w.id, display: w.text + ' ', style: st, onClick: () => this.wordClick(w) };
+      })
+    };
+    });
+
+    // caption words for current sentence
+    let captionWords = [];
+    const cur = active.find(w => w.id === currentId);
+    if (cur){
+      const senWords = bySid[cur.sid];
+      if (senWords){
+        captionWords = senWords.filter(w => !w.deleted).map(w => {
+          const isCur = w.id === currentId;
+          const st = { transition:'color .12s', color: '#ffffff' };
+          if (capStyle === 'karaoke'){ st.color = isCur ? accent : 'rgba(255,255,255,.55)'; }
+          return { display: w.text + ' ', style: st };
+        });
+      }
+    }
+
+    // waveform bars (active words concatenated)
+    const bars = [];
+    active.forEach(w => {
+      const st = startMap[w.id];
+      const n = w.bars.length;
+      const slot = (w.dur) / total;
+      w.bars.forEach((h, i) => {
+        const left = ((st + (w.dur) * (i / n)) / total) * 100;
+        const width = (slot / n) * 100 * 0.62;
+        bars.push({ left: left.toFixed(3) + '%', width: Math.max(0.25, width).toFixed(3) + '%', height: (8 + h * 78).toFixed(1) + '%' });
+      });
+    });
+
+    // clips (per sentence, for V1 + CC tracks)
+    const clips = [];
+    sidOrder.forEach(sid => {
+      const aw = bySid[sid].filter(w => !w.deleted);
+      if (!aw.length) return;
+      const a = startMap[aw[0].id];
+      const last = aw[aw.length - 1];
+      const b = startMap[last.id] + last.dur;
+      const leftPct = (a / total) * 100;
+      const widthPct = Math.max(1.2, ((b - a) / total) * 100);
+      clips.push({ left: leftPct.toFixed(3) + '%', width: (widthPct - 0.5).toFixed(3) + '%', label: aw.slice(0, 5).map(w => w.text).join(' ') });
+    });
+
+    // ruler ticks
+    const ticks = [];
+    const step = total / 8;
+    for (let i = 0; i <= 8; i++){ const tt = i * step; ticks.push({ left: ((tt / total) * 100).toFixed(3) + '%', label: this.fmt(tt) }); }
+
+    const fillerCount = active.filter(w => w.filler).length;
+    const deletedCount = s.words.filter(w => w.deleted).length;
+    const selWord = s.words.find(w => w.id === s.selectedId);
+    const playheadPct = ((ct / total) * 100).toFixed(3) + '%';
+
+    // B-roll overlays VM
+    const overlays = s.overlays.map(o => {
+      const left = Math.max(0, (o.start / total) * 100);
+      const width = Math.max(1.5, (o.dur / total) * 100);
+      return {
+        id: o.id, name: o.name,
+        style: { position:'absolute', top:'5px', bottom:'5px', left: left.toFixed(2) + '%', width: width.toFixed(2) + '%', borderRadius:'5px', overflow:'hidden', background: o.thumb, border:'1px solid rgba(255,106,61,.55)', boxShadow:'inset 0 0 0 9999px rgba(255,106,61,.07)', cursor:'pointer' },
+        onClick: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ currentTime: o.start }); },
+        remove: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.removeOverlay(o.id); },
+      };
+    });
+    const resources = s.resources.map(r => ({ id:r.id, name:r.name, kind:r.kind, thumb:r.thumb, durTC:this.fmt(r.dur), onClick: () => this.addOverlay(r) }));
+    const lastRes = s.resources.find(r => r.id === s.lastResId);
+
+    const chipBase = { padding:'7px 14px', borderRadius:'8px', fontSize:'12.5px', cursor:'pointer', fontWeight:'500' };
+    const on = { ...chipBase, background:'rgba(255,106,61,.12)', border:'1px solid ' + accent, color:'#f3f2f0' };
+    const off = { ...chipBase, background:'#17171a', border:'1px solid #26262b', color:'#a3a2a8' };
+
+    const projects = [
+      { title:'Q3 launch recap', dur:'7:18', kind:'WEBINAR', meta:'Edited 1d ago', bg:'repeating-linear-gradient(135deg,#1f1a2c 0 12px,#191622 12px 24px)' },
+      { title:'Newsletter — issue 12', dur:'3:04', kind:'TALKING HEAD', meta:'Edited 3d ago', bg:'repeating-linear-gradient(135deg,#15211f 0 12px,#121a19 12px 24px)' },
+      { title:'Customer interview — Mara', dur:'21:47', kind:'INTERVIEW', meta:'Edited 5d ago', bg:'repeating-linear-gradient(135deg,#241c19 0 12px,#1b1714 12px 24px)' },
+      { title:'Product walkthrough v2', dur:'9:31', kind:'DEMO', meta:'Edited 1w ago', bg:'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)' },
+      { title:'Behind the scenes', dur:'2:12', kind:'VLOG', meta:'Edited 1w ago', bg:'repeating-linear-gradient(135deg,#26201a 0 12px,#1c1814 12px 24px)' },
+    ].map(p => ({ ...p, onClick: () => this.openProject() }));
+
+    return {
+      accent,
+      isDashboard: s.screen === 'dashboard',
+      isEditor: s.screen === 'editor',
+      projects,
+      openProject: () => this.openProject(),
+      back: () => this.back(),
+      togglePlay: () => this.togglePlay(),
+      toStart: () => this.toStart(),
+      toEnd: () => this.toEnd(),
+      playing: s.playing,
+      paused: !s.playing,
+      currentTC: this.fmt(ct),
+      totalTC: this.fmt(total),
+      sentences,
+      captionWords,
+      showCaptions: s.showCaptions,
+      toggleCaptions: () => this.toggleCaptions(),
+      bars,
+      clips,
+      ticks,
+      playheadPct,
+      overlays,
+      noOverlays: s.overlays.length === 0,
+      resources,
+      resourceCount: s.resources.length,
+      openRecord: () => this.openRecord(),
+      closeRecord: () => this.closeRecord(),
+      beginRecording: () => this.beginRecording(),
+      stopRecording: () => this.stopRecording(),
+      toggleMedia: () => this.toggleMedia(),
+      addLastToTimeline: () => this.addLastToTimeline(),
+      showMedia: s.showMedia,
+      showRecord: s.recordPhase !== 'none',
+      recPreview: s.recordPhase === 'live' || s.recordPhase === 'countdown' || s.recordPhase === 'recording',
+      recIdle: s.recordPhase === 'live',
+      recCounting: s.recordPhase === 'countdown',
+      recActive: s.recordPhase === 'recording',
+      recReview: s.recordPhase === 'review',
+      recCount: s.recCount,
+      recElapsedTC: this.fmt(s.recElapsed),
+      camDenied: s.camDenied,
+      recRef: this._recRef,
+      lastName: lastRes ? lastRes.name : '',
+      lastDur: lastRes ? this.fmt(lastRes.dur) : '',
+      lastThumb: lastRes ? lastRes.thumb : '#161619',
+      onTimelineClick: (e) => this.onTimelineClick(e),
+      query: s.query,
+      onSearch: (e) => this.onSearch(e),
+      fillerCount,
+      deletedCount,
+      wordCount: active.length,
+      savedLabel: deletedCount > 0 ? ('−' + deletedCount + ' words trimmed') : 'Original cut',
+      removeFillers: () => this.removeFillers(),
+      hasSelection: !!selWord,
+      selectedText: selWord ? selWord.text : '',
+      deleteLabel: selWord && selWord.deleted ? 'Restore word' : 'Delete word',
+      deleteSelected: () => this.deleteSelected(),
+      startExport: () => this.startExport(),
+      closeExport: () => this.closeExport(),
+      runExport: () => this.runExport(),
+      showExport: s.exportPhase !== 'none',
+      exportConfig: s.exportPhase === 'config',
+      exporting: s.exportPhase === 'exporting',
+      exportDone: s.exportPhase === 'done',
+      exportPct: Math.round(s.exportProgress * 100) + '%',
+      setKaraoke: () => this.setState({ captionStyle: 'karaoke' }),
+      setClean: () => this.setState({ captionStyle: 'clean' }),
+      karaokeChip: capStyle === 'karaoke' ? on : off,
+      cleanChip: capStyle === 'clean' ? on : off,
+    };
+  }
+}
+</script>
+</body>
+</html>
