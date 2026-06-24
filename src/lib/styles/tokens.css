@@ -1,0 +1,103 @@
+/*
+ * Cutline design tokens (M1-01).
+ * Canonical names — components consume var(--token); never hardcode hex downstream.
+ */
+
+:root {
+	/* Surfaces (darkest → lightest) */
+	--surface-base: #0b0b0d;
+	--surface-0: #0a0a0c;
+	--surface-1: #0c0c0e;
+	--surface-2: #0d0d0f;
+	--surface-3: #0e0e10;
+	--surface-4: #101013;
+	--surface-5: #131316;
+	--surface-6: #141417;
+	--surface-7: #17171a;
+	--surface-active: #1a1a1e;
+
+	/* Borders (darkest → lightest) */
+	--border-faint: #161619;
+	--border-1: #18181c;
+	--border-2: #1a1a1e;
+	--border-3: #1d1d21;
+	--border-4: #1f1f24;
+	--border-5: #232328;
+	--border-6: #26262b;
+	--border-7: #2a2a30;
+
+	/* Text (lightest → faintest) */
+	--text-bright: #f6f5f2;
+	--text-1: #f3f2f0;
+	--text-2: #d6d5da;
+	--text-3: #cfcdd2;
+	--text-4: #b9b8bd;
+	--text-5: #a3a2a8;
+	--text-6: #8b8a90;
+	--text-7: #6f6e75;
+	--text-8: #5f5e66;
+	--text-9: #56555c;
+	--text-deleted: #54535b;
+	--text-placeholder: #3f3e45;
+
+	/* Accent (themeable — override on a wrapper to swap palette) */
+	--accent: #ff6a3d;
+	--on-accent: #0b0b0d;
+	--accent-tint-08: color-mix(in srgb, var(--accent) 8%, transparent);
+	--accent-tint-10: color-mix(in srgb, var(--accent) 10%, transparent);
+	--accent-tint-12: color-mix(in srgb, var(--accent) 12%, transparent);
+	--accent-tint-14: color-mix(in srgb, var(--accent) 14%, transparent);
+	--accent-tint-22: color-mix(in srgb, var(--accent) 22%, transparent);
+	--accent-tint-32: color-mix(in srgb, var(--accent) 32%, transparent);
+	--accent-tint-55: color-mix(in srgb, var(--accent) 55%, transparent);
+
+	/* Danger */
+	--danger: #ff5a4d;
+	--danger-text: #ff8478;
+	--on-danger: #160808;
+	--danger-tint-12: color-mix(in srgb, var(--danger) 12%, transparent);
+	--danger-tint-14: color-mix(in srgb, var(--danger) 14%, transparent);
+	--danger-tint-42: color-mix(in srgb, var(--danger) 42%, transparent);
+	--danger-tint-45: color-mix(in srgb, var(--danger) 45%, transparent);
+
+	/* Highlight & filler */
+	--filler: #e6936b;
+	--highlight: rgb(255 214 102 / 22%);
+
+	/* Typography */
+	--font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	--font-mono: 'JetBrains Mono', monospace;
+
+	/* Radii */
+	--radius-xs: 4px;
+	--radius-sm: 7px;
+	--radius-md: 8px;
+	--radius-lg: 11px;
+	--radius-xl: 13px;
+	--radius-2xl: 16px;
+	--radius-3xl: 18px;
+	--radius-pill: 50%;
+
+	/* Z-index */
+	--z-playhead: 5;
+	--z-media-shelf: 42;
+	--z-export: 50;
+	--z-record: 55;
+
+	/* Elevation */
+	--shadow-shelf: 0 20px 50px rgb(0 0 0 / 55%);
+	--shadow-modal: 0 30px 80px rgb(0 0 0 / 60%);
+
+	/* Scrollbar */
+	--scrollbar-thumb: #2a2a2f;
+	--scrollbar-thumb-hover: #3a3a40;
+	--scrollbar-radius: 6px;
+
+	/* Fixed layout dimensions */
+	--sidebar-w: 240px;
+	--topbar-h: 54px;
+	--rail-w: 54px;
+	--timeline-h: 252px;
+	--track-label-w: 78px;
+	--ruler-h: 22px;
+}
