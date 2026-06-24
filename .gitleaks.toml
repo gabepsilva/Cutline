@@ -8,6 +8,7 @@ useDefault = true
 description = "Known false positives and test fixtures"
 paths = [
   '''^\.github/workflows/.*$''',
+  '''^playwright\.config\.ts$''',
   '''^scripts/issues/.*$''',
   '''^PLANNING\.md$''',
 ]
