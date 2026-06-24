@@ -34,9 +34,25 @@ npm run dev -- --open
 To create a production version of your app:
 
 ```sh
-npm run build
+bun run build
 ```
 
-You can preview the production build with `npm run preview`.
+You can preview the production build with `bun run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+
+## CI
+
+Every PR to `master` must pass the workflows in `.github/workflows/`:
+
+| Check             | Workflow       | Local equivalent                                                   |
+| ----------------- | -------------- | ------------------------------------------------------------------ |
+| Code quality      | `ci.yml`       | `prettier --check`, `eslint`, `check`, `test:unit`, Playwright e2e |
+| Coverage          | `ci.yml`       | `bun run test:unit:coverage`                                       |
+| Secret scanning   | `security.yml` | — (gitleaks in CI)                                                 |
+| Dependency audit  | `security.yml` | `bash scripts/ci/audit-deps.sh`                                    |
+| Dependency review | `security.yml` | — (PR-only, GitHub-hosted)                                         |
+| CodeQL            | `codeql.yml`   | —                                                                  |
+| Build verify      | `build.yml`    | `bun run build`                                                    |
+
+Trusted PRs (same repo) and pushes run on the self-hosted runner `cutline-runner-1`; fork PRs use `ubuntu-latest`. See `PLANNING.md` → CI/CD pipeline for the full design.

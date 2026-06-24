@@ -1,0 +1,22 @@
+title = "Cutline gitleaks config"
+
+[extend]
+# Use the default gitleaks ruleset.
+useDefault = true
+
+[allowlist]
+description = "Known false positives and test fixtures"
+paths = [
+  # Workflow files are intentionally scanned — never blanket-allowlist them,
+  # or a hardcoded secret in a workflow would slip past secret scanning.
+  '''^playwright\.config\.ts$''',
+  '''^scripts/issues/.*$''',
+  '''^PLANNING\.md$''',
+]
+
+# Example tokens in documentation or issue templates are not real secrets.
+regexes = [
+  '''fake[_-]?token''',
+  '''example[_-]?secret''',
+  '''<your[_-]?api[_-]?key>''',
+]

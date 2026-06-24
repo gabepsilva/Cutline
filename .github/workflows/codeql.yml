@@ -1,0 +1,48 @@
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  schedule:
+    # Weekly SAST scan (Sunday 04:00 UTC)
+    - cron: '0 4 * * 0'
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    name: CodeQL
+    timeout-minutes: 45
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'schedule' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted", "Linux", "X64"]') || 'ubuntu-latest' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6a61c0375d66246de94630495909f12cf8dac84d # v4.4.0
+        with:
+          # CodeQL JS/TS extractor invokes node for TypeScript parsing.
+          node-version: '22'
+
+      - name: Setup Bun
+        uses: ./.github/actions/bun-ci
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@a16f4a497336b68eeff8ef72868ea4bab1c672bb # v3.28.9
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+          build-mode: none
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@a16f4a497336b68eeff8ef72868ea4bab1c672bb # v3.28.9
+        with:
+          category: /language:javascript-typescript
