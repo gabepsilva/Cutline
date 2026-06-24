@@ -51,15 +51,24 @@ or edit the epic's PID→# table from `pid-map.json`.
 | `scope.json` | Optional per-issue goal/scope enrichment |
 | `setup-labels.sh` | Static label set |
 | `setup-milestones.sh` | Milestones M0–M6 |
-| `setup-project.sh` | GitHub Project board (needs `project` scope — see below) |
+| `setup-project.sh` | Thin wrapper → `sync-board.mjs` |
+| `sync-board.mjs` | Create + sync the Project board, add issues, set status from labels |
 | `pid-map.json` | Generated PID → issue-number map |
 
 ## GitHub Project board
 
-Creating the **Cutline UI** board needs the `project` token scope, which the current
-`gh` login lacks. Grant it once:
+Creating the **Cutline UI** board needs the `project` token scope. Grant it once,
+then sync (idempotent — re-run after every issue release to add new issues):
 
 ```sh
 gh auth refresh -s project,read:project
-bash scripts/issues/setup-project.sh
+node scripts/issues/sync-board.mjs
 ```
+
+`sync-board.mjs` creates the board if missing, sets the Status columns
+(Backlog · Ready · In progress · Blocked · Done), adds every repo issue, and sets
+each item's Status from labels (epic → In progress; `blocked:*` → Blocked; else Ready),
+leaving already-set statuses untouched.
+
+> Board creation uses the GraphQL API directly: `gh project create` is broken in
+> gh 2.87.0 (`Variable $query is used by CreateProjectV2 but not declared`).
