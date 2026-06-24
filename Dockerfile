@@ -45,6 +45,9 @@ RUN rm -rf node_modules/esbuild node_modules/@esbuild node_modules/@esbuild-kit 
 # --- slim runtime (alpine) ---
 FROM oven/bun:1.3.13-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664e9ae5726f94d7bb5349 AS runner
 WORKDIR /app
+# Pull patched OS packages (e.g. openssl) released after the base image was cut,
+# so the image scan stays clean without waiting for a base-image bump.
+RUN apk upgrade --no-cache
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000 \
