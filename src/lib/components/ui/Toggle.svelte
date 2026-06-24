@@ -74,11 +74,11 @@
 	.toggle__thumb {
 		position: absolute;
 		top: 2px;
+		left: 2px;
 		border-radius: var(--radius-pill);
 		background: var(--on-accent);
-		transition:
-			left 0.15s,
-			right 0.15s;
+		transform: translateX(0);
+		transition: transform 0.15s;
 	}
 
 	.toggle--sm .toggle__thumb {
@@ -91,13 +91,12 @@
 		height: 18px;
 	}
 
-	.toggle:not(.toggle--checked) .toggle__thumb {
-		left: 2px;
-		right: auto;
+	/* Slide thumb to the trailing edge: track width − thumb width − 2px gap each side */
+	.toggle--sm.toggle--checked .toggle__thumb {
+		transform: translateX(13px);
 	}
 
-	.toggle--checked .toggle__thumb {
-		left: auto;
-		right: 2px;
+	.toggle--md.toggle--checked .toggle__thumb {
+		transform: translateX(16px);
 	}
 </style>
