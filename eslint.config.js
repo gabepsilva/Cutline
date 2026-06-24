@@ -36,8 +36,11 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		files: ['src/lib/components/ui/**/*.svelte'],
+		rules: {
+			'svelte/button-has-type': 'error',
+			'svelte/no-target-blank': 'error',
+			'svelte/no-at-html-tags': 'error'
+		}
 	}
 );
