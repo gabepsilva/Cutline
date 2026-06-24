@@ -46,7 +46,13 @@
 	];
 </script>
 
-<Modal {open} title="Export video" layer="export" {onclose} class={className}>
+<Modal
+	{open}
+	title="Export video"
+	layer="export"
+	{onclose}
+	class={['export-modal-shell', className]}
+>
 	<div class="export-modal">
 			<p class="export-modal__section-label">Format</p>
 			<div class="export-modal__chips" role="group" aria-label="Export format">
@@ -81,6 +87,11 @@
 </Modal>
 
 <style>
+	:global(.export-modal-shell .modal__panel) {
+		width: min(100% - 32px, 440px);
+		padding: 26px;
+	}
+
 	.export-modal__section-label {
 		margin: 0 0 9px;
 		font-size: 11px;
