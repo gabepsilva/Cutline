@@ -26,7 +26,7 @@
 </script>
 
 <div class={['dashboard-layout', className]}>
-	<AppSidebar {user} {usage} {navItems} onnavclick={onnavclick} />
+	<AppSidebar {user} {usage} {navItems} {onnavclick} />
 	<main class="dashboard-layout__main">
 		{@render children()}
 	</main>
