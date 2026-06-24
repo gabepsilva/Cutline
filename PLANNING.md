@@ -219,6 +219,12 @@ one monolithic pipeline.
 
 **Hardening rules for every workflow:**
 
+- **Runner:** all jobs run on the **self-hosted runner** — `runs-on: [self-hosted, Linux, X64]`
+  (runner `cutline-runner-1`). Do **not** use GitHub-hosted runners. Because the runner is
+  persistent: don't assume a clean VM (clean the workspace, pin tool versions), and **restrict
+  self-hosted execution to trusted PRs** (same-repo/org, not forks) — running untrusted fork PRs
+  on a self-hosted runner is arbitrary code execution on our infra. Gate fork PRs to a hosted
+  runner or require maintainer approval before they run.
 - Least-privilege `permissions:` — default `contents: read`; grant `security-events: write`,
   `id-token: write`, etc. only to the job that needs it.
 - **Pin all third-party Actions to a full commit SHA** (not `@v4`) — supply-chain integrity.

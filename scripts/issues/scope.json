@@ -4,6 +4,7 @@
   "T-00": {
     "goal": "Stand up Stage 1 of the pipeline: the code-quality CI workflow. The repo has no `.github/workflows/` yet, so this is the first gate every later PR depends on.",
     "scope": [
+      "Runner: all jobs `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted. Don't assume a clean VM; gate fork PRs so untrusted code never runs on the self-hosted runner.",
       "Create `.github/workflows/ci.yml` triggered on `pull_request` and `push` to `master`.",
       "Job hardening: `permissions: { contents: read }`; `concurrency` group per-ref with `cancel-in-progress: true`; `timeout-minutes`; pin every Action to a full commit SHA.",
       "Setup: checkout → `oven-sh/setup-bun` → cache Bun store + Playwright browsers → `bun install --frozen-lockfile`.",
@@ -16,6 +17,7 @@
   "T-01": {
     "goal": "Stage 2: enforce coverage thresholds in CI. No coverage provider is installed yet.",
     "scope": [
+      "Runner: the coverage job runs on the `cutline-runner-1` self-hosted runner — `runs-on: [self-hosted, Linux, X64]`.",
       "`bun add -D @vitest/coverage-v8`.",
       "Add a `test.coverage` block to `vite.config.ts`: provider `v8`, reporters `['text','html','lcov']`, and per-area `thresholds` from PLANNING.md → Testing strategy (utils ≥95, editor ≥90, ui ≥85, components ≥80, server ≥85, overall ≥80).",
       "Enable coverage for BOTH the `client` (browser) and `server` projects; verify thresholds aggregate across both.",
@@ -27,6 +29,7 @@
   "T-05": {
     "goal": "Stage 3 (safe code): detect secrets/credentials before they reach history.",
     "scope": [
+      "Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
       "Add `gitleaks` to `.github/workflows/security.yml` on `pull_request` + `push`; add a scheduled (weekly) full-history scan.",
       "Commit `.gitleaks.toml` with the ruleset and a documented allowlist for known false positives.",
       "Enable repo **secret scanning** + **push protection** (Settings → Code security & analysis) and note it in the issue.",
@@ -38,6 +41,7 @@
   "T-06": {
     "goal": "Stage 4 (safe code): dependency & supply-chain security.",
     "scope": [
+      "Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
       "Add a dependency-audit job to `.github/workflows/security.yml`: `bun audit` failing on high/critical (augment with `google/osv-scanner` for transitive coverage).",
       "Add `actions/dependency-review-action` on `pull_request` to block known-vulnerable deps and disallowed licenses (define an allowed-license policy).",
       "Add `.github/dependabot.yml` with weekly updates for the npm/bun ecosystem AND `github-actions`.",
@@ -49,6 +53,7 @@
   "T-07": {
     "goal": "Stage 5 (safe code): static application security testing via CodeQL.",
     "scope": [
+      "Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted. Ensure the runner meets CodeQL's resource needs.",
       "Add `.github/workflows/codeql.yml` using `github/codeql-action` (init/analyze) for language `javascript-typescript`.",
       "Use the `security-extended` query suite; run on `pull_request`, `push: master`, and a weekly schedule.",
       "`permissions: { security-events: write, contents: read, actions: read }`; SHA-pinned actions.",
@@ -60,6 +65,7 @@
   "T-08": {
     "goal": "Stage 6 (safe binaries): verify the build, produce an SBOM, and scan the output.",
     "scope": [
+      "Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
       "Add `.github/workflows/build.yml`: `bun install --frozen-lockfile` → `bun run build` must succeed; upload the build output as a retention-limited artifact.",
       "Generate a CycloneDX **SBOM** (`@cyclonedx/cyclonedx-npm` or `anchore/sbom-action`) and attach it to the run.",
       "Run **Trivy** (filesystem + config/misconfig scan) and fail on high/critical.",
