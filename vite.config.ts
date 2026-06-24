@@ -28,7 +28,8 @@ export default defineConfig({
 	test: {
 		expect: { requireAssertions: true },
 		coverage: {
-			provider: 'v8',
+			// istanbul: browser (client) project does not support v8 coverage APIs.
+			provider: 'istanbul',
 			reporter: ['text', 'html', 'lcov'],
 			include: [
 				'src/lib/**/*.{ts,svelte}',
@@ -62,9 +63,6 @@ export default defineConfig({
 				extends: './vite.config.ts',
 				test: {
 					name: 'client',
-					coverage: {
-						provider: 'istanbul'
-					},
 					browser: {
 						enabled: true,
 						provider: playwright(),
