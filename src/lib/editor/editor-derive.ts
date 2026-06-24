@@ -90,7 +90,9 @@ export function trackClips(words: Word[], startMap: Record<string, number>, tota
 		const start = startMap[first.id];
 		const end = startMap[last.id] + last.dur;
 		const leftPct = (start / total) * 100;
-		const widthPct = Math.max(1.2, ((end - start) / total) * 100 - 0.5);
+		// Design clamps the raw clip width to a 1.2% floor, then trims 0.5% for the
+		// inter-clip gap (renderVals: `Math.max(1.2, …)` then `width - 0.5`).
+		const widthPct = Math.max(1.2, ((end - start) / total) * 100) - 0.5;
 		clips.push({
 			leftPct,
 			widthPct,

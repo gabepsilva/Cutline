@@ -12,6 +12,7 @@ import {
 	WORD_GAP
 } from './editor-derive';
 import { fixtureTranscriptWords } from '$lib/test/fixtures';
+import type { Word } from '$lib/types/transcript';
 
 describe('editor-derive', () => {
 	describe('totalDuration', () => {
@@ -109,6 +110,26 @@ describe('editor-derive', () => {
 			const clips = trackClips(fixtureTranscriptWords, map, total);
 			expect(clips).toHaveLength(1);
 			expect(clips[0]?.label).toContain('Okay');
+		});
+
+		it('floors narrow clip width at 1.2% before trimming 0.5% (design math)', () => {
+			// A tiny clip relative to total: raw width is well under the 1.2% floor,
+			// so the design formula clamps to 1.2 then subtracts 0.5 → 0.7.
+			const narrow: Word = {
+				id: 'n0',
+				text: 'hi',
+				clean: 'hi',
+				dur: 0.05,
+				bars: [0.5],
+				filler: false,
+				deleted: false,
+				sid: 'sn'
+			};
+			const total = 100;
+			const map = buildStartMap([narrow]);
+			const clips = trackClips([narrow], map, total);
+			expect(clips).toHaveLength(1);
+			expect(clips[0]?.widthPct).toBeCloseTo(0.7, 5);
 		});
 	});
 
