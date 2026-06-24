@@ -9,9 +9,8 @@ test.describe('/demo/shells smoke', () => {
 		await expect(page.getByTestId('shells-dashboard')).toBeVisible();
 		await expect(page.getByTestId('shells-editor')).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeVisible();
-		await expect(page.getByTestId('editor-timeline-placeholder')).toContainText(
-			'Timeline pending — M2-17'
-		);
+		await expect(page.getByRole('region', { name: 'Timeline' })).toBeVisible();
+		await expect(page.getByText('B-ROLL', { exact: true })).toBeVisible();
 	});
 
 	test('preview route is not indexed', async ({ page }) => {
