@@ -1,0 +1,28 @@
+# TLS via cert-manager Certificate `cutline-tls` (see certificate.yaml).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cutline
+  namespace: cutline
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dns01
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+  labels:
+    app.kubernetes.io/name: cutline
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - cutline.i.psilva.org
+      secretName: cutline-tls
+  rules:
+    - host: cutline.i.psilva.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cutline
+                port:
+                  number: 80

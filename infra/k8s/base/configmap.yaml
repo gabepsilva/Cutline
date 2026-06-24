@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cutline-config
+  namespace: cutline
+  labels:
+    app.kubernetes.io/name: cutline
+data:
+  # Public origin — must match the ingress host so better-auth issues correct
+  # cookies/redirects and adapter-node accepts the request origin.
+  ORIGIN: 'https://cutline.i.psilva.org'
+  PORT: '3000'
+  # Ephemeral SQLite on the pod's emptyDir /tmp. Data is lost on restart — a
+  # persistent DB is deferred (see PLANNING.md / infra/k8s/README.md).
+  DATABASE_URL: 'file:/tmp/cutline.db'
