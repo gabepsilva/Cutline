@@ -76,7 +76,7 @@ export default defineConfig({
 						instances: [{ browser: 'chromium', headless: true }]
 					},
 					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-					exclude: ['src/lib/server/**', 'src/lib/test/**/*.harness.svelte']
+					exclude: ['src/lib/server/**']
 				}
 			},
 
