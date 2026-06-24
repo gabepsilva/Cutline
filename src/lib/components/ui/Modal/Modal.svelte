@@ -8,8 +8,8 @@
 		title: string;
 		layer?: ModalLayer;
 		onclose?: () => void;
-		class?: string;
-		header?: Snippet;
+		class?: string | string[];
+		header?: Snippet<[{ titleId: string }]>;
 		children: Snippet;
 		footer?: Snippet;
 	}
@@ -101,7 +101,7 @@
 		>
 			<header class="modal__header">
 				{#if header}
-					{@render header()}
+					{@render header({ titleId })}
 				{:else}
 					<h2 id={titleId} class="modal__title">{title}</h2>
 				{/if}
