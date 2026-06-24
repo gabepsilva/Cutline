@@ -54,35 +54,35 @@
 	class={['export-modal-shell', className]}
 >
 	<div class="export-modal">
-			<p class="export-modal__section-label">Format</p>
-			<div class="export-modal__chips" role="group" aria-label="Export format">
-				{#each formats as item (item.id)}
-					<Chip selected={format === item.id} onclick={() => onformatchange?.(item.id)}>
-						{item.label}
-					</Chip>
-				{/each}
-			</div>
+		<p class="export-modal__section-label">Format</p>
+		<div class="export-modal__chips" role="group" aria-label="Export format">
+			{#each formats as item (item.id)}
+				<Chip selected={format === item.id} onclick={() => onformatchange?.(item.id)}>
+					{item.label}
+				</Chip>
+			{/each}
+		</div>
 
-			<p class="export-modal__section-label">Resolution</p>
-			<div class="export-modal__chips" role="group" aria-label="Export resolution">
-				{#each resolutions as item (item.id)}
-					<Chip selected={resolution === item.id} onclick={() => onresolutionchange?.(item.id)}>
-						{item.label}
-					</Chip>
-				{/each}
-			</div>
+		<p class="export-modal__section-label">Resolution</p>
+		<div class="export-modal__chips" role="group" aria-label="Export resolution">
+			{#each resolutions as item (item.id)}
+				<Chip selected={resolution === item.id} onclick={() => onresolutionchange?.(item.id)}>
+					{item.label}
+				</Chip>
+			{/each}
+		</div>
 
-			<div class="export-modal__toggle-row">
-				<div>
-					<p class="export-modal__toggle-title">Burn in captions</p>
-					<p class="export-modal__toggle-detail">Render subtitles into the video</p>
-				</div>
-				<Toggle label="Burn in captions" checked={burnCaptions} onchange={onburncaptionschange} />
+		<div class="export-modal__toggle-row">
+			<div>
+				<p class="export-modal__toggle-title">Burn in captions</p>
+				<p class="export-modal__toggle-detail">Render subtitles into the video</p>
 			</div>
+			<Toggle label="Burn in captions" checked={burnCaptions} onchange={onburncaptionschange} />
+		</div>
 
-			<Button variant="primary" size="lg" class="export-modal__submit" onclick={onexport}>
-				Export · {totalTimecode}
-			</Button>
+		<Button variant="primary" size="lg" class="export-modal__submit" onclick={onexport}>
+			Export · {totalTimecode}
+		</Button>
 	</div>
 </Modal>
 

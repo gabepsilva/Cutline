@@ -58,31 +58,31 @@
 	{/snippet}
 
 	{#if step === 'review'}
-			<RecordReview
-				name={reviewName}
-				durationLabel={reviewDurationLabel}
-				thumb={reviewThumb}
-				{onkeep}
-				{onaddtotimeline}
-			/>
-		{:else}
-			<RecordPreview {recording} {countingDown} {countdown} {elapsedLabel} />
-			<RecordSourceTabs selected={source} onselect={onsourcechange} />
+		<RecordReview
+			name={reviewName}
+			durationLabel={reviewDurationLabel}
+			thumb={reviewThumb}
+			{onkeep}
+			{onaddtotimeline}
+		/>
+	{:else}
+		<RecordPreview {recording} {countingDown} {countdown} {elapsedLabel} />
+		<RecordSourceTabs selected={source} onselect={onsourcechange} />
 
-			{#if idle}
-				<Button variant="danger" size="lg" class="record-modal__primary" onclick={onstart}>
-					<span class="record-modal__start-dot" aria-hidden="true"></span>
-					Start recording
-				</Button>
-			{:else if countingDown}
-				<div class="record-modal__waiting" role="status">Get ready…</div>
-			{:else}
-				<Button variant="primary" size="lg" class="record-modal__primary" onclick={onstop}>
-					<span class="record-modal__stop-icon" aria-hidden="true"></span>
-					Stop & save · {elapsedLabel}
-				</Button>
-			{/if}
+		{#if idle}
+			<Button variant="danger" size="lg" class="record-modal__primary" onclick={onstart}>
+				<span class="record-modal__start-dot" aria-hidden="true"></span>
+				Start recording
+			</Button>
+		{:else if countingDown}
+			<div class="record-modal__waiting" role="status">Get ready…</div>
+		{:else}
+			<Button variant="primary" size="lg" class="record-modal__primary" onclick={onstop}>
+				<span class="record-modal__stop-icon" aria-hidden="true"></span>
+				Stop & save · {elapsedLabel}
+			</Button>
 		{/if}
+	{/if}
 </Modal>
 
 <style>
