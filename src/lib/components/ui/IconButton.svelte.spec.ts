@@ -29,6 +29,14 @@ describe('IconButton.svelte', () => {
 		expect(styles.height).toBe('30px');
 	});
 
+	it('forwards a custom class onto the button', async () => {
+		render(IconButtonHarness, { label: 'Settings', class: 'is-active' });
+
+		const button = await page.getByRole('button', { name: 'Settings' }).element();
+
+		expect(button.classList.contains('is-active')).toBe(true);
+	});
+
 	it('does not fire onclick when disabled', async () => {
 		const onclick = vi.fn();
 		render(IconButtonHarness, { label: 'Zoom in', variant: 'bordered', disabled: true, onclick });

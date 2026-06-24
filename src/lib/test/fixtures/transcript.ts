@@ -52,4 +52,4 @@ export const fixtureSentence: Sentence = {
 };
 
 /** Fixture: word list for selection / filler tests. */
-export const fixtureTranscriptWords: Word[] = fixtureWords;
+export const fixtureTranscriptWords: Word[] = [...fixtureWords];

@@ -8,11 +8,19 @@
 		size?: IconButtonSize;
 		disabled?: boolean;
 		onclick?: (event: MouseEvent) => void;
+		class?: string;
 	}
 
-	let { label, variant = 'ghost', size = 'md', disabled = false, onclick }: Props = $props();
+	let {
+		label,
+		variant = 'ghost',
+		size = 'md',
+		disabled = false,
+		onclick,
+		class: className = ''
+	}: Props = $props();
 </script>
 
-<IconButton {label} {variant} {size} {disabled} {onclick}>
+<IconButton {label} {variant} {size} {disabled} {onclick} class={className}>
 	<span aria-hidden="true">×</span>
 </IconButton>
