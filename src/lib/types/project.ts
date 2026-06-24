@@ -6,6 +6,8 @@ export interface Project {
 	title: string;
 	durationLabel: string;
 	kind: ProjectKind | (string & {});
+	/** Hero subtitle — optional; grid cards use meta only. */
+	description?: string;
 	meta: string;
 	thumb: string;
 }
