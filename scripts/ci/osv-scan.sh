@@ -18,26 +18,26 @@ json="$(mktemp)"
 "$scanner" scan -L bun.lock -f json --output-file "$json" || true
 
 high_count="$(
-	python3 - "$json" <<'PY'
-import json
-import sys
-
-data = json.load(open(sys.argv[1]))
-count = 0
-for result in data.get("results", []):
-    for pkg in result.get("packages", []):
-        for group in pkg.get("groups", []):
-            raw = group.get("max_severity")
-            if raw is None:
-                continue
-            try:
-                if float(raw) >= 7.0:
-                    count += 1
-            except ValueError:
-                if str(raw).upper() in {"HIGH", "CRITICAL"}:
-                    count += 1
-print(count)
-PY
+	bun -e "
+const data = JSON.parse(await Bun.file(process.argv[1]).text());
+let count = 0;
+for (const result of data.results ?? []) {
+	for (const pkg of result.packages ?? []) {
+		for (const group of pkg.groups ?? []) {
+			const raw = group.max_severity;
+			if (raw == null) continue;
+			const asNumber = Number(raw);
+			if (!Number.isNaN(asNumber)) {
+				if (asNumber >= 7) count += 1;
+				continue;
+			}
+			const label = String(raw).toUpperCase();
+			if (label === 'HIGH' || label === 'CRITICAL') count += 1;
+		}
+	}
+}
+console.log(count);
+" "$json"
 )"
 
 if [ "$high_count" -gt 0 ]; then
