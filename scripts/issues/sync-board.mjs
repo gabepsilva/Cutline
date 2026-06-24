@@ -64,6 +64,21 @@ if (!proj) {
   console.log(`reusing board #${proj.number}: ${TITLE}`);
 }
 
+// link board to the repo so it shows under the repo's Projects tab (idempotent)
+try {
+  const repoId = gql('query($o:String!,$r:String!){repository(owner:$o,name:$r){id}}', {
+    o: OWNER,
+    r: REPO.split('/')[1]
+  }).repository.id;
+  gql('mutation($p:ID!,$r:ID!){linkProjectV2ToRepository(input:{projectId:$p,repositoryId:$r}){repository{name}}}', {
+    p: proj.id,
+    r: repoId
+  });
+  console.log(`linked board to ${REPO}`);
+} catch {
+  /* already linked */
+}
+
 // ensure Status columns
 const statusField = gql(
   'query($l:String!,$n:Int!){user(login:$l){projectV2(number:$n){field(name:"Status"){... on ProjectV2SingleSelectField{id options{id name}}}}}}',
