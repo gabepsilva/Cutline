@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cutline-tls
+  namespace: cutline
+  labels:
+    app.kubernetes.io/name: cutline
+spec:
+  secretName: cutline-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-dns01
+  dnsNames:
+    - cutline.i.psilva.org

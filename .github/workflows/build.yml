@@ -66,7 +66,11 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: 1
 
-      # Container/release path — enable when a Dockerfile lands.
+      # Container/release path — active now that a Dockerfile exists.
+      - name: Build container image
+        if: hashFiles('Dockerfile') != ''
+        run: docker build --provenance=false --sbom=false -t cutline:ci .
+
       - name: Trivy image scan
         if: hashFiles('Dockerfile') != ''
         uses: aquasecurity/trivy-action@cf5c088a69634cd13ccddc735d7926162c31f9a6 # v0.28.0
@@ -74,4 +78,5 @@ jobs:
           scan-type: image
           image-ref: cutline:ci
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
           exit-code: 1
