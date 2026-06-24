@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Implementation plan (PLANNING.md)
+    url: https://github.com/gabepsilva/Cutline/blob/master/PLANNING.md
+    about: Read the milestoned issue inventory, design → Svelte translation guide, design tokens, type contracts, and agent runbook before opening an issue.
+  - name: Contributor conventions (AGENTS.md)
+    url: https://github.com/gabepsilva/Cutline/blob/master/AGENTS.md
+    about: BEM, Svelte 5 runes, mandatory Svelte MCP workflow, file-size limits, and mock-data policy.

@@ -1,0 +1,24 @@
+{
+  "_comment": "Optional per-issue enrichment for create-issues.mjs. PLANNING.md stays the source of truth for inventory/order/labels/deps; this only adds goal + scope bullets. Add entries here to make any issue's body richer; missing entries fall back to sensible template defaults.",
+
+  "T-00": {
+    "goal": "Stand up the first CI workflow for the repo (none exists yet). Every later PR depends on this gate being green.",
+    "scope": [
+      "Create `.github/workflows/ci.yml` running on `push` to `master` and on `pull_request`.",
+      "Steps: checkout → setup Bun → `bun install --frozen-lockfile` → `bun run check` (svelte-check + tsc) → `bun run lint` (prettier --check + eslint) → `bun run test:unit -- --run` (Vitest client + server projects, Playwright browser provider) → `bun run test:e2e`.",
+      "Cache Bun + Playwright browsers; `playwright install --with-deps` before E2E.",
+      "Required checks must pass before merge. Do NOT add coverage gating here — that is T-01.",
+      "Keep the job matrix minimal (single Linux runner) for now."
+    ]
+  },
+
+  "M1-01": {
+    "goal": "Extract the design's global tokens into `src/lib/styles/tokens.css` as the canonical, themeable source consumed by every component. This is a hard gate: M1-04+ / M2 / M4–M6 must not start until token names are final and merged.",
+    "scope": [
+      "Define CSS custom properties for the full Design tokens reference in PLANNING.md: surfaces (`--surface-base`…`--surface-active`), borders (`--border-faint`…`--border-7`), text (`--text-bright`…`--text-placeholder`), accent/danger/highlight, typography (`--font-sans`, `--font-mono`), radii, z-index, motion, elevation, scrollbar, and fixed layout dims (`--sidebar-w`, `--topbar-h`, `--rail-w`, `--timeline-h`, `--track-label-w`, `--ruler-h`).",
+      "Default `--accent: #ff6a3d`; derive accent/danger tints from the accent variable via `color-mix(in srgb, var(--accent) N%, transparent)` so the 4 design accents work without hardcoding orange tints.",
+      "Expose tokens on `:root`; do not include component markup or global resets (those are M1-02).",
+      "Publish the final token-name list in this issue/PR description before dependent issues start (consumers reference these exact names — never raw hex)."
+    ]
+  }
+}
