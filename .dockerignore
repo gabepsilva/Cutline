@@ -1,0 +1,28 @@
+# Build context hygiene (T-10) — keep the image small and deterministic.
+.git
+.github
+.svelte-kit
+build
+node_modules
+
+# Local DBs / secrets / env
+*.db
+.env
+.env.*
+!.env.example
+
+# Test + coverage artifacts
+coverage
+playwright-report
+test-results
+osv-scanner
+
+# Editor / tooling
+.vscode
+.cursor
+.claude
+.mcp.json
+
+# Docs / planning (not needed at build)
+design-by-claude
+PLANNING.md

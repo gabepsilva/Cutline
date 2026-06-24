@@ -4,6 +4,10 @@ import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
+	// K8s liveness/readiness probe (T-10): answer before any auth/DB work so a
+	// degraded database can never make the pod fail its health check.
+	if (event.url.pathname === '/healthz') return resolve(event);
+
 	const session = await auth.api.getSession({ headers: event.request.headers });
 
 	if (session) {
