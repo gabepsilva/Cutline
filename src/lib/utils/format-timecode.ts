@@ -1,6 +1,6 @@
 /** Format seconds as `m:ss` (design `fmt()` — M1-11). */
 export function formatTimecode(seconds: number): string {
-	const safe = Math.max(0, seconds);
+	const safe = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
 	const minutes = Math.floor(safe / 60);
 	const secs = Math.floor(safe % 60);
 	return `${minutes}:${String(secs).padStart(2, '0')}`;

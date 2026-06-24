@@ -1,12 +1,3 @@
-<script module lang="ts">
-	let modalIdCounter = 0;
-
-	export function nextModalTitleId(): string {
-		modalIdCounter += 1;
-		return `modal-title-${modalIdCounter}`;
-	}
-</script>
-
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { ModalLayer } from './Modal.types';
@@ -34,7 +25,7 @@
 		footer
 	}: Props = $props();
 
-	const titleId = nextModalTitleId();
+	const titleId = $props.id();
 
 	let panelEl = $state<HTMLDivElement | null>(null);
 	let closeButtonEl = $state<HTMLButtonElement | null>(null);
