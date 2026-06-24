@@ -48,15 +48,15 @@ or edit the epic's PID→# table from `pid-map.json`.
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `create-issues.mjs` | Parser + body composer + `gh` driver |
-| `scope.json` | Optional per-issue goal/scope enrichment |
-| `setup-labels.sh` | Static label set |
-| `setup-milestones.sh` | Milestones M0–M6 |
-| `setup-project.sh` | Thin wrapper → `sync-board.mjs` |
-| `sync-board.mjs` | Create + sync the Project board, add issues, set status from labels |
-| `pid-map.json` | Generated PID → issue-number map |
+| File                  | Purpose                                                             |
+| --------------------- | ------------------------------------------------------------------- |
+| `create-issues.mjs`   | Parser + body composer + `gh` driver                                |
+| `scope.json`          | Optional per-issue goal/scope enrichment                            |
+| `setup-labels.sh`     | Static label set                                                    |
+| `setup-milestones.sh` | Milestones M0–M6                                                    |
+| `setup-project.sh`    | Thin wrapper → `sync-board.mjs`                                     |
+| `sync-board.mjs`      | Create + sync the Project board, add issues, set status from labels |
+| `pid-map.json`        | Generated PID → issue-number map                                    |
 
 ## GitHub Project board
 

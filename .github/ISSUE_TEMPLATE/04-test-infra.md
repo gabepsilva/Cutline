@@ -1,11 +1,11 @@
 ---
-name: "Test / CI infrastructure (Template D)"
-about: "Test tooling, fixtures, or CI work (T-* issues)."
-title: "<PID>: <infra task>"
-labels: ["testing"]
+name: 'Test / CI infrastructure (Template D)'
+about: 'Test tooling, fixtures, or CI work (T-* issues).'
+title: '<PID>: <infra task>'
+labels: ['testing']
 ---
 
-> **Planning-ID:** `<PID>`  ·  **Milestone:** `M0`
+> **Planning-ID:** `<PID>` · **Milestone:** `M0`
 > **Read first** in `PLANNING.md`: Testing strategy · Agent runbook & conventions
 > **Blocked by:** `<PIDs → map to #NN before starting>`
 

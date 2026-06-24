@@ -1,6 +1,6 @@
 ## Closes
 
-Closes #<issue>  ·  Planning-ID: `<PID>`
+Closes #<issue> · Planning-ID: `<PID>`
 
 ## What
 

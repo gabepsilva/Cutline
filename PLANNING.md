@@ -64,13 +64,13 @@ An issue labelled `blocked:data` means **real integration is still required to c
 
 Follow `AGENTS.md` file size guidelines:
 
-| File type | Target | Hard ceiling |
-|-----------|--------|--------------|
-| Route `+page.svelte` | ~50–80 lines | ~120 lines |
-| Leaf UI component | ~80–150 lines | ~250 lines |
-| Layout / orchestrator | ~60–100 lines | ~150 lines |
-| Complex widget | ~100–200 lines | ~300 lines |
-| `.ts` utils / types | ~100–200 lines | ~300 lines |
+| File type             | Target         | Hard ceiling |
+| --------------------- | -------------- | ------------ |
+| Route `+page.svelte`  | ~50–80 lines   | ~120 lines   |
+| Leaf UI component     | ~80–150 lines  | ~250 lines   |
+| Layout / orchestrator | ~60–100 lines  | ~150 lines   |
+| Complex widget        | ~100–200 lines | ~300 lines   |
+| `.ts` utils / types   | ~100–200 lines | ~300 lines   |
 
 - One primary component per file.
 - Pages compose components — no large markup blocks in routes.
@@ -81,13 +81,13 @@ Follow `AGENTS.md` file size guidelines:
 
 The Claude prototype contains two main screens and several overlays:
 
-| Screen / overlay | Design marker (HTML comment) | Lines (approx.) |
-|------------------|------------------------------|-----------------|
-| Dashboard | `<!-- ================= DASHBOARD ================= -->` | 30–108 |
-| Editor | `<!-- ================= EDITOR ================= -->` | 110–506 |
-| Media shelf | `showMedia` overlay | 352–380 |
-| Record modal | `showRecord` overlay | 382–448 |
-| Export modal | `showExport` overlay | 450–503 |
+| Screen / overlay | Design marker (HTML comment)                             | Lines (approx.) |
+| ---------------- | -------------------------------------------------------- | --------------- |
+| Dashboard        | `<!-- ================= DASHBOARD ================= -->` | 30–108          |
+| Editor           | `<!-- ================= EDITOR ================= -->`    | 110–506         |
+| Media shelf      | `showMedia` overlay                                      | 352–380         |
+| Record modal     | `showRecord` overlay                                     | 382–448         |
+| Export modal     | `showExport` overlay                                     | 450–503         |
 
 Global tokens and styles live in the `<helmet>` block (lines 10–25) and root wrapper (line 28).
 
@@ -131,12 +131,12 @@ Issue **M5-00** must land before M5-11 and M6-03.
 
 Shared types live in `src/lib/types/` — not inside `.svelte` files. Create when schema/API lands:
 
-| File | Issue | When |
-|------|-------|------|
-| `project.ts` | M4-00 | Projects schema merged |
-| `transcript.ts` | M5-00 | Transcript schema merged |
-| `media.ts` | M6-00 | Media library schema merged |
-| `timeline.ts` | M6-00 | Timeline model merged |
+| File            | Issue | When                        |
+| --------------- | ----- | --------------------------- |
+| `project.ts`    | M4-00 | Projects schema merged      |
+| `transcript.ts` | M5-00 | Transcript schema merged    |
+| `media.ts`      | M6-00 | Media library schema merged |
+| `timeline.ts`   | M6-00 | Timeline model merged       |
 
 ---
 
@@ -146,11 +146,11 @@ High test coverage is a **merge requirement**, not optional polish. Tests ship i
 
 ### Tooling (already in repo)
 
-| Layer | Tool | File pattern | Environment |
-|-------|------|--------------|-------------|
-| Svelte components | Vitest + `vitest-browser-svelte` | `src/**/*.svelte.spec.ts` | Browser (Chromium) |
-| Pure TS (utils, state, load) | Vitest | `src/**/*.spec.ts` (excl. `.svelte.spec.ts`) | Node |
-| Routes / flows | Playwright | `src/**/*.e2e.ts` | Browser |
+| Layer                        | Tool                             | File pattern                                 | Environment        |
+| ---------------------------- | -------------------------------- | -------------------------------------------- | ------------------ |
+| Svelte components            | Vitest + `vitest-browser-svelte` | `src/**/*.svelte.spec.ts`                    | Browser (Chromium) |
+| Pure TS (utils, state, load) | Vitest                           | `src/**/*.spec.ts` (excl. `.svelte.spec.ts`) | Node               |
+| Routes / flows               | Playwright                       | `src/**/*.e2e.ts`                            | Browser            |
 
 Run: `bun run test:unit` (unit + component), `bun run test:e2e` (Playwright).
 
@@ -160,29 +160,29 @@ Run: `bun run test:unit` (unit + component), `bun run test:e2e` (Playwright).
 
 Enforce in CI (issue **T-01**):
 
-| Area | Line coverage target |
-|------|---------------------|
-| `src/lib/utils/**` | **≥ 95%** |
-| `src/lib/editor/**` (state, pure helpers) | **≥ 90%** |
-| `src/lib/components/ui/**` | **≥ 85%** |
-| `src/lib/components/**` (all other) | **≥ 80%** |
-| `src/routes/**` `+page.server.ts` / `+server.ts` | **≥ 85%** |
-| **Overall** `src/lib/**` | **≥ 80%** |
+| Area                                             | Line coverage target |
+| ------------------------------------------------ | -------------------- |
+| `src/lib/utils/**`                               | **≥ 95%**            |
+| `src/lib/editor/**` (state, pure helpers)        | **≥ 90%**            |
+| `src/lib/components/ui/**`                       | **≥ 85%**            |
+| `src/lib/components/**` (all other)              | **≥ 80%**            |
+| `src/routes/**` `+page.server.ts` / `+server.ts` | **≥ 85%**            |
+| **Overall** `src/lib/**`                         | **≥ 80%**            |
 
 Coverage gaps need justification in the PR (e.g. browser-only media APIs). Prefer extracting testable pure functions over skipping tests.
 
 ### What to test per issue type
 
-| Issue type | Required tests |
-|------------|----------------|
-| **UI primitive** (Button, Modal, Toggle) | Render variants; click / keyboard; disabled state; a11y roles and labels; open/close for Modal |
-| **Layout shell** | Renders with empty props or documented mocks from parent; slots/snippets render children |
+| Issue type                                               | Required tests                                                                                          |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **UI primitive** (Button, Modal, Toggle)                 | Render variants; click / keyboard; disabled state; a11y roles and labels; open/close for Modal          |
+| **Layout shell**                                         | Renders with empty props or documented mocks from parent; slots/snippets render children                |
 | **Presentational feature** (ProjectCard, TranscriptWord) | Renders from typed fixture; key props change output; callbacks fire on interaction; empty/missing props |
-| **Pure util** (`format-timecode`) | Table-driven edge cases (0, 59s, 60s, large values); invalid input handling |
-| **EditorState** | seek, play/pause, select word, derived timecode — no DOM |
-| **Server `load`** | Returns shape; empty DB → empty arrays; auth gate; errors — use test DB or mocked drizzle |
-| **Route page** | Thin composition: minimal test that correct child components mount with loaded data |
-| **E2E flow** | Auth login; home empty state; editor open project — critical paths only |
+| **Pure util** (`format-timecode`)                        | Table-driven edge cases (0, 59s, 60s, large values); invalid input handling                             |
+| **EditorState**                                          | seek, play/pause, select word, derived timecode — no DOM                                                |
+| **Server `load`**                                        | Returns shape; empty DB → empty arrays; auth gate; errors — use test DB or mocked drizzle               |
+| **Route page**                                           | Thin composition: minimal test that correct child components mount with loaded data                     |
+| **E2E flow**                                             | Auth login; home empty state; editor open project — critical paths only                                 |
 
 ### Test file layout
 
@@ -300,32 +300,32 @@ T-01 is green — see T-01 note.)
 **Template:** Board  
 **Link:** All issues below should be added to this project.
 
-| Column | Purpose |
-|--------|---------|
-| **Backlog** | Not started |
-| **Ready** | Unblocked, can be assigned |
-| **In progress** | Active work |
-| **Blocked** | Waiting on data, schema, or dependency issue |
-| **Done** | Merged to main |
+| Column          | Purpose                                      |
+| --------------- | -------------------------------------------- |
+| **Backlog**     | Not started                                  |
+| **Ready**       | Unblocked, can be assigned                   |
+| **In progress** | Active work                                  |
+| **Blocked**     | Waiting on data, schema, or dependency issue |
+| **Done**        | Merged to main                               |
 
 ### Labels
 
 Create these labels on the repo:
 
-| Label | Suggested color | Meaning |
-|-------|-----------------|---------|
-| `ui` | Blue | Visual implementation |
-| `design-system` | Purple | Tokens, primitives, shared CSS |
-| `layout` | Green | Shell / page structure |
-| `component` | — | Reusable Svelte component |
-| `screen:dashboard` | — | Dashboard area from design |
-| `screen:editor` | — | Editor area from design |
-| `size:small` | — | Single component, one file |
-| `size:compose` | — | Thin route/page wiring only |
-| `blocked:data` | Red | Real backend/service not wired yet — mocks OK with TODO until closed |
-| `blocked:auth` | Orange | Needs auth integration |
-| `testing` | Yellow | Test infrastructure or coverage work |
-| `epic` | — | Parent / tracking issue |
+| Label              | Suggested color | Meaning                                                              |
+| ------------------ | --------------- | -------------------------------------------------------------------- |
+| `ui`               | Blue            | Visual implementation                                                |
+| `design-system`    | Purple          | Tokens, primitives, shared CSS                                       |
+| `layout`           | Green           | Shell / page structure                                               |
+| `component`        | —               | Reusable Svelte component                                            |
+| `screen:dashboard` | —               | Dashboard area from design                                           |
+| `screen:editor`    | —               | Editor area from design                                              |
+| `size:small`       | —               | Single component, one file                                           |
+| `size:compose`     | —               | Thin route/page wiring only                                          |
+| `blocked:data`     | Red             | Real backend/service not wired yet — mocks OK with TODO until closed |
+| `blocked:auth`     | Orange          | Needs auth integration                                               |
+| `testing`          | Yellow          | Test infrastructure or coverage work                                 |
+| `epic`             | —               | Parent / tracking issue                                              |
 
 ### Epic (parent issue)
 
@@ -384,18 +384,18 @@ Order = priority. The **CI/CD & safety foundation (T-00, T-01, T-05–T-09) land
 before any component issue — see the [CI/CD pipeline](#cicd-pipeline-quality--security--supply-chain--safe-binaries)
 section for the detailed steps each issue implements.
 
-| ID | Title | Labels | Target file(s) | Status | Depends on |
-|----|-------|--------|----------------|--------|------------|
-| T-00 | **CI: code-quality gates** (format, lint, `svelte-check`/tsc, unit+component, e2e) | `testing` | `.github/workflows/ci.yml` | ready | — |
-| T-01 | CI: coverage thresholds (`vitest --coverage`) | `testing` | `vite.config.ts`, `.github/workflows/ci.yml`, `package.json` | ready | T-00 |
-| T-05 | CI: secret scanning (gitleaks + push protection) | `testing` | `.github/workflows/security.yml`, `.gitleaks.toml` | ready | T-00 |
-| T-06 | CI: dependency & supply-chain security (audit, dependency-review, Dependabot, pinned actions) | `testing` | `.github/workflows/security.yml`, `.github/dependabot.yml` | ready | T-00 |
-| T-07 | CI: static analysis (CodeQL, JS/TS) | `testing` | `.github/workflows/codeql.yml` | ready | T-00 |
-| T-08 | CI: build verification + SBOM + scan (safe binaries) | `testing` | `.github/workflows/build.yml` | ready | T-00 |
-| T-09 | Repo hardening: PR template + CODEOWNERS + branch protection / required checks | `testing` | `.github/pull_request_template.md`, `.github/CODEOWNERS` | ready | T-00, T-01, T-05, T-06, T-07, T-08 |
-| T-02 | Test helpers + global styles in component tests | `testing` | `src/lib/test/render.ts`, `src/lib/test/setup.ts` | ready | M1-01, M1-02 |
-| T-03 | Domain fixtures package (typed, minimal, realistic) | `testing` | `src/lib/test/fixtures/*.ts` | ready | T-02 |
-| T-04 | E2E smoke: app boots + shells route | `testing` | `src/routes/demo/shells/shells.e2e.ts` | ready | M2-23, T-02 |
+| ID   | Title                                                                                         | Labels    | Target file(s)                                               | Status | Depends on                         |
+| ---- | --------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------ | ------ | ---------------------------------- |
+| T-00 | **CI: code-quality gates** (format, lint, `svelte-check`/tsc, unit+component, e2e)            | `testing` | `.github/workflows/ci.yml`                                   | ready  | —                                  |
+| T-01 | CI: coverage thresholds (`vitest --coverage`)                                                 | `testing` | `vite.config.ts`, `.github/workflows/ci.yml`, `package.json` | ready  | T-00                               |
+| T-05 | CI: secret scanning (gitleaks + push protection)                                              | `testing` | `.github/workflows/security.yml`, `.gitleaks.toml`           | ready  | T-00                               |
+| T-06 | CI: dependency & supply-chain security (audit, dependency-review, Dependabot, pinned actions) | `testing` | `.github/workflows/security.yml`, `.github/dependabot.yml`   | ready  | T-00                               |
+| T-07 | CI: static analysis (CodeQL, JS/TS)                                                           | `testing` | `.github/workflows/codeql.yml`                               | ready  | T-00                               |
+| T-08 | CI: build verification + SBOM + scan (safe binaries)                                          | `testing` | `.github/workflows/build.yml`                                | ready  | T-00                               |
+| T-09 | Repo hardening: PR template + CODEOWNERS + branch protection / required checks                | `testing` | `.github/pull_request_template.md`, `.github/CODEOWNERS`     | ready  | T-00, T-01, T-05, T-06, T-07, T-08 |
+| T-02 | Test helpers + global styles in component tests                                               | `testing` | `src/lib/test/render.ts`, `src/lib/test/setup.ts`            | ready  | M1-01, M1-02                       |
+| T-03 | Domain fixtures package (typed, minimal, realistic)                                           | `testing` | `src/lib/test/fixtures/*.ts`                                 | ready  | T-02                               |
+| T-04 | E2E smoke: app boots + shells route                                                           | `testing` | `src/routes/demo/shells/shells.e2e.ts`                       | ready  | M2-23, T-02                        |
 
 **T-00 (no CI exists yet):** The repo has **no `.github/workflows/`**. T-00 lands first — the Stage 1 quality workflow (`bun install` → `prettier --check` → `eslint` → `bun run check` → `bun run test:unit -- --run` → `bun run test:e2e`). T-01 extends it with coverage. T-05–T-08 add security/supply-chain/build workflows; T-09 wires required checks + branch protection. Do **not** assume CI exists in any other issue.
 
@@ -413,22 +413,22 @@ section for the detailed steps each issue implements.
 
 ### M1 — Foundation
 
-| ID | Title | Labels | Target file(s) | Tests | Status | Depends on |
-|----|-------|--------|----------------|-------|--------|------------|
-| M1-01 | Extract design tokens (`tokens.css`) | `design-system`, `size:small` | `src/lib/styles/tokens.css` | — | ready | — |
-| M1-02 | Global styles (scrollbar, animations, base) | `design-system`, `size:small` | `src/lib/styles/global.css` | — | ready | M1-01 |
-| M1-03 | App root layout + fonts in `app.html` | `layout`, `size:compose` | `src/app.html`, `src/routes/+layout.svelte` | `+layout.svelte.spec.ts` | ready | M1-01, M1-02 |
-| M1-04 | `Button` component | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Button.svelte` | `Button.svelte.spec.ts` | ready | M1-01, T-02 |
-| M1-05 | `IconButton` component | `ui`, `design-system`, `size:small` | `src/lib/components/ui/IconButton.svelte` | `IconButton.svelte.spec.ts` | ready | M1-01, T-02 |
-| M1-06 | `Chip` component (selectable pill) | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Chip.svelte` | `Chip.svelte.spec.ts` | ready | M1-01, T-02 |
-| M1-07 | `Toggle` component | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Toggle.svelte` | `Toggle.svelte.spec.ts` | ready | M1-01, T-02 |
-| M1-08 | `Avatar` component | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Avatar.svelte` | `Avatar.svelte.spec.ts` | ready | M1-01, T-02 |
-| M1-09 | `ProgressBar` component | `ui`, `design-system`, `size:small` | `src/lib/components/ui/ProgressBar.svelte` | `ProgressBar.svelte.spec.ts` | ready | M1-01, T-02 |
-| M1-10 | `Modal` base (overlay + panel + close) | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Modal/*.svelte` | `Modal.svelte.spec.ts` | ready | M1-04, M1-05, T-02 |
-| M1-11 | `TimecodeDisplay` + `format-timecode` util | `ui`, `size:small` | `TimecodeDisplay.svelte`, `format-timecode.ts` | `.svelte.spec.ts` + `.spec.ts` | ready | M1-01, T-02 |
-| M1-12 | `Input` component (search fields) | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Input.svelte` | `Input.svelte.spec.ts` | ready | M1-01, T-02 |
-| M1-13 | `EmptyState` component | `ui`, `design-system`, `size:small` | `src/lib/components/ui/EmptyState.svelte` | `EmptyState.svelte.spec.ts` | ready | M1-01, T-02 |
-| M1-14 | a11y conventions doc + lint rules for `ui/` | `design-system`, `testing` | `docs/a11y.md` or section in AGENTS.md | — | ready | M1-04 |
+| ID    | Title                                       | Labels                              | Target file(s)                                 | Tests                          | Status | Depends on         |
+| ----- | ------------------------------------------- | ----------------------------------- | ---------------------------------------------- | ------------------------------ | ------ | ------------------ |
+| M1-01 | Extract design tokens (`tokens.css`)        | `design-system`, `size:small`       | `src/lib/styles/tokens.css`                    | —                              | ready  | —                  |
+| M1-02 | Global styles (scrollbar, animations, base) | `design-system`, `size:small`       | `src/lib/styles/global.css`                    | —                              | ready  | M1-01              |
+| M1-03 | App root layout + fonts in `app.html`       | `layout`, `size:compose`            | `src/app.html`, `src/routes/+layout.svelte`    | `+layout.svelte.spec.ts`       | ready  | M1-01, M1-02       |
+| M1-04 | `Button` component                          | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Button.svelte`          | `Button.svelte.spec.ts`        | ready  | M1-01, T-02        |
+| M1-05 | `IconButton` component                      | `ui`, `design-system`, `size:small` | `src/lib/components/ui/IconButton.svelte`      | `IconButton.svelte.spec.ts`    | ready  | M1-01, T-02        |
+| M1-06 | `Chip` component (selectable pill)          | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Chip.svelte`            | `Chip.svelte.spec.ts`          | ready  | M1-01, T-02        |
+| M1-07 | `Toggle` component                          | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Toggle.svelte`          | `Toggle.svelte.spec.ts`        | ready  | M1-01, T-02        |
+| M1-08 | `Avatar` component                          | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Avatar.svelte`          | `Avatar.svelte.spec.ts`        | ready  | M1-01, T-02        |
+| M1-09 | `ProgressBar` component                     | `ui`, `design-system`, `size:small` | `src/lib/components/ui/ProgressBar.svelte`     | `ProgressBar.svelte.spec.ts`   | ready  | M1-01, T-02        |
+| M1-10 | `Modal` base (overlay + panel + close)      | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Modal/*.svelte`         | `Modal.svelte.spec.ts`         | ready  | M1-04, M1-05, T-02 |
+| M1-11 | `TimecodeDisplay` + `format-timecode` util  | `ui`, `size:small`                  | `TimecodeDisplay.svelte`, `format-timecode.ts` | `.svelte.spec.ts` + `.spec.ts` | ready  | M1-01, T-02        |
+| M1-12 | `Input` component (search fields)           | `ui`, `design-system`, `size:small` | `src/lib/components/ui/Input.svelte`           | `Input.svelte.spec.ts`         | ready  | M1-01, T-02        |
+| M1-13 | `EmptyState` component                      | `ui`, `design-system`, `size:small` | `src/lib/components/ui/EmptyState.svelte`      | `EmptyState.svelte.spec.ts`    | ready  | M1-01, T-02        |
+| M1-14 | a11y conventions doc + lint rules for `ui/` | `design-system`, `testing`          | `docs/a11y.md` or section in AGENTS.md         | —                              | ready  | M1-04              |
 
 **M1-01 design ref:** `<helmet>` styles lines 14–25; accent `#ff6a3d`; palette (`#0b0b0d`, `#0e0e10`, `#f3f2f0`, `#8b8a90`, etc.); `--accent` CSS variable; JetBrains Mono for monospace.
 
@@ -440,33 +440,33 @@ section for the detailed steps each issue implements.
 
 ### M2 — Layout shells
 
-| ID | Title | Labels | Target file(s) | Tests | Status | Depends on |
-|----|-------|--------|----------------|-------|--------|------------|
-| M2-01 | `AppSidebarLogo` | `layout`, `component`, `size:small` | `AppSidebar/AppSidebarLogo.svelte` | `.svelte.spec.ts` | ready | M1-01, T-02 |
-| M2-02 | `AppSidebarNav` + `AppSidebarNavItem` | `layout`, `component`, `size:small` | `AppSidebarNav.svelte`, `AppSidebarNavItem.svelte` | `.svelte.spec.ts` each | ready | M1-01, T-02 |
-| M2-03 | `AppSidebarStorage` (empty slot) | `layout`, `component`, `size:small` | `AppSidebarStorage.svelte` | `.svelte.spec.ts` | ready | M1-09, T-02 |
-| M2-04 | `AppSidebarUser` (props only) | `layout`, `component`, `size:small` | `AppSidebarUser.svelte` | `.svelte.spec.ts` | ready | M1-08, T-02, T-03 |
-| M2-05 | `AppSidebar` (composes 2-01–2-04) | `layout`, `component`, `screen:dashboard` | `AppSidebar.svelte` | `.svelte.spec.ts` | ready | M2-01–M2-04 |
-| M2-06 | `DashboardLayout` | `layout`, `screen:dashboard`, `size:compose` | `layout/DashboardLayout.svelte` | `.svelte.spec.ts` | ready | M2-05 |
-| M2-07 | `DashboardHeader` (title + CTA slots) | `layout`, `screen:dashboard`, `size:small` | `dashboard/DashboardHeader.svelte` | `.svelte.spec.ts` | ready | M1-04, T-02 |
-| M2-08 | `EditorTopBar` shell | `layout`, `screen:editor`, `size:small` | `editor/EditorTopBar/EditorTopBar.svelte` | `.svelte.spec.ts` | ready | M1-04, T-02 |
-| M2-09 | `TransportControls` shell | `screen:editor`, `component`, `size:small` | `EditorTopBar/TransportControls.svelte` | `.svelte.spec.ts` | ready | M1-05, M1-11, T-02 |
-| M2-10 | `EditorIconRail` | `screen:editor`, `component`, `size:small` | `editor/EditorIconRail.svelte` | `.svelte.spec.ts` | ready | M1-05, T-02 |
-| M2-11 | `EditorLayout` | `layout`, `screen:editor`, `size:compose` | `editor/EditorLayout.svelte` | `.svelte.spec.ts` | ready | M2-08, M2-10 |
-| M2-12 | `TimelineToolbar` | `screen:editor`, `component`, `size:small` | `timeline/TimelineToolbar.svelte` | `.svelte.spec.ts` | ready | M1-04, M1-07, T-02 |
-| M2-13 | `TimelineRuler` (empty ticks slot) | `screen:editor`, `component`, `size:small` | `timeline/TimelineRuler.svelte` | `.svelte.spec.ts` | ready | M1-01, T-02 |
-| M2-14 | `TimelineTrack` (generic track row) | `screen:editor`, `component`, `size:small` | `timeline/TimelineTrack.svelte` | `.svelte.spec.ts` | ready | M1-01, M1-13, T-02 |
-| M2-15 | `TimelinePlayhead` | `screen:editor`, `component`, `size:small` | `timeline/TimelinePlayhead.svelte` | `.svelte.spec.ts` | ready | M1-01, T-02 |
-| M2-16 | `TimelineWaveform` (A1 bars + played overlay) | `screen:editor`, `component`, `size:small` | `timeline/TimelineWaveform.svelte` | `.svelte.spec.ts` | ready | M1-01, T-02 |
-| M2-17 | `Timeline` (composes toolbar, ruler, tracks, playhead) | `screen:editor`, `component`, `size:small` | `timeline/Timeline.svelte` | `.svelte.spec.ts` | ready | M2-12–M2-16 |
-| M2-18 | `ExportModal` shell (config step UI only) | `screen:editor`, `component`, `size:small` | `modals/ExportModal/*.svelte` | `ExportModal.svelte.spec.ts` | ready | M1-10, M1-06, M1-07, T-02 |
-| M2-19 | `ExportProgress` + `ExportComplete` shells | `screen:editor`, `component`, `size:small` | `ExportProgress.svelte`, `ExportComplete.svelte` | `.svelte.spec.ts` each | ready | M1-10, M1-09, T-02 |
-| M2-20 | `RecordModal` shell | `screen:editor`, `component`, `size:small` | `modals/RecordModal/RecordModal.svelte`, `RecordPreview.svelte` | `.svelte.spec.ts` | ready | M1-10, T-02 |
-| M2-21 | `RecordReview` + `RecordSourceTabs` shells | `screen:editor`, `component`, `size:small` | `RecordReview.svelte`, `RecordSourceTabs.svelte` | `.svelte.spec.ts` | ready | M1-10, M1-04, T-02 |
-| M2-22 | `RecBadge` (pulse REC indicator) | `screen:editor`, `component`, `size:small` | `src/lib/components/ui/RecBadge.svelte` | `.svelte.spec.ts` | ready | M1-02, T-02 |
-| M2-23 | `MediaShelf` shell + `MediaCard` | `screen:editor`, `component`, `size:small` | `modals/MediaShelf.svelte`, `MediaCard.svelte` | `.svelte.spec.ts` | ready | M1-10, T-02 |
-| M2-24 | `TranscriptSpeaker` block | `screen:editor`, `component`, `size:small` | `transcript/TranscriptSpeaker.svelte` | `.svelte.spec.ts` | ready | M1-08, T-02, T-03 |
-| M2-25 | Shell preview route (`/demo/shells`) | `layout`, `size:compose` | `src/routes/demo/shells/+page.svelte` | `shells.e2e.ts` (T-04) | ready | M2-06, M2-11, M2-17 |
+| ID    | Title                                                  | Labels                                       | Target file(s)                                                  | Tests                        | Status | Depends on                |
+| ----- | ------------------------------------------------------ | -------------------------------------------- | --------------------------------------------------------------- | ---------------------------- | ------ | ------------------------- |
+| M2-01 | `AppSidebarLogo`                                       | `layout`, `component`, `size:small`          | `AppSidebar/AppSidebarLogo.svelte`                              | `.svelte.spec.ts`            | ready  | M1-01, T-02               |
+| M2-02 | `AppSidebarNav` + `AppSidebarNavItem`                  | `layout`, `component`, `size:small`          | `AppSidebarNav.svelte`, `AppSidebarNavItem.svelte`              | `.svelte.spec.ts` each       | ready  | M1-01, T-02               |
+| M2-03 | `AppSidebarStorage` (empty slot)                       | `layout`, `component`, `size:small`          | `AppSidebarStorage.svelte`                                      | `.svelte.spec.ts`            | ready  | M1-09, T-02               |
+| M2-04 | `AppSidebarUser` (props only)                          | `layout`, `component`, `size:small`          | `AppSidebarUser.svelte`                                         | `.svelte.spec.ts`            | ready  | M1-08, T-02, T-03         |
+| M2-05 | `AppSidebar` (composes 2-01–2-04)                      | `layout`, `component`, `screen:dashboard`    | `AppSidebar.svelte`                                             | `.svelte.spec.ts`            | ready  | M2-01–M2-04               |
+| M2-06 | `DashboardLayout`                                      | `layout`, `screen:dashboard`, `size:compose` | `layout/DashboardLayout.svelte`                                 | `.svelte.spec.ts`            | ready  | M2-05                     |
+| M2-07 | `DashboardHeader` (title + CTA slots)                  | `layout`, `screen:dashboard`, `size:small`   | `dashboard/DashboardHeader.svelte`                              | `.svelte.spec.ts`            | ready  | M1-04, T-02               |
+| M2-08 | `EditorTopBar` shell                                   | `layout`, `screen:editor`, `size:small`      | `editor/EditorTopBar/EditorTopBar.svelte`                       | `.svelte.spec.ts`            | ready  | M1-04, T-02               |
+| M2-09 | `TransportControls` shell                              | `screen:editor`, `component`, `size:small`   | `EditorTopBar/TransportControls.svelte`                         | `.svelte.spec.ts`            | ready  | M1-05, M1-11, T-02        |
+| M2-10 | `EditorIconRail`                                       | `screen:editor`, `component`, `size:small`   | `editor/EditorIconRail.svelte`                                  | `.svelte.spec.ts`            | ready  | M1-05, T-02               |
+| M2-11 | `EditorLayout`                                         | `layout`, `screen:editor`, `size:compose`    | `editor/EditorLayout.svelte`                                    | `.svelte.spec.ts`            | ready  | M2-08, M2-10              |
+| M2-12 | `TimelineToolbar`                                      | `screen:editor`, `component`, `size:small`   | `timeline/TimelineToolbar.svelte`                               | `.svelte.spec.ts`            | ready  | M1-04, M1-07, T-02        |
+| M2-13 | `TimelineRuler` (empty ticks slot)                     | `screen:editor`, `component`, `size:small`   | `timeline/TimelineRuler.svelte`                                 | `.svelte.spec.ts`            | ready  | M1-01, T-02               |
+| M2-14 | `TimelineTrack` (generic track row)                    | `screen:editor`, `component`, `size:small`   | `timeline/TimelineTrack.svelte`                                 | `.svelte.spec.ts`            | ready  | M1-01, M1-13, T-02        |
+| M2-15 | `TimelinePlayhead`                                     | `screen:editor`, `component`, `size:small`   | `timeline/TimelinePlayhead.svelte`                              | `.svelte.spec.ts`            | ready  | M1-01, T-02               |
+| M2-16 | `TimelineWaveform` (A1 bars + played overlay)          | `screen:editor`, `component`, `size:small`   | `timeline/TimelineWaveform.svelte`                              | `.svelte.spec.ts`            | ready  | M1-01, T-02               |
+| M2-17 | `Timeline` (composes toolbar, ruler, tracks, playhead) | `screen:editor`, `component`, `size:small`   | `timeline/Timeline.svelte`                                      | `.svelte.spec.ts`            | ready  | M2-12–M2-16               |
+| M2-18 | `ExportModal` shell (config step UI only)              | `screen:editor`, `component`, `size:small`   | `modals/ExportModal/*.svelte`                                   | `ExportModal.svelte.spec.ts` | ready  | M1-10, M1-06, M1-07, T-02 |
+| M2-19 | `ExportProgress` + `ExportComplete` shells             | `screen:editor`, `component`, `size:small`   | `ExportProgress.svelte`, `ExportComplete.svelte`                | `.svelte.spec.ts` each       | ready  | M1-10, M1-09, T-02        |
+| M2-20 | `RecordModal` shell                                    | `screen:editor`, `component`, `size:small`   | `modals/RecordModal/RecordModal.svelte`, `RecordPreview.svelte` | `.svelte.spec.ts`            | ready  | M1-10, T-02               |
+| M2-21 | `RecordReview` + `RecordSourceTabs` shells             | `screen:editor`, `component`, `size:small`   | `RecordReview.svelte`, `RecordSourceTabs.svelte`                | `.svelte.spec.ts`            | ready  | M1-10, M1-04, T-02        |
+| M2-22 | `RecBadge` (pulse REC indicator)                       | `screen:editor`, `component`, `size:small`   | `src/lib/components/ui/RecBadge.svelte`                         | `.svelte.spec.ts`            | ready  | M1-02, T-02               |
+| M2-23 | `MediaShelf` shell + `MediaCard`                       | `screen:editor`, `component`, `size:small`   | `modals/MediaShelf.svelte`, `MediaCard.svelte`                  | `.svelte.spec.ts`            | ready  | M1-10, T-02               |
+| M2-24 | `TranscriptSpeaker` block                              | `screen:editor`, `component`, `size:small`   | `transcript/TranscriptSpeaker.svelte`                           | `.svelte.spec.ts`            | ready  | M1-08, T-02, T-03         |
+| M2-25 | Shell preview route (`/demo/shells`)                   | `layout`, `size:compose`                     | `src/routes/demo/shells/+page.svelte`                           | `shells.e2e.ts` (T-04)       | ready  | M2-06, M2-11, M2-17       |
 
 **M2-02 design ref:** Sidebar nav lines 41–45 (Home, All projects, Templates, Trash). Nav items are static labels; links disabled or `#` until routes exist.
 
@@ -498,11 +498,11 @@ section for the detailed steps each issue implements.
 
 ### M3 — Auth UI
 
-| ID | Title | Labels | Target file(s) | Tests | Status | Depends on |
-|----|-------|--------|----------------|-------|--------|------------|
-| M3-01 | Auth layout (matches Cutline visual style) | `ui`, `layout`, `blocked:auth` | `src/routes/(auth)/+layout.svelte` | `.svelte.spec.ts` | ready* | M1-01, M1-02, M1-03, T-02 |
-| M3-02 | Login page (better-auth, styled) | `ui`, `blocked:auth` | `src/routes/(auth)/login/+page.svelte`, `+page.server.ts` | `.svelte.spec.ts` + `login.spec.ts` + `login.e2e.ts` | ready* | M3-01, M1-04, T-02 |
-| M3-03 | Signup page (if applicable) | `ui`, `blocked:auth` | `src/routes/(auth)/signup/+page.svelte` | `.svelte.spec.ts` + `signup.e2e.ts` | ready* | M3-01, M1-04, T-02 |
+| ID    | Title                                      | Labels                         | Target file(s)                                            | Tests                                                | Status  | Depends on                |
+| ----- | ------------------------------------------ | ------------------------------ | --------------------------------------------------------- | ---------------------------------------------------- | ------- | ------------------------- |
+| M3-01 | Auth layout (matches Cutline visual style) | `ui`, `layout`, `blocked:auth` | `src/routes/(auth)/+layout.svelte`                        | `.svelte.spec.ts`                                    | ready\* | M1-01, M1-02, M1-03, T-02 |
+| M3-02 | Login page (better-auth, styled)           | `ui`, `blocked:auth`           | `src/routes/(auth)/login/+page.svelte`, `+page.server.ts` | `.svelte.spec.ts` + `login.spec.ts` + `login.e2e.ts` | ready\* | M3-01, M1-04, T-02        |
+| M3-03 | Signup page (if applicable)                | `ui`, `blocked:auth`           | `src/routes/(auth)/signup/+page.svelte`                   | `.svelte.spec.ts` + `signup.e2e.ts`                  | ready\* | M3-01, M1-04, T-02        |
 
 \*Auth infrastructure exists (`better-auth`, demo routes under `src/routes/demo/better-auth/`). Mock session in dev only with `TODO(backend): better-auth session`.
 
@@ -512,15 +512,15 @@ section for the detailed steps each issue implements.
 
 ### M4 — Dashboard (data-backed)
 
-| ID | Title | Labels | Target file(s) | Tests | Status | Depends on | Data required |
-|----|-------|--------|----------------|-------|--------|------------|---------------|
-| M4-00 | Dashboard domain types (`project.ts`) | `blocked:data`, `size:small` | `src/lib/types/project.ts` | `project.spec.ts` (type guards if any) | blocked:data | Schema PR | Drizzle `projects` table |
-| M4-01 | `ProjectCard` component | `ui`, `screen:dashboard`, `blocked:data`, `size:small` | `dashboard/ProjectCard.svelte` | `.svelte.spec.ts` + fixture from T-03 | blocked:data | M1-01, M4-00, T-03 | Project shape |
-| M4-02 | `ProjectGrid` component | `screen:dashboard`, `blocked:data`, `size:small` | `ProjectGrid.svelte` | `.svelte.spec.ts` | blocked:data | M4-01, T-03 | `projects[]` |
-| M4-03 | `ContinueEditingHero` | `screen:dashboard`, `blocked:data`, `size:small` | `ContinueEditingHero.svelte` | `.svelte.spec.ts` + T-03 fixture | blocked:data | M1-04, M4-00, T-03 | Latest project |
-| M4-04 | Home route `+page` + `+page.server` | `screen:dashboard`, `blocked:data`, `size:compose` | `src/routes/+page.svelte`, `+page.server.ts` | `+page.server.spec.ts`, `home.e2e.ts` | blocked:data | M2-06, M4-02, M4-03, M1-13 | projects, session |
-| M4-05 | `AppSidebarStorage` — wire real storage | `layout`, `blocked:data` | `AppSidebarStorage.svelte` | `.svelte.spec.ts` | blocked:data | M2-03 | Storage API |
-| M4-06 | `AppSidebarUser` — wire session user | `layout`, `blocked:data` | `AppSidebarUser.svelte` | `.svelte.spec.ts` + T-03 user fixture | blocked:data | M2-04, M3-02, T-03 | User session |
+| ID    | Title                                   | Labels                                                 | Target file(s)                               | Tests                                  | Status       | Depends on                 | Data required            |
+| ----- | --------------------------------------- | ------------------------------------------------------ | -------------------------------------------- | -------------------------------------- | ------------ | -------------------------- | ------------------------ |
+| M4-00 | Dashboard domain types (`project.ts`)   | `blocked:data`, `size:small`                           | `src/lib/types/project.ts`                   | `project.spec.ts` (type guards if any) | blocked:data | Schema PR                  | Drizzle `projects` table |
+| M4-01 | `ProjectCard` component                 | `ui`, `screen:dashboard`, `blocked:data`, `size:small` | `dashboard/ProjectCard.svelte`               | `.svelte.spec.ts` + fixture from T-03  | blocked:data | M1-01, M4-00, T-03         | Project shape            |
+| M4-02 | `ProjectGrid` component                 | `screen:dashboard`, `blocked:data`, `size:small`       | `ProjectGrid.svelte`                         | `.svelte.spec.ts`                      | blocked:data | M4-01, T-03                | `projects[]`             |
+| M4-03 | `ContinueEditingHero`                   | `screen:dashboard`, `blocked:data`, `size:small`       | `ContinueEditingHero.svelte`                 | `.svelte.spec.ts` + T-03 fixture       | blocked:data | M1-04, M4-00, T-03         | Latest project           |
+| M4-04 | Home route `+page` + `+page.server`     | `screen:dashboard`, `blocked:data`, `size:compose`     | `src/routes/+page.svelte`, `+page.server.ts` | `+page.server.spec.ts`, `home.e2e.ts`  | blocked:data | M2-06, M4-02, M4-03, M1-13 | projects, session        |
+| M4-05 | `AppSidebarStorage` — wire real storage | `layout`, `blocked:data`                               | `AppSidebarStorage.svelte`                   | `.svelte.spec.ts`                      | blocked:data | M2-03                      | Storage API              |
+| M4-06 | `AppSidebarUser` — wire session user    | `layout`, `blocked:data`                               | `AppSidebarUser.svelte`                      | `.svelte.spec.ts` + T-03 user fixture  | blocked:data | M2-04, M3-02, T-03         | User session             |
 
 **M4-03 design ref:** Continue editing hero lines 72–88.
 
@@ -533,15 +533,15 @@ section for the detailed steps each issue implements.
 ```svelte
 <!-- Parent receives data from +page.server.ts (real or mock — mocks live in server load, not here) -->
 <DashboardLayout>
-  <DashboardHeader user={data.user} />
-  {#if data.latestProject}
-    <ContinueEditingHero project={data.latestProject} />
-  {/if}
-  {#if data.projects.length}
-    <ProjectGrid projects={data.projects} />
-  {:else}
-    <EmptyState title="No projects yet" />
-  {/if}
+	<DashboardHeader user={data.user} />
+	{#if data.latestProject}
+		<ContinueEditingHero project={data.latestProject} />
+	{/if}
+	{#if data.projects.length}
+		<ProjectGrid projects={data.projects} />
+	{:else}
+		<EmptyState title="No projects yet" />
+	{/if}
 </DashboardLayout>
 ```
 
@@ -552,9 +552,9 @@ section for the detailed steps each issue implements.
 import { mockProjects, mockUser } from '$lib/mocks/dashboard.mock';
 
 export const load = async () => ({
-  user: mockUser,
-  projects: mockProjects,
-  latestProject: mockProjects[0] ?? null
+	user: mockUser,
+	projects: mockProjects,
+	latestProject: mockProjects[0] ?? null
 });
 ```
 
@@ -562,22 +562,22 @@ export const load = async () => ({
 
 ### M5 — Editor (data-backed)
 
-| ID | Title | Labels | Target file(s) | Tests | Status | Depends on | Data required |
-|----|-------|--------|----------------|-------|--------|------------|---------------|
-| M5-00 | Editor types + `EditorState` class | `blocked:data`, `size:small` | `src/lib/types/transcript.ts`, `src/lib/editor/editor-state.svelte.ts` | `editor-state.spec.ts` | blocked:data | Schema PR | Transcript model |
-| M5-00b | **Editor derivations util** (pure functions ported from design) | `blocked:data`, `size:small` | `src/lib/editor/editor-derive.ts` | `editor-derive.spec.ts` | ready* | M5-00 | Transcript model |
-| M5-01 | `TranscriptSearch` | `screen:editor`, `blocked:data`, `size:small` | `transcript/TranscriptSearch.svelte` | `.svelte.spec.ts` | blocked:data | M1-12, T-02 | — |
-| M5-02 | `TranscriptWord` | `screen:editor`, `blocked:data`, `size:small` | `transcript/TranscriptWord.svelte` | `.svelte.spec.ts` + T-03 | blocked:data | M5-00, T-03 | Word model |
-| M5-03 | `TranscriptSentence` | `screen:editor`, `blocked:data`, `size:small` | `transcript/TranscriptSentence.svelte` | `.svelte.spec.ts` + T-03 | blocked:data | M5-02, M1-11, T-03 | Sentence model |
-| M5-04 | `TranscriptSelectionBar` | `screen:editor`, `blocked:data`, `size:small` | `transcript/TranscriptSelectionBar.svelte` | `.svelte.spec.ts` | blocked:data | M1-04, T-02 | Selection state |
-| M5-05 | `TranscriptPanel` | `screen:editor`, `blocked:data`, `size:small` | `transcript/TranscriptPanel.svelte` | `.svelte.spec.ts` + T-03 | blocked:data | M5-01–M5-04, M2-24 | Transcript API |
-| M5-06 | `PreviewPlayer` | `screen:editor`, `blocked:data`, `size:small` | `preview/PreviewPlayer.svelte` | `.svelte.spec.ts` | blocked:data | M1-05, M2-22, T-02 | Video URL |
-| M5-07 | `PreviewCaptions` | `screen:editor`, `blocked:data`, `size:small` | `preview/PreviewCaptions.svelte` | `.svelte.spec.ts` + T-03 | blocked:data | M5-02, T-03 | Caption words |
-| M5-08 | `PreviewStats` | `screen:editor`, `blocked:data`, `size:small` | `preview/PreviewStats.svelte` | `.svelte.spec.ts` | blocked:data | M1-11, T-02 | Edit stats |
-| M5-09 | `CaptionStylePicker` | `screen:editor`, `blocked:data`, `size:small` | `preview/CaptionStylePicker.svelte` | `.svelte.spec.ts` | blocked:data | M1-06, T-02 | Local preference |
-| M5-10 | `PreviewPanel` | `screen:editor`, `blocked:data`, `size:small` | `preview/PreviewPanel.svelte` | `.svelte.spec.ts` | blocked:data | M5-06–M5-09 | — |
-| M5-11 | Wire `TransportControls` to `EditorState` | `screen:editor`, `blocked:data` | `TransportControls.svelte` | extend `.svelte.spec.ts` | blocked:data | M2-09, M5-00, M5-06 | Player state |
-| M5-12 | Editor route `projects/[id]` + server load | `screen:editor`, `blocked:data`, `size:compose` | `+page.svelte`, `+page.server.ts` | `+page.server.spec.ts`, `editor.e2e.ts` | blocked:data | M2-11, M2-17, M5-05, M5-10, M5-00 | Project, transcript, video |
+| ID     | Title                                                           | Labels                                          | Target file(s)                                                         | Tests                                   | Status       | Depends on                        | Data required              |
+| ------ | --------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------- | ------------ | --------------------------------- | -------------------------- |
+| M5-00  | Editor types + `EditorState` class                              | `blocked:data`, `size:small`                    | `src/lib/types/transcript.ts`, `src/lib/editor/editor-state.svelte.ts` | `editor-state.spec.ts`                  | blocked:data | Schema PR                         | Transcript model           |
+| M5-00b | **Editor derivations util** (pure functions ported from design) | `blocked:data`, `size:small`                    | `src/lib/editor/editor-derive.ts`                                      | `editor-derive.spec.ts`                 | ready\*      | M5-00                             | Transcript model           |
+| M5-01  | `TranscriptSearch`                                              | `screen:editor`, `blocked:data`, `size:small`   | `transcript/TranscriptSearch.svelte`                                   | `.svelte.spec.ts`                       | blocked:data | M1-12, T-02                       | —                          |
+| M5-02  | `TranscriptWord`                                                | `screen:editor`, `blocked:data`, `size:small`   | `transcript/TranscriptWord.svelte`                                     | `.svelte.spec.ts` + T-03                | blocked:data | M5-00, T-03                       | Word model                 |
+| M5-03  | `TranscriptSentence`                                            | `screen:editor`, `blocked:data`, `size:small`   | `transcript/TranscriptSentence.svelte`                                 | `.svelte.spec.ts` + T-03                | blocked:data | M5-02, M1-11, T-03                | Sentence model             |
+| M5-04  | `TranscriptSelectionBar`                                        | `screen:editor`, `blocked:data`, `size:small`   | `transcript/TranscriptSelectionBar.svelte`                             | `.svelte.spec.ts`                       | blocked:data | M1-04, T-02                       | Selection state            |
+| M5-05  | `TranscriptPanel`                                               | `screen:editor`, `blocked:data`, `size:small`   | `transcript/TranscriptPanel.svelte`                                    | `.svelte.spec.ts` + T-03                | blocked:data | M5-01–M5-04, M2-24                | Transcript API             |
+| M5-06  | `PreviewPlayer`                                                 | `screen:editor`, `blocked:data`, `size:small`   | `preview/PreviewPlayer.svelte`                                         | `.svelte.spec.ts`                       | blocked:data | M1-05, M2-22, T-02                | Video URL                  |
+| M5-07  | `PreviewCaptions`                                               | `screen:editor`, `blocked:data`, `size:small`   | `preview/PreviewCaptions.svelte`                                       | `.svelte.spec.ts` + T-03                | blocked:data | M5-02, T-03                       | Caption words              |
+| M5-08  | `PreviewStats`                                                  | `screen:editor`, `blocked:data`, `size:small`   | `preview/PreviewStats.svelte`                                          | `.svelte.spec.ts`                       | blocked:data | M1-11, T-02                       | Edit stats                 |
+| M5-09  | `CaptionStylePicker`                                            | `screen:editor`, `blocked:data`, `size:small`   | `preview/CaptionStylePicker.svelte`                                    | `.svelte.spec.ts`                       | blocked:data | M1-06, T-02                       | Local preference           |
+| M5-10  | `PreviewPanel`                                                  | `screen:editor`, `blocked:data`, `size:small`   | `preview/PreviewPanel.svelte`                                          | `.svelte.spec.ts`                       | blocked:data | M5-06–M5-09                       | —                          |
+| M5-11  | Wire `TransportControls` to `EditorState`                       | `screen:editor`, `blocked:data`                 | `TransportControls.svelte`                                             | extend `.svelte.spec.ts`                | blocked:data | M2-09, M5-00, M5-06               | Player state               |
+| M5-12  | Editor route `projects/[id]` + server load                      | `screen:editor`, `blocked:data`, `size:compose` | `+page.svelte`, `+page.server.ts`                                      | `+page.server.spec.ts`, `editor.e2e.ts` | blocked:data | M2-11, M2-17, M5-05, M5-10, M5-00 | Project, transcript, video |
 
 **M5-00b (new):** The design's interaction math lives in `renderVals()` (design lines 750–847) and is currently homeless — split into wiring issues where it would be re-derived inconsistently. Extract as **pure, DOM-free, fully tested** functions so timeline, waveform, preview, and captions all share one implementation:
 
@@ -604,19 +604,19 @@ These are deterministic given inputs → ideal table-driven tests (Template C). 
 
 ### M6 — Editor features (data-backed)
 
-| ID | Title | Labels | Target file(s) | Tests | Status | Depends on | Data required |
-|----|-------|--------|----------------|-------|--------|------------|---------------|
-| M6-00 | Timeline + media domain types | `blocked:data`, `size:small` | `src/lib/types/timeline.ts`, `media.ts` | `.spec.ts` | blocked:data | Schema PR | Timeline + media models |
-| M6-01 | `TimelineClip` | `screen:editor`, `blocked:data`, `size:small` | `timeline/TimelineClip.svelte` | `.svelte.spec.ts` + T-03 | blocked:data | M2-14, M6-00, T-03 | Clip model |
-| M6-02 | Wire timeline tracks (V1, A1, CC, B-roll) | `screen:editor`, `blocked:data` | `Timeline.svelte`, tracks | extend `.svelte.spec.ts` | blocked:data | M2-17, M6-01, M6-00 | Timeline model |
-| M6-03 | Timeline click → seek (`EditorState`) | `screen:editor`, `blocked:data` | `Timeline.svelte` | `Timeline.svelte.spec.ts` + `editor-state.spec.ts` | blocked:data | M6-02, M5-00, M5-11 | Duration, playhead |
-| M6-04 | `MediaShelf` — wire resource list | `screen:editor`, `blocked:data` | `MediaShelf.svelte`, `MediaCard.svelte` | `.svelte.spec.ts` + T-03 | blocked:data | M2-23, M6-00, T-03 | Media library API |
-| M6-05 | `RecordModal` — camera + recording flow | `screen:editor`, `blocked:data` | `RecordModal/*` | `.svelte.spec.ts` + mocked `mediaDevices` | blocked:data | M2-20, M6-00 | Media capture API |
-| M6-06 | B-roll overlays on timeline | `screen:editor`, `blocked:data` | `TimelineTrack.svelte` | `.svelte.spec.ts` | blocked:data | M6-02, M6-04 | Overlays model |
-| M6-07 | `ExportModal` — wire export job | `screen:editor`, `blocked:data` | `ExportModal/*` | `.svelte.spec.ts` + `export-job.spec.ts` | blocked:data | M2-18, M6-00 | Export job API |
-| M6-08 | Filler removal action | `screen:editor`, `blocked:data` | `TranscriptPanel.svelte` | extend `.svelte.spec.ts` | blocked:data | M5-05, M5-00 | Transcript edit API |
-| M6-09 | Word select / delete / restore | `screen:editor`, `blocked:data` | `TranscriptWord.svelte`, `TranscriptSelectionBar.svelte` | extend `.svelte.spec.ts` | blocked:data | M5-02, M5-04, M5-00 | Transcript edit API |
-| M6-10 | Keyboard shortcuts (space, delete) | `screen:editor`, `blocked:data` | `src/lib/utils/editor-keyboard.ts` | `editor-keyboard.spec.ts` + editor E2E | blocked:data | M5-11, M6-09, M5-12 | Editor mounted |
+| ID    | Title                                     | Labels                                        | Target file(s)                                           | Tests                                              | Status       | Depends on          | Data required           |
+| ----- | ----------------------------------------- | --------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------- | ------------ | ------------------- | ----------------------- |
+| M6-00 | Timeline + media domain types             | `blocked:data`, `size:small`                  | `src/lib/types/timeline.ts`, `media.ts`                  | `.spec.ts`                                         | blocked:data | Schema PR           | Timeline + media models |
+| M6-01 | `TimelineClip`                            | `screen:editor`, `blocked:data`, `size:small` | `timeline/TimelineClip.svelte`                           | `.svelte.spec.ts` + T-03                           | blocked:data | M2-14, M6-00, T-03  | Clip model              |
+| M6-02 | Wire timeline tracks (V1, A1, CC, B-roll) | `screen:editor`, `blocked:data`               | `Timeline.svelte`, tracks                                | extend `.svelte.spec.ts`                           | blocked:data | M2-17, M6-01, M6-00 | Timeline model          |
+| M6-03 | Timeline click → seek (`EditorState`)     | `screen:editor`, `blocked:data`               | `Timeline.svelte`                                        | `Timeline.svelte.spec.ts` + `editor-state.spec.ts` | blocked:data | M6-02, M5-00, M5-11 | Duration, playhead      |
+| M6-04 | `MediaShelf` — wire resource list         | `screen:editor`, `blocked:data`               | `MediaShelf.svelte`, `MediaCard.svelte`                  | `.svelte.spec.ts` + T-03                           | blocked:data | M2-23, M6-00, T-03  | Media library API       |
+| M6-05 | `RecordModal` — camera + recording flow   | `screen:editor`, `blocked:data`               | `RecordModal/*`                                          | `.svelte.spec.ts` + mocked `mediaDevices`          | blocked:data | M2-20, M6-00        | Media capture API       |
+| M6-06 | B-roll overlays on timeline               | `screen:editor`, `blocked:data`               | `TimelineTrack.svelte`                                   | `.svelte.spec.ts`                                  | blocked:data | M6-02, M6-04        | Overlays model          |
+| M6-07 | `ExportModal` — wire export job           | `screen:editor`, `blocked:data`               | `ExportModal/*`                                          | `.svelte.spec.ts` + `export-job.spec.ts`           | blocked:data | M2-18, M6-00        | Export job API          |
+| M6-08 | Filler removal action                     | `screen:editor`, `blocked:data`               | `TranscriptPanel.svelte`                                 | extend `.svelte.spec.ts`                           | blocked:data | M5-05, M5-00        | Transcript edit API     |
+| M6-09 | Word select / delete / restore            | `screen:editor`, `blocked:data`               | `TranscriptWord.svelte`, `TranscriptSelectionBar.svelte` | extend `.svelte.spec.ts`                           | blocked:data | M5-02, M5-04, M5-00 | Transcript edit API     |
+| M6-10 | Keyboard shortcuts (space, delete)        | `screen:editor`, `blocked:data`               | `src/lib/utils/editor-keyboard.ts`                       | `editor-keyboard.spec.ts` + editor E2E             | blocked:data | M5-11, M6-09, M5-12 | Editor mounted          |
 
 **M6-04 design ref:** Media shelf lines 352–380.
 
@@ -803,26 +803,26 @@ Co-locate `*.svelte.spec.ts` beside each component and `*.spec.ts` beside each u
 
 Quick reference from `Cutline.dc.html` sections to issues.
 
-| Design region | HTML lines | Issues |
-|---------------|------------|--------|
-| Global / helmet / fonts | 10–28 | M1-01, M1-02, M1-03 |
-| Sidebar logo | 35–39 | M2-01 |
-| Sidebar nav | 41–45 | M2-02 |
-| Sidebar storage | 47–50 | M2-03, M4-05 |
-| Sidebar user | 52–55 | M2-04, M4-06 |
-| Dashboard header | 60–68 | M2-07 |
-| Continue editing hero | 72–88 | M4-03 |
-| Project grid / cards | 90–105 | M4-01, M4-02 |
-| Editor top bar | 115–152 | M2-08, M2-09, M5-11 |
-| Editor icon rail | 158–164 | M2-10 |
-| Transcript speaker | 190–193 | M2-24 |
-| Transcript panel | 167–206 | M5-01–M5-05, M6-08, M6-09 |
-| Preview panel | 209–255 | M5-06–M5-10, M2-22 |
-| Timeline | 259–350 | M2-12–M2-17, M6-01–M6-03, M6-06 |
-| Waveform (A1) | 320–332 | M2-16 |
-| Media shelf / card | 352–380 | M2-23, M6-04 |
-| Record modal | 382–448 | M2-20, M2-21, M6-05 |
-| Export modal | 450–503 | M2-18, M2-19, M6-07 |
+| Design region           | HTML lines | Issues                          |
+| ----------------------- | ---------- | ------------------------------- |
+| Global / helmet / fonts | 10–28      | M1-01, M1-02, M1-03             |
+| Sidebar logo            | 35–39      | M2-01                           |
+| Sidebar nav             | 41–45      | M2-02                           |
+| Sidebar storage         | 47–50      | M2-03, M4-05                    |
+| Sidebar user            | 52–55      | M2-04, M4-06                    |
+| Dashboard header        | 60–68      | M2-07                           |
+| Continue editing hero   | 72–88      | M4-03                           |
+| Project grid / cards    | 90–105     | M4-01, M4-02                    |
+| Editor top bar          | 115–152    | M2-08, M2-09, M5-11             |
+| Editor icon rail        | 158–164    | M2-10                           |
+| Transcript speaker      | 190–193    | M2-24                           |
+| Transcript panel        | 167–206    | M5-01–M5-05, M6-08, M6-09       |
+| Preview panel           | 209–255    | M5-06–M5-10, M2-22              |
+| Timeline                | 259–350    | M2-12–M2-17, M6-01–M6-03, M6-06 |
+| Waveform (A1)           | 320–332    | M2-16                           |
+| Media shelf / card      | 352–380    | M2-23, M6-04                    |
+| Record modal            | 382–448    | M2-20, M2-21, M6-05             |
+| Export modal            | 450–503    | M2-18, M2-19, M6-07             |
 
 ---
 
@@ -833,12 +833,12 @@ Copy the **Test quality review** block into every implementation issue. PRs cann
 **Standard context header — prepend to every generated issue body** so each is self-contained for an autonomous agent:
 
 ```markdown
-Planning-ID: <PID>  ·  Milestone: <Mn>
+Planning-ID: <PID> · Milestone: <Mn>
 Read first: PLANNING.md →
-  • Agent runbook & conventions (commands, MCP, branching, DoD)
-  • Design → Svelte translation guide
-  • Design tokens reference  ·  Shared type contracts
-  • Reading the design file
+• Agent runbook & conventions (commands, MCP, branching, DoD)
+• Design → Svelte translation guide
+• Design tokens reference · Shared type contracts
+• Reading the design file
 Design source: design-by-claude/Cutline.dc.html (lines <range>)
 Blocked by: <PIDs → map to #NN before starting>
 ```
@@ -849,34 +849,42 @@ Blocked by: <PIDs → map to #NN before starting>
 
 ```markdown
 ## Goal
+
 Implement `<ComponentName>` from the Claude design as a presentational Svelte 5 component.
 
 ## Planning ID
+
 M2-05
 
 ## Design reference
+
 - File: `design-by-claude/Cutline.dc.html`
 - Section: [describe section]
 - Lines: [line range]
 
 ## Target files
+
 - `src/lib/components/.../ComponentName.svelte`
 - `src/lib/components/.../ComponentName.svelte.spec.ts` **(required, same PR)**
 
 ## Scope
+
 - [Bullet list of what is included]
 
 ## Out of scope
+
 - Undocumented hardcoded data (no comment / no TODO)
 - Backend wiring marked done while mocks remain (unless issue is explicitly UI-only)
 
 ## Mock data (if backend not ready)
+
 - [ ] Mocks live in `src/lib/mocks/`, not inside the component
 - [ ] Each mock file/block has `// MOCK:` explanation
 - [ ] Each has `TODO(data|backend|service|3p):` with target issue or integration
 - [ ] Components still receive data via props only
 
 ## Svelte checklist (AGENTS.md)
+
 - [ ] **Svelte MCP:** `svelte-autofixer` run on changed `.svelte` files — no issues/suggestions remaining
 - [ ] `$props()` with typed props
 - [ ] BEM class names
@@ -887,13 +895,13 @@ M2-05
 
 ## Tests to write
 
-| Test | Asserts (behavior, not implementation) |
-|------|--------------------------------------|
-| renders default state | Specific visible text, role, or structure from design |
-| [variant / prop] | Output changes when prop changes (e.g. `disabled`, `selected`) |
-| user interaction | `click` / `keyboard` → callback fired or DOM updates |
-| a11y | Correct role, `aria-*`, focusable, labelled control |
-| empty / null props | Graceful hide or empty state — no crash |
+| Test                  | Asserts (behavior, not implementation)                         |
+| --------------------- | -------------------------------------------------------------- |
+| renders default state | Specific visible text, role, or structure from design          |
+| [variant / prop]      | Output changes when prop changes (e.g. `disabled`, `selected`) |
+| user interaction      | `click` / `keyboard` → callback fired or DOM updates           |
+| a11y                  | Correct role, `aria-*`, focusable, labelled control            |
+| empty / null props    | Graceful hide or empty state — no crash                        |
 
 Use fixtures from `src/lib/test/fixtures/` when props need domain objects.
 
@@ -912,12 +920,14 @@ Use fixtures from `src/lib/test/fixtures/` when props need domain objects.
 - [ ] **Reviewer sign-off:** Tests would catch a regression in this component's scope
 
 ### Anti-patterns (reject in PR)
+
 - Snapshot of entire `document.body` with no behavioral assertion
 - Testing that Svelte "renders without error" only
 - Duplicate tests asserting the same fact five times
 - Tests that pass when the expected text/role is wrong
 
 ## Acceptance criteria
+
 - [ ] Component matches design tokens (M1-01)
 - [ ] Presentational: props in, callbacks out
 - [ ] Co-located `ComponentName.svelte.spec.ts` passes (`bun run test:unit`)
@@ -925,9 +935,11 @@ Use fixtures from `src/lib/test/fixtures/` when props need domain objects.
 - [ ] PR links to this issue
 
 ## Depends on
+
 - Blocked by: #NN
 
 ## Milestone
+
 M2 — Layout shells
 ```
 
@@ -937,39 +949,46 @@ M2 — Layout shells
 
 ```markdown
 ## Goal
+
 Wire [feature] to real server data.
 
 ## Planning ID
+
 M4-04
 
 ## Design reference
+
 - File: `design-by-claude/Cutline.dc.html`
 - Lines: [line range]
 
 ## Data required
+
 - [ ] `projects` table / API
 - [ ] User session
 
 ## Target files
+
 - `src/routes/+page.server.ts` + `+page.server.spec.ts`
 - `src/routes/+page.svelte` (composition only, ~50–80 lines)
 - `src/routes/home.e2e.ts` (if user-facing flow)
 
 ## Out of scope
+
 - Undocumented hardcoded data in components
 - Closing issue as "wired" while `src/lib/mocks/` still feeds this route
 
 ## Mock data (if backend not ready)
+
 - [ ] `+page.server.ts` imports from `$lib/mocks/*` with `MOCK` + `TODO(backend)` comments
 - [ ] Issue remains open (or sub-issue created) until real drizzle/API replaces mock
 
 ## Tests to write
 
-| Layer | File | Asserts |
-|-------|------|---------|
-| Server | `+page.server.spec.ts` | Real test DB or mocked drizzle: empty DB → `projects: []`; seeded DB → correct shape; unauthorized → redirect/error |
-| Page | `+page.svelte.spec.ts` (optional) | Correct child components receive loaded props |
-| E2E | `home.e2e.ts` | Authenticated user sees empty state OR real project from seed — never hardcoded "Alex Chen" |
+| Layer  | File                              | Asserts                                                                                                             |
+| ------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Server | `+page.server.spec.ts`            | Real test DB or mocked drizzle: empty DB → `projects: []`; seeded DB → correct shape; unauthorized → redirect/error |
+| Page   | `+page.svelte.spec.ts` (optional) | Correct child components receive loaded props                                                                       |
+| E2E    | `home.e2e.ts`                     | Authenticated user sees empty state OR real project from seed — never hardcoded "Alex Chen"                         |
 
 ## Test quality review (required before merge)
 
@@ -986,11 +1005,13 @@ M4-04
 - [ ] **Reviewer sign-off:** Tests would catch data regression for this route
 
 ### Anti-patterns (reject in PR)
+
 - `load` tests that never assert return value fields
 - E2E that intercepts API with fake JSON unrelated to schema
 - Component tests with 20 fake projects when the test claims to cover **empty state**
 
 ## Acceptance criteria
+
 - [ ] `load` returns real DB data **or** documented mocks with TODOs (UI phase only)
 - [ ] Empty state when `projects.length === 0` — uses `EmptyState` (M1-13)
 - [ ] Route page is thin composition only
@@ -999,9 +1020,11 @@ M4-04
 - [ ] PR links to this issue
 
 ## Depends on
+
 - Blocked by: #NN (schema), #NN (components)
 
 ## Milestone
+
 M4 — Dashboard (data-backed)
 ```
 
@@ -1011,23 +1034,26 @@ M4 — Dashboard (data-backed)
 
 ```markdown
 ## Goal
+
 Implement `[function | EditorState method]` with full unit coverage.
 
 ## Planning ID
+
 M5-00
 
 ## Target files
+
 - `src/lib/editor/editor-state.svelte.ts`
 - `src/lib/editor/editor-state.spec.ts`
 
 ## Tests to write (table-driven)
 
-| Case | Input | Expected |
-|------|-------|----------|
-| initial state | — | `playing === false`, `currentTime === 0` |
-| `togglePlay` at end | `currentTime === duration` | resets to 0 or clamps per spec |
-| `seek` | `t = 30` | `currentTime === 30`, derived timecode updates |
-| edge: seek past end | `t > duration` | clamps to duration |
+| Case                | Input                      | Expected                                       |
+| ------------------- | -------------------------- | ---------------------------------------------- |
+| initial state       | —                          | `playing === false`, `currentTime === 0`       |
+| `togglePlay` at end | `currentTime === duration` | resets to 0 or clamps per spec                 |
+| `seek`              | `t = 30`                   | `currentTime === 30`, derived timecode updates |
+| edge: seek past end | `t > duration`             | clamps to duration                             |
 
 ## Test quality review (required before merge)
 
@@ -1038,6 +1064,7 @@ M5-00
 - [ ] **Reviewer sign-off:** Tests document expected behavior as living spec
 
 ## Acceptance criteria
+
 - [ ] `editor-state.spec.ts` passes
 - [ ] No `$effect` that mutates state for derived values — use `$derived`
 - [ ] Test quality review checked
@@ -1045,20 +1072,24 @@ M5-00
 
 ---
 
-### Template D — Test infrastructure (T-*)
+### Template D — Test infrastructure (T-\*)
 
 ```markdown
 ## Goal
+
 [T-01: Add coverage thresholds to CI]
 
 ## Planning ID
+
 T-01
 
 ## Target files
+
 - `vite.config.ts` — `coverage` thresholds
 - `.github/workflows/ci.yml` — fail if below threshold
 
 ## Acceptance criteria
+
 - [ ] `bun run test:unit -- --coverage` reports thresholds from PLANNING.md
 - [ ] CI fails when coverage drops below threshold on changed files (or global)
 - [ ] Document command in README or AGENTS.md
@@ -1079,41 +1110,41 @@ T-01
 
 ### Sprint 1 — Visual foundation
 
-1. M1-01 → M1-02 → M1-03  
-2. M1-14 (a11y conventions)  
-3. M1-04, M1-05, M1-06, M1-07, M1-08, M1-09, M1-12, M1-13 (parallel — **each PR includes `.svelte.spec.ts`**)  
-4. M1-10, M1-11  
+1. M1-01 → M1-02 → M1-03
+2. M1-14 (a11y conventions)
+3. M1-04, M1-05, M1-06, M1-07, M1-08, M1-09, M1-12, M1-13 (parallel — **each PR includes `.svelte.spec.ts`**)
+4. M1-10, M1-11
 
 **Outcome:** Tokens, primitives, utils tested ≥ 85–95% coverage.
 
 ### Sprint 2 — Shells
 
-1. M2-01 → … → M2-06  
-2. M2-07  
-3. M2-08 → M2-11  
-4. M2-12 → M2-17 (timeline, including M2-16 waveform)  
-5. M2-18 → M2-24 (modals, media, speaker)  
-6. M2-25 + T-04 (shell preview + E2E smoke)  
+1. M2-01 → … → M2-06
+2. M2-07
+3. M2-08 → M2-11
+4. M2-12 → M2-17 (timeline, including M2-16 waveform)
+5. M2-18 → M2-24 (modals, media, speaker)
+6. M2-25 + T-04 (shell preview + E2E smoke)
 
 **Outcome:** Full UI tree composable; `/demo/shells` E2E proves mounts; mocks only via `$lib/mocks/` with TODOs.
 
 ### Sprint 3 — Auth
 
-1. M3-01 → M3-02 → M3-03 (include login E2E)  
+1. M3-01 → M3-02 → M3-03 (include login E2E)
 
 ### Sprint 4+ — Unblock as backend lands
 
 Prioritize by product dependency:
 
-1. **Projects schema** → M4-00, then M4-01 through M4-04  
-2. **User session in layout** → M4-06  
-3. **Storage API** → M4-05  
-4. **Transcript schema** → M5-00, then M5-* (editor core)  
-5. **Timeline + media schema** → M6-00, then M6-01–M6-03  
-6. **Media library** → M6-04, M6-06  
-7. **Recording** → M6-05  
-8. **Export jobs** → M6-07  
-9. **Transcript editing** → M6-08, M6-09, M6-10  
+1. **Projects schema** → M4-00, then M4-01 through M4-04
+2. **User session in layout** → M4-06
+3. **Storage API** → M4-05
+4. **Transcript schema** → M5-00, then M5-\* (editor core)
+5. **Timeline + media schema** → M6-00, then M6-01–M6-03
+6. **Media library** → M6-04, M6-06
+7. **Recording** → M6-05
+8. **Export jobs** → M6-07
+9. **Transcript editing** → M6-08, M6-09, M6-10
 
 Move issues from **Blocked** to **Ready** on the project board when their data dependency is merged.
 
@@ -1123,20 +1154,20 @@ Move issues from **Blocked** to **Ready** on the project board when their data d
 
 Do not create implementation issues for these until design and data exist:
 
-| Item | Reason |
-|------|--------|
-| **All projects** nav destination | No design screen |
-| **Templates** nav destination | No design screen |
-| **Trash** nav destination | No design screen |
-| **Share** button behavior | No design for share flow |
-| **New project** flow | Design shows CTA but no create-project modal/flow |
-| **Editor icon rail** tools (except transcript) | Icons shown inactive; no screens designed |
-| **Screen / Camera + Screen** record sources | Design shows tabs; implement after core record works |
-| **MOV / GIF / 720p / 4K** export variants | Shell can show options; backend needed per format |
-| **Accent theme switcher** | Design exposes 4 accents (`accentColor`) as a *design-tool* prop only — no in-app switcher is designed. Build tokens to support theming (derive tints from `--accent`), but ship a single default accent; no switcher UI. |
-| **Filler-hint toggle UI** | `showFillerHints` is a tool prop with no on-screen control — render filler hints **on** by default; no toggle component. |
-| **Timeline zoom** | The `− [slider] +` control (design lines 263–266) has **no zoom logic** in the prototype (purely visual). Render the control in `TimelineToolbar` (M2-12) as inert/visual; do not build zoom math until specified. |
-| **Timeline "Snap" toggle behavior** | Toggle is shown (line 275) but does nothing in the design — render as a visual `Toggle`; no snapping logic. |
+| Item                                           | Reason                                                                                                                                                                                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **All projects** nav destination               | No design screen                                                                                                                                                                                                          |
+| **Templates** nav destination                  | No design screen                                                                                                                                                                                                          |
+| **Trash** nav destination                      | No design screen                                                                                                                                                                                                          |
+| **Share** button behavior                      | No design for share flow                                                                                                                                                                                                  |
+| **New project** flow                           | Design shows CTA but no create-project modal/flow                                                                                                                                                                         |
+| **Editor icon rail** tools (except transcript) | Icons shown inactive; no screens designed                                                                                                                                                                                 |
+| **Screen / Camera + Screen** record sources    | Design shows tabs; implement after core record works                                                                                                                                                                      |
+| **MOV / GIF / 720p / 4K** export variants      | Shell can show options; backend needed per format                                                                                                                                                                         |
+| **Accent theme switcher**                      | Design exposes 4 accents (`accentColor`) as a _design-tool_ prop only — no in-app switcher is designed. Build tokens to support theming (derive tints from `--accent`), but ship a single default accent; no switcher UI. |
+| **Filler-hint toggle UI**                      | `showFillerHints` is a tool prop with no on-screen control — render filler hints **on** by default; no toggle component.                                                                                                  |
+| **Timeline zoom**                              | The `− [slider] +` control (design lines 263–266) has **no zoom logic** in the prototype (purely visual). Render the control in `TimelineToolbar` (M2-12) as inert/visual; do not build zoom math until specified.        |
+| **Timeline "Snap" toggle behavior**            | Toggle is shown (line 275) but does nothing in the design — render as a visual `Toggle`; no snapping logic.                                                                                                               |
 
 Track these as future epics or product tickets — not as part of the initial Claude design implementation batch.
 
@@ -1148,16 +1179,16 @@ Track these as future epics or product tickets — not as part of the initial Cl
 
 ### Template constructs
 
-| Design construct | Svelte 5 equivalent | Notes |
-|------------------|---------------------|-------|
-| `<sc-if value="{{ x }}">…</sc-if>` | `{#if x}…{/if}` | `hint-placeholder-val` is design-tool noise — ignore it |
-| paired `sc-if` on `{{ playing }}` / `{{ paused }}` | `{#if playing}…{:else}…{/if}` | design uses two `sc-if`; collapse to one `if/else` |
-| `<sc-for list="{{ items }}" as="it">` | `{#each items as it (it.id)}` | **always keyed** by stable id; never index (AGENTS.md) |
-| `onClick="{{ fn }}"` | `onclick={fn}` | expose as **callback prop** (`onclick`, `onseek`, `onclose`) — not internal handlers |
-| `value="{{ q }}" onInput="{{ fn }}"` | `bind:value={q}` or `value={q} oninput={fn}` | search/input fields |
-| `ref="{{ recRef }}"` | `bind:this={el}` | only the `<video>` in RecordModal needs this |
-| `style="{{ x.style }}"` (computed style object) | **do not port** — compute boolean state, use clsx class arrays | see "Styling" below |
-| `--accent:{{ accent }}` | `--accent` CSS custom property from `tokens.css` | theme via prop; see token reference |
+| Design construct                                   | Svelte 5 equivalent                                            | Notes                                                                                |
+| -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `<sc-if value="{{ x }}">…</sc-if>`                 | `{#if x}…{/if}`                                                | `hint-placeholder-val` is design-tool noise — ignore it                              |
+| paired `sc-if` on `{{ playing }}` / `{{ paused }}` | `{#if playing}…{:else}…{/if}`                                  | design uses two `sc-if`; collapse to one `if/else`                                   |
+| `<sc-for list="{{ items }}" as="it">`              | `{#each items as it (it.id)}`                                  | **always keyed** by stable id; never index (AGENTS.md)                               |
+| `onClick="{{ fn }}"`                               | `onclick={fn}`                                                 | expose as **callback prop** (`onclick`, `onseek`, `onclose`) — not internal handlers |
+| `value="{{ q }}" onInput="{{ fn }}"`               | `bind:value={q}` or `value={q} oninput={fn}`                   | search/input fields                                                                  |
+| `ref="{{ recRef }}"`                               | `bind:this={el}`                                               | only the `<video>` in RecordModal needs this                                         |
+| `style="{{ x.style }}"` (computed style object)    | **do not port** — compute boolean state, use clsx class arrays | see "Styling" below                                                                  |
+| `--accent:{{ accent }}`                            | `--accent` CSS custom property from `tokens.css`               | theme via prop; see token reference                                                  |
 
 ### Styling (most important rule)
 
@@ -1169,15 +1200,19 @@ The design encodes state as **computed inline-style objects** (e.g. `word.style`
 
 ```svelte
 <span
-  class={['transcript-word', {
-    'transcript-word--current': isCurrent,
-    'transcript-word--selected': isSelected,
-    'transcript-word--filler': isFiller && showFiller,
-    'transcript-word--deleted': isDeleted,
-    'transcript-word--match': isMatch
-  }]}
-  onclick={onselect}
->{text} </span>
+	class={[
+		'transcript-word',
+		{
+			'transcript-word--current': isCurrent,
+			'transcript-word--selected': isSelected,
+			'transcript-word--filler': isFiller && showFiller,
+			'transcript-word--deleted': isDeleted,
+			'transcript-word--match': isMatch
+		}
+	]}
+	onclick={onselect}
+	>{text}
+</span>
 ```
 
 4. Pass dynamic numeric values via the `style:` directive (e.g. `style:--playhead={playheadPct}`, `style:--columns={columns}`), not string concatenation.
@@ -1185,14 +1220,14 @@ The design encodes state as **computed inline-style objects** (e.g. `word.style`
 
 ### Logic / reactivity
 
-| Design (React `DCLogic`) | Svelte 5 | Issue |
-|--------------------------|----------|-------|
-| `this.state = {…}` | `$state` (local UI) / `$state.raw` (server payloads) | per component |
-| `renderVals()` computed view-model | `$derived` / `$derived.by`, or pure functions in `editor-derive.ts` | M5-00b |
-| `componentDidMount` + `requestAnimationFrame` loop (lines 594–676) | `EditorState` class + a single `$effect` for the rAF tick only | M5-00 |
-| `componentDidUpdate` syncing `srcObject` | `$effect` with `bind:this` on `<video>` | M6-05 |
-| `onKey` global keydown (lines 678–684) | `editor-keyboard.ts` + `svelte:window onkeydown` | M6-10 |
-| props schema `accentColor` / `captionStyle` / `showFillerHints` (lines 512–514) | typed component/route props with same enums | M1-01, M5-09 |
+| Design (React `DCLogic`)                                                        | Svelte 5                                                            | Issue         |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------- |
+| `this.state = {…}`                                                              | `$state` (local UI) / `$state.raw` (server payloads)                | per component |
+| `renderVals()` computed view-model                                              | `$derived` / `$derived.by`, or pure functions in `editor-derive.ts` | M5-00b        |
+| `componentDidMount` + `requestAnimationFrame` loop (lines 594–676)              | `EditorState` class + a single `$effect` for the rAF tick only      | M5-00         |
+| `componentDidUpdate` syncing `srcObject`                                        | `$effect` with `bind:this` on `<video>`                             | M6-05         |
+| `onKey` global keydown (lines 678–684)                                          | `editor-keyboard.ts` + `svelte:window onkeydown`                    | M6-10         |
+| props schema `accentColor` / `captionStyle` / `showFillerHints` (lines 512–514) | typed component/route props with same enums                         | M1-01, M5-09  |
 
 **Reactivity rules (AGENTS.md):** prefer `$derived` over `$effect`; never mutate state inside `$effect` (the rAF tick advancing `currentTime` is the one sanctioned exception). Derive everything else (timecode, playhead %, filler count, caption words) from state.
 
@@ -1204,96 +1239,96 @@ Canonical values pulled from `Cutline.dc.html` (helmet lines 14–25 + inline st
 
 ### Color — surfaces (darkest → lightest)
 
-| Token | Value | Used for |
-|-------|-------|----------|
-| `--surface-base` | `#0b0b0d` | app background, on-accent text |
-| `--surface-0` | `#0a0a0c` | preview pane |
-| `--surface-1` | `#0c0c0e` | icon rail, timeline |
-| `--surface-2` | `#0d0d0f` | transcript panel |
-| `--surface-3` | `#0e0e10` | sidebar, top bar |
-| `--surface-4` | `#101013` | cards, meta panels, media shelf, storage widget |
-| `--surface-5` | `#131316` | modals |
-| `--surface-6` | `#141417` | inputs, media cards, secondary buttons |
-| `--surface-7` | `#17171a` | unselected chips / source tabs |
-| `--surface-active` | `#1a1a1e` | active nav item, active rail tile |
+| Token              | Value     | Used for                                        |
+| ------------------ | --------- | ----------------------------------------------- |
+| `--surface-base`   | `#0b0b0d` | app background, on-accent text                  |
+| `--surface-0`      | `#0a0a0c` | preview pane                                    |
+| `--surface-1`      | `#0c0c0e` | icon rail, timeline                             |
+| `--surface-2`      | `#0d0d0f` | transcript panel                                |
+| `--surface-3`      | `#0e0e10` | sidebar, top bar                                |
+| `--surface-4`      | `#101013` | cards, meta panels, media shelf, storage widget |
+| `--surface-5`      | `#131316` | modals                                          |
+| `--surface-6`      | `#141417` | inputs, media cards, secondary buttons          |
+| `--surface-7`      | `#17171a` | unselected chips / source tabs                  |
+| `--surface-active` | `#1a1a1e` | active nav item, active rail tile               |
 
 ### Color — borders (darkest → lightest)
 
-| Token | Value | Used for |
-|-------|-------|----------|
-| `--border-faint` | `#161619` | timeline track separators |
-| `--border-1` | `#18181c` | timeline header/label separators |
-| `--border-2` | `#1a1a1e` | rail / transcript borders |
-| `--border-3` | `#1d1d21` | top bar / sidebar borders |
-| `--border-4` | `#1f1f24` | card borders, storage track |
-| `--border-5` | `#232328` | search, hero, transport borders |
-| `--border-6` | `#26262b` | chips, dividers |
-| `--border-7` | `#2a2a30` | modal borders |
+| Token            | Value     | Used for                         |
+| ---------------- | --------- | -------------------------------- |
+| `--border-faint` | `#161619` | timeline track separators        |
+| `--border-1`     | `#18181c` | timeline header/label separators |
+| `--border-2`     | `#1a1a1e` | rail / transcript borders        |
+| `--border-3`     | `#1d1d21` | top bar / sidebar borders        |
+| `--border-4`     | `#1f1f24` | card borders, storage track      |
+| `--border-5`     | `#232328` | search, hero, transport borders  |
+| `--border-6`     | `#26262b` | chips, dividers                  |
+| `--border-7`     | `#2a2a30` | modal borders                    |
 
 ### Color — text (lightest → faintest)
 
-| Token | Value | Used for |
-|-------|-------|----------|
-| `--text-bright` | `#f6f5f2` | search-match text |
-| `--text-1` | `#f3f2f0` | primary text |
-| `--text-2` | `#d6d5da` | avatar/transport text |
-| `--text-3` | `#cfcdd2` | body / transcript text |
-| `--text-4` | `#b9b8bd` | section labels |
-| `--text-5` | `#a3a2a8` | muted controls |
-| `--text-6` | `#8b8a90` | muted text |
-| `--text-7` | `#6f6e75` | meta text |
-| `--text-8` | `#5f5e66` | faint meta |
-| `--text-9` | `#56555c` | ruler / faint timecode |
-| `--text-deleted` | `#54535b` | struck-through deleted word |
-| `--text-placeholder` | `#3f3e45` | empty-state hint text |
+| Token                | Value     | Used for                    |
+| -------------------- | --------- | --------------------------- |
+| `--text-bright`      | `#f6f5f2` | search-match text           |
+| `--text-1`           | `#f3f2f0` | primary text                |
+| `--text-2`           | `#d6d5da` | avatar/transport text       |
+| `--text-3`           | `#cfcdd2` | body / transcript text      |
+| `--text-4`           | `#b9b8bd` | section labels              |
+| `--text-5`           | `#a3a2a8` | muted controls              |
+| `--text-6`           | `#8b8a90` | muted text                  |
+| `--text-7`           | `#6f6e75` | meta text                   |
+| `--text-8`           | `#5f5e66` | faint meta                  |
+| `--text-9`           | `#56555c` | ruler / faint timecode      |
+| `--text-deleted`     | `#54535b` | struck-through deleted word |
+| `--text-placeholder` | `#3f3e45` | empty-state hint text       |
 
 ### Color — accent, danger, highlight
 
-| Token | Value | Notes |
-|-------|-------|-------|
-| `--accent` | `#ff6a3d` | default; **themeable** — options `#7c5cff`, `#2ad1a3`, `#3d7bff` (design prop `accentColor`, lines 512) |
-| `--on-accent` | `#0b0b0d` | text/icons on accent fills |
-| `--accent-tint-08` / `-10` / `-12` / `-14` / `-22` / `-32` / `-55` | `rgba(255,106,61,α)` | tint backgrounds & borders (α as named) |
-| `--danger` | `#ff5a4d` | record dot/button |
-| `--danger-text` | `#ff8478` | record label text |
-| `--on-danger` | `#160808` | text on danger fill |
-| `--danger-tint-12` / `-14` / `-42` / `-45` | `rgba(255,90,77,α)` | record affordances |
-| `--filler` | `#e6936b` | filler-word underline color |
-| `--highlight` | `rgba(255,214,102,.22)` | search match background |
+| Token                                                              | Value                   | Notes                                                                                                   |
+| ------------------------------------------------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `--accent`                                                         | `#ff6a3d`               | default; **themeable** — options `#7c5cff`, `#2ad1a3`, `#3d7bff` (design prop `accentColor`, lines 512) |
+| `--on-accent`                                                      | `#0b0b0d`               | text/icons on accent fills                                                                              |
+| `--accent-tint-08` / `-10` / `-12` / `-14` / `-22` / `-32` / `-55` | `rgba(255,106,61,α)`    | tint backgrounds & borders (α as named)                                                                 |
+| `--danger`                                                         | `#ff5a4d`               | record dot/button                                                                                       |
+| `--danger-text`                                                    | `#ff8478`               | record label text                                                                                       |
+| `--on-danger`                                                      | `#160808`               | text on danger fill                                                                                     |
+| `--danger-tint-12` / `-14` / `-42` / `-45`                         | `rgba(255,90,77,α)`     | record affordances                                                                                      |
+| `--filler`                                                         | `#e6936b`               | filler-word underline color                                                                             |
+| `--highlight`                                                      | `rgba(255,214,102,.22)` | search match background                                                                                 |
 
 > Accent/danger tints must be **derived from the accent variable** where possible (e.g. `color-mix(in srgb, var(--accent) 12%, transparent)`) so the 4 themes work without hardcoding orange tints.
 
 ### Typography
 
-| Token | Value |
-|-------|-------|
-| `--font-sans` | `'Helvetica Neue', Helvetica, Arial, sans-serif` |
-| `--font-mono` | `'JetBrains Mono', monospace` (Google Fonts; preconnect in `app.html`, M1-03) |
-| Weights | 400, 500, 600, 700 |
+| Token           | Value                                                                            |
+| --------------- | -------------------------------------------------------------------------------- |
+| `--font-sans`   | `'Helvetica Neue', Helvetica, Arial, sans-serif`                                 |
+| `--font-mono`   | `'JetBrains Mono', monospace` (Google Fonts; preconnect in `app.html`, M1-03)    |
+| Weights         | 400, 500, 600, 700                                                               |
 | Sizes (px) seen | 8.5, 9.5, 10, 10.5, 11, 12, 12.5, 13, 13.5, 14, 16, 16.5, 17, 18, 19, 21, 26, 84 |
 
 Mono is used for all timecodes, metadata, counts, and labels — wire it through `TimecodeDisplay` (M1-11).
 
 ### Radii, z-index, motion, elevation
 
-| Group | Tokens |
-|-------|--------|
+| Group      | Tokens                                                                                                                                                                                               |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Radii (px) | `--radius-xs:4`, `--radius-sm:7`, `--radius-md:8`, `--radius-lg:11`, `--radius-xl:13`, `--radius-2xl:16`, `--radius-3xl:18`, `--radius-pill:50%` (design also uses 2,3,5,6,9,10,14 — map to nearest) |
-| Z-index | `--z-playhead:5`, `--z-media-shelf:42`, `--z-export:50`, `--z-record:55` |
-| Motion | `@keyframes spin` (`.8s linear infinite`), `@keyframes pulseRec` (`1.4s`/`1.6s infinite`) → M1-02 |
-| Elevation | `--shadow-shelf: 0 20px 50px rgba(0,0,0,.55)`; `--shadow-modal: 0 30px 80px rgba(0,0,0,.6)` |
-| Scrollbar | thumb `#2a2a2f` (hover `#3a3a40`), 2px solid `--surface-base` border, radius 6 → M1-02 |
+| Z-index    | `--z-playhead:5`, `--z-media-shelf:42`, `--z-export:50`, `--z-record:55`                                                                                                                             |
+| Motion     | `@keyframes spin` (`.8s linear infinite`), `@keyframes pulseRec` (`1.4s`/`1.6s infinite`) → M1-02                                                                                                    |
+| Elevation  | `--shadow-shelf: 0 20px 50px rgba(0,0,0,.55)`; `--shadow-modal: 0 30px 80px rgba(0,0,0,.6)`                                                                                                          |
+| Scrollbar  | thumb `#2a2a2f` (hover `#3a3a40`), 2px solid `--surface-base` border, radius 6 → M1-02                                                                                                               |
 
 ### Fixed layout dimensions
 
-| Token | Value | Region |
-|-------|-------|--------|
-| `--sidebar-w` | `240px` | dashboard sidebar |
-| `--topbar-h` | `54px` | editor top bar |
-| `--rail-w` | `54px` | editor icon rail |
-| `--timeline-h` | `252px` | timeline dock |
-| `--track-label-w` | `78px` | timeline track labels |
-| `--ruler-h` | `22px` | timeline ruler |
+| Token             | Value   | Region                |
+| ----------------- | ------- | --------------------- |
+| `--sidebar-w`     | `240px` | dashboard sidebar     |
+| `--topbar-h`      | `54px`  | editor top bar        |
+| `--rail-w`        | `54px`  | editor icon rail      |
+| `--timeline-h`    | `252px` | timeline dock         |
+| `--track-label-w` | `78px`  | timeline track labels |
+| `--ruler-h`       | `22px`  | timeline ruler        |
 
 App background is a radial gradient: `radial-gradient(120% 80% at 50% -10%, #131316 0%, #0b0b0d 55%)` (design line 28) → root layout (M1-03).
 
@@ -1308,19 +1343,19 @@ Derived directly from the design's `buildTranscript()` (lines 558–592), `rende
 ```ts
 // src/lib/types/transcript.ts  (M5-00)
 export interface Word {
-  id: string;          // 'w0', 'w1', …
-  text: string;        // raw token incl. punctuation, e.g. "um,"
-  clean: string;       // lowercased, alnum only — for search/filler match
-  dur: number;         // seconds
-  bars: number[];      // 0..1 waveform bar heights for this word
-  filler: boolean;     // 'um' | 'uh' | "you know" pairs
-  deleted: boolean;    // soft-delete (toggle, no re-render)
-  sid: string;         // owning sentence id, 's0', 's1', …
+	id: string; // 'w0', 'w1', …
+	text: string; // raw token incl. punctuation, e.g. "um,"
+	clean: string; // lowercased, alnum only — for search/filler match
+	dur: number; // seconds
+	bars: number[]; // 0..1 waveform bar heights for this word
+	filler: boolean; // 'um' | 'uh' | "you know" pairs
+	deleted: boolean; // soft-delete (toggle, no re-render)
+	sid: string; // owning sentence id, 's0', 's1', …
 }
 export interface Sentence {
-  id: string;          // 's0', …
-  words: Word[];
-  t0: number;          // start time (seconds)
+	id: string; // 's0', …
+	words: Word[];
+	t0: number; // start time (seconds)
 }
 export type CaptionStyle = 'karaoke' | 'clean';
 ```
@@ -1329,27 +1364,39 @@ export type CaptionStyle = 'karaoke' | 'clean';
 // src/lib/types/media.ts  (M6-00)
 export type MediaKind = 'B-roll' | 'Graphic' | 'Recording';
 export interface MediaResource {
-  id: string;
-  name: string;
-  dur: number;         // seconds
-  kind: MediaKind | (string & {});
-  thumb: string;       // CSS background value (placeholder gradient until real thumbnails)
+	id: string;
+	name: string;
+	dur: number; // seconds
+	kind: MediaKind | (string & {});
+	thumb: string; // CSS background value (placeholder gradient until real thumbnails)
 }
 ```
 
 ```ts
 // src/lib/types/timeline.ts  (M6-00)
-export interface Overlay {       // B-roll dropped on the timeline
-  id: string;
-  resId: string;
-  name: string;
-  start: number;       // seconds (playhead at drop time)
-  dur: number;
-  thumb: string;
+export interface Overlay {
+	// B-roll dropped on the timeline
+	id: string;
+	resId: string;
+	name: string;
+	start: number; // seconds (playhead at drop time)
+	dur: number;
+	thumb: string;
 }
-export interface Tick { leftPct: number; label: string; }            // ruler
-export interface Clip { leftPct: number; widthPct: number; label: string; } // V1 / CC blocks
-export interface WaveBar { leftPct: number; widthPct: number; heightPct: number; } // A1
+export interface Tick {
+	leftPct: number;
+	label: string;
+} // ruler
+export interface Clip {
+	leftPct: number;
+	widthPct: number;
+	label: string;
+} // V1 / CC blocks
+export interface WaveBar {
+	leftPct: number;
+	widthPct: number;
+	heightPct: number;
+} // A1
 ```
 
 > Percentages are modeled as **numbers** here (e.g. `37.5`), not the design's `'37.500%'` strings. Convert to `%` at the template boundary via the `style:` directive.
@@ -1357,18 +1404,18 @@ export interface WaveBar { leftPct: number; widthPct: number; heightPct: number;
 ```ts
 // src/lib/types/project.ts  (M4-00)
 export interface Project {
-  id: string;
-  title: string;
-  durationLabel: string;   // 'durTC' in design, e.g. "4:32"
-  kind: string;            // 'WEBINAR' | 'INTERVIEW' | … (badge text)
-  meta: string;            // "Edited 2h ago · 1,142 words · MP4"
-  thumb: string;           // CSS background value
+	id: string;
+	title: string;
+	durationLabel: string; // 'durTC' in design, e.g. "4:32"
+	kind: string; // 'WEBINAR' | 'INTERVIEW' | … (badge text)
+	meta: string; // "Edited 2h ago · 1,142 words · MP4"
+	thumb: string; // CSS background value
 }
 ```
 
 ```ts
 // editor enums (M5-00 / M6-00) — drive modal + record state machines
-export type ExportPhase = 'none' | 'config' | 'exporting' | 'done';      // design line 530
+export type ExportPhase = 'none' | 'config' | 'exporting' | 'done'; // design line 530
 export type RecordPhase = 'none' | 'live' | 'countdown' | 'recording' | 'review'; // line 532
 export type AccentColor = '#ff6a3d' | '#7c5cff' | '#2ad1a3' | '#3d7bff'; // line 512
 ```
@@ -1381,20 +1428,20 @@ export type AccentColor = '#ff6a3d' | '#7c5cff' | '#2ad1a3' | '#3d7bff'; // line
 
 The 74 implementable issues (M1–M6) are designed for **parallel** independent agents, but several files are touched by **multiple** issues. Uncoordinated parallel work on these will merge-conflict and produce inconsistent results. Treat the files below as **single-owner / serialized** — the second issue may not start until the first is merged.
 
-| Shared file | Issues that touch it | Rule |
-|-------------|----------------------|------|
-| `src/lib/styles/tokens.css` | M1-01 (creates) → consumed by ~all | **Hard gate.** Nothing in M1-04+ / M2 / M4–M6 starts until M1-01 is merged and token names are final. |
-| `src/lib/styles/global.css` | M1-02 (creates) → consumed by all | Gate alongside M1-01. |
-| `editor/timeline/Timeline.svelte` | M2-17, M6-02, M6-03, M6-06 | Serialize in that order; one open PR at a time. |
-| `editor/timeline/TimelineTrack.svelte` | M2-14, M6-06 | M6-06 after M2-14 merged. |
-| `editor/transcript/TranscriptWord.svelte` | M5-02, M6-09 | M6-09 after M5-02. |
-| `editor/transcript/TranscriptPanel.svelte` | M5-05, M6-08 | M6-08 after M5-05. |
-| `EditorTopBar/TransportControls.svelte` | M2-09, M5-11 | M5-11 after M2-09. |
-| `src/lib/editor/editor-state.svelte.ts` | M5-00, M5-11, M6-03, M6-09, M6-10 | M5-00 owns the class; later issues add methods sequentially, not concurrently. |
-| `src/routes/+page.svelte` / `+page.server.ts` | exists (default) → M4-04 | M4-04 replaces the SvelteKit default home; expect to delete boilerplate. |
-| `modals/MediaShelf.svelte` + `MediaCard.svelte` | M2-23, M6-04 | M6-04 after M2-23. |
-| `modals/RecordModal/*` | M2-20, M2-21, M6-05 | M6-05 after shells (M2-20/21). |
-| `modals/ExportModal/*` | M2-18, M2-19, M6-07 | M6-07 after shells. |
+| Shared file                                     | Issues that touch it               | Rule                                                                                                  |
+| ----------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `src/lib/styles/tokens.css`                     | M1-01 (creates) → consumed by ~all | **Hard gate.** Nothing in M1-04+ / M2 / M4–M6 starts until M1-01 is merged and token names are final. |
+| `src/lib/styles/global.css`                     | M1-02 (creates) → consumed by all  | Gate alongside M1-01.                                                                                 |
+| `editor/timeline/Timeline.svelte`               | M2-17, M6-02, M6-03, M6-06         | Serialize in that order; one open PR at a time.                                                       |
+| `editor/timeline/TimelineTrack.svelte`          | M2-14, M6-06                       | M6-06 after M2-14 merged.                                                                             |
+| `editor/transcript/TranscriptWord.svelte`       | M5-02, M6-09                       | M6-09 after M5-02.                                                                                    |
+| `editor/transcript/TranscriptPanel.svelte`      | M5-05, M6-08                       | M6-08 after M5-05.                                                                                    |
+| `EditorTopBar/TransportControls.svelte`         | M2-09, M5-11                       | M5-11 after M2-09.                                                                                    |
+| `src/lib/editor/editor-state.svelte.ts`         | M5-00, M5-11, M6-03, M6-09, M6-10  | M5-00 owns the class; later issues add methods sequentially, not concurrently.                        |
+| `src/routes/+page.svelte` / `+page.server.ts`   | exists (default) → M4-04           | M4-04 replaces the SvelteKit default home; expect to delete boilerplate.                              |
+| `modals/MediaShelf.svelte` + `MediaCard.svelte` | M2-23, M6-04                       | M6-04 after M2-23.                                                                                    |
+| `modals/RecordModal/*`                          | M2-20, M2-21, M6-05                | M6-05 after shells (M2-20/21).                                                                        |
+| `modals/ExportModal/*`                          | M2-18, M2-19, M6-07                | M6-07 after shells.                                                                                   |
 
 **Guidance for agents:** before starting an issue, confirm every "Blocked by" issue is **merged** (not just open). For shared files, rebase on `main` immediately before opening the PR. Prefer extracting a new sub-component over editing a hot file when the design allows it.
 
@@ -1415,12 +1462,12 @@ Planning IDs (`M1-04`, `T-01`, `M5-00b`) are **not** GitHub issue numbers. To ma
 ### ID → issue-number map (fill in at creation time)
 
 | Planning ID | GitHub # | Planning ID | GitHub # |
-|-------------|----------|-------------|----------|
-| Epic | _#__ | M2-13 | _#__ |
-| T-00 | _#__ | … | … |
-| T-01 | _#__ | M5-00 | _#__ |
-| T-02 | _#__ | M5-00b | _#__ |
-| M1-01 | _#__ | … | … |
+| ----------- | -------- | ----------- | -------- |
+| Epic        | \_#\_\_  | M2-13       | \_#\_\_  |
+| T-00        | \_#\_\_  | …           | …        |
+| T-01        | \_#\_\_  | M5-00       | \_#\_\_  |
+| T-02        | \_#\_\_  | M5-00b      | \_#\_\_  |
+| M1-01       | \_#\_\_  | …           | …        |
 
 > Keep this table in the **epic issue** (or a pinned project note), not only here, so it stays current as numbers are assigned.
 
@@ -1458,28 +1505,28 @@ Prefer the `svelte-file-editor` subagent for non-trivial `.svelte` work.
 
 ### Naming conventions
 
-| Thing | Convention | Example |
-|-------|-----------|---------|
-| Component file | `PascalCase.svelte` | `ProjectCard.svelte` |
-| Test file | `<name>.svelte.spec.ts` / `<name>.spec.ts` | `ProjectCard.svelte.spec.ts` |
-| Types / utils | `kebab-case.ts` | `format-timecode.ts`, `editor-state.svelte.ts` |
-| BEM block | kebab-case of the component name | `ProjectCard` → `.project-card`, `.project-card__title`, `.project-card--selected` |
-| CSS custom prop | `--kebab-case` from token reference | `var(--accent)`, `--playhead` |
-| Callback prop | `on` + verb | `onclick`, `onseek`, `onclose`, `onselect` |
+| Thing           | Convention                                 | Example                                                                            |
+| --------------- | ------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Component file  | `PascalCase.svelte`                        | `ProjectCard.svelte`                                                               |
+| Test file       | `<name>.svelte.spec.ts` / `<name>.spec.ts` | `ProjectCard.svelte.spec.ts`                                                       |
+| Types / utils   | `kebab-case.ts`                            | `format-timecode.ts`, `editor-state.svelte.ts`                                     |
+| BEM block       | kebab-case of the component name           | `ProjectCard` → `.project-card`, `.project-card__title`, `.project-card--selected` |
+| CSS custom prop | `--kebab-case` from token reference        | `var(--accent)`, `--playhead`                                                      |
+| Callback prop   | `on` + verb                                | `onclick`, `onseek`, `onclose`, `onselect`                                         |
 
 One primary component per file; co-locate its `.spec.ts` and any non-reusable helper. Respect the [file-size limits](#small-organized-files).
 
 ### Branching, commits & PRs
 
-| Item | Convention |
-|------|-----------|
-| Branch | `feat/<pid>-<slug>` (e.g. `feat/m1-04-button`); `chore/`, `test/`, `fix/` prefixes as appropriate |
-| Scope | **One issue → one branch → one PR.** Do not bundle issues. |
-| Commits | Imperative, present tense; reference the issue (`M1-04: add Button component`) |
-| PR title | `<PID>: <summary>` (e.g. `M1-04: Button component`) |
-| PR body | Use the PR template below; link `Closes #NN` |
-| Before opening | Rebase on `main` (critical for [hot files](#concurrency--file-ownership)) |
-| Merge | Squash; delete branch |
+| Item           | Convention                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| Branch         | `feat/<pid>-<slug>` (e.g. `feat/m1-04-button`); `chore/`, `test/`, `fix/` prefixes as appropriate |
+| Scope          | **One issue → one branch → one PR.** Do not bundle issues.                                        |
+| Commits        | Imperative, present tense; reference the issue (`M1-04: add Button component`)                    |
+| PR title       | `<PID>: <summary>` (e.g. `M1-04: Button component`)                                               |
+| PR body        | Use the PR template below; link `Closes #NN`                                                      |
+| Before opening | Rebase on `main` (critical for [hot files](#concurrency--file-ownership))                         |
+| Merge          | Squash; delete branch                                                                             |
 
 Git safety: never force-push `main`, never skip hooks, never commit secrets (`.env`).
 
@@ -1487,15 +1534,19 @@ Git safety: never force-push `main`, never skip hooks, never commit secrets (`.e
 
 ```markdown
 ## Closes
-Closes #<issue>  ·  Planning-ID: <PID>
+
+Closes #<issue> · Planning-ID: <PID>
 
 ## What
+
 <1–3 sentences: which design region/component, what this PR delivers>
 
 ## Design reference
+
 - `design-by-claude/Cutline.dc.html` lines <range>
 
 ## Checklist
+
 - [ ] Matches design tokens (no hardcoded hex) — uses `src/lib/styles/tokens.css`
 - [ ] Follows the Design → Svelte translation guide (BEM, clsx variants, keyed `{#each}`)
 - [ ] `svelte-autofixer` clean on all changed `.svelte` files
@@ -1524,11 +1575,11 @@ An issue is **Done** only when **all** are true:
 
 Extends the [GitHub setup](#github-setup) list:
 
-| Label | Meaning |
-|-------|---------|
-| `pid:<ID>` | One per planning ID (e.g. `pid:M1-04`) — makes dependencies greppable |
-| `chore` | Cleanup / infra not tied to a design region (e.g. remove `vitest-examples`) |
-| `good-first-task` | Optional: well-isolated `size:small` UI primitives (M1-04…M1-13) |
+| Label             | Meaning                                                                     |
+| ----------------- | --------------------------------------------------------------------------- |
+| `pid:<ID>`        | One per planning ID (e.g. `pid:M1-04`) — makes dependencies greppable       |
+| `chore`           | Cleanup / infra not tied to a design region (e.g. remove `vitest-examples`) |
+| `good-first-task` | Optional: well-isolated `size:small` UI primitives (M1-04…M1-13)            |
 
 Create `pid:*` labels in bulk when issues are generated.
 
@@ -1550,30 +1601,30 @@ How agents should use it:
 
 ## Summary for team lead
 
-| Metric | Count |
-|--------|-------|
-| Total planned issues | **85** (1 epic + 10 test/CI-safety infra + 74 implementable) |
-| Ready to start now (M0 + M1 + M2 + M3 + M5-00b) | **53** (M0:10 + M1:14 + M2:25 + M3:3 + M5-00b:1) |
-| Blocked on data (M4 + M5 + M6, excl. M5-00b) | **31** (M4:7 + M5:13 + M6:11) — UI may use `$lib/mocks/`; issue closes when real backend wired |
-| Buckets reconcile | 53 ready + 31 blocked = **84 work issues**; + 1 epic = **85 total** |
-| Milestones | **7** (M0–M6) |
-| Co-located test files | **Required on every component/util PR** |
-| Coverage gate | **≥ 80% overall `src/lib/**` (CI via T-01)** |
-| Consistency anchors | **Tokens, type contracts, translation guide** must be honored by every agent |
+| Metric                                          | Count                                                                                          |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Total planned issues                            | **85** (1 epic + 10 test/CI-safety infra + 74 implementable)                                   |
+| Ready to start now (M0 + M1 + M2 + M3 + M5-00b) | **53** (M0:10 + M1:14 + M2:25 + M3:3 + M5-00b:1)                                               |
+| Blocked on data (M4 + M5 + M6, excl. M5-00b)    | **31** (M4:7 + M5:13 + M6:11) — UI may use `$lib/mocks/`; issue closes when real backend wired |
+| Buckets reconcile                               | 53 ready + 31 blocked = **84 work issues**; + 1 epic = **85 total**                            |
+| Milestones                                      | **7** (M0–M6)                                                                                  |
+| Co-located test files                           | **Required on every component/util PR**                                                        |
+| Coverage gate                                   | **≥ 80% overall `src/lib/**` (CI via T-01)\*\*                                                 |
+| Consistency anchors                             | **Tokens, type contracts, translation guide** must be honored by every agent                   |
 
 **Recommended actions:**
 
-1. Create GitHub Project **Cutline UI** with columns listed above.  
-2. Create labels (include `testing` and per-issue `pid:*` labels — see [issue mechanics](#github-issue-mechanics-planning-id--number)).  
-3. Create milestones M0–M6.  
-4. Create epic issue linking to this document; paste the **ID → number map** into it.  
-5. **Create T-00 (base CI) and T-01–T-03 first** (CI + test infra before the component flood).  
-6. **Gate on M1-01 (tokens) + M1-02 (global) merging** before any other component issue starts — see [Concurrency & file ownership](#concurrency--file-ownership).  
-7. Batch-create M1 and M2 issues — paste **Template A**; every issue includes **Test quality review** section and links the [translation guide](#design--svelte-translation-guide).  
-8. Create M4–M6 issues in **Blocked** with **Template B**.  
-9. Add backend epic for schemas; link as blockers from M4-00, M5-00, M6-00.  
+1. Create GitHub Project **Cutline UI** with columns listed above.
+2. Create labels (include `testing` and per-issue `pid:*` labels — see [issue mechanics](#github-issue-mechanics-planning-id--number)).
+3. Create milestones M0–M6.
+4. Create epic issue linking to this document; paste the **ID → number map** into it.
+5. **Create T-00 (base CI) and T-01–T-03 first** (CI + test infra before the component flood).
+6. **Gate on M1-01 (tokens) + M1-02 (global) merging** before any other component issue starts — see [Concurrency & file ownership](#concurrency--file-ownership).
+7. Batch-create M1 and M2 issues — paste **Template A**; every issue includes **Test quality review** section and links the [translation guide](#design--svelte-translation-guide).
+8. Create M4–M6 issues in **Blocked** with **Template B**.
+9. Add backend epic for schemas; link as blockers from M4-00, M5-00, M6-00.
 10. PR template: link issue + confirm **Test quality review** checkboxes + coverage pass.
 
 ---
 
-*Final — ready for GitHub issue generation. Aligned with `AGENTS.md`, `design-by-claude/Cutline.dc.html`, `package.json`/`vite.config.ts`. Includes extracted tokens, type contracts, translation guide, agent runbook, and concurrency rules so each generated issue is self-contained for an autonomous coding agent.*
+_Final — ready for GitHub issue generation. Aligned with `AGENTS.md`, `design-by-claude/Cutline.dc.html`, `package.json`/`vite.config.ts`. Includes extracted tokens, type contracts, translation guide, agent runbook, and concurrency rules so each generated issue is self-contained for an autonomous coding agent._

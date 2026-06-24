@@ -13,11 +13,11 @@ This is a **Svelte 5 / SvelteKit** project. Any agent (LLM) that **creates, edit
 
 ### Required workflow
 
-| Step | When | MCP tool |
-|------|------|----------|
-| 1 | Starting Svelte/SvelteKit work or unsure of API | `list-sections` → `get-documentation` for relevant sections |
-| 2 | Before finishing any `.svelte` change | `svelte-autofixer` — repeat until **no issues or suggestions** |
-| 3 | User asks for playground only | `playground-link` (after confirmation; never for files written in-repo) |
+| Step | When                                            | MCP tool                                                                |
+| ---- | ----------------------------------------------- | ----------------------------------------------------------------------- |
+| 1    | Starting Svelte/SvelteKit work or unsure of API | `list-sections` → `get-documentation` for relevant sections             |
+| 2    | Before finishing any `.svelte` change           | `svelte-autofixer` — repeat until **no issues or suggestions**          |
+| 3    | User asks for playground only                   | `playground-link` (after confirmation; never for files written in-repo) |
 
 ### Rules
 
@@ -91,13 +91,13 @@ Keep files small and single-purpose. Large monolithic components are hard to rev
 
 **Size guidelines:**
 
-| File type | Target (aim here) | Hard ceiling (split before merging) |
-|-----------|-------------------|-------------------------------------|
-| Route `+page.svelte` | ~50–80 lines | ~120 lines |
-| Leaf UI component | ~80–150 lines | ~250 lines |
-| Layout / orchestrator (mostly composition) | ~60–100 lines | ~150 lines |
-| Complex widget (e.g. timeline track) | ~100–200 lines | ~300 lines |
-| `.ts` utils / types | ~100–200 lines | ~300 lines |
+| File type                                  | Target (aim here) | Hard ceiling (split before merging) |
+| ------------------------------------------ | ----------------- | ----------------------------------- |
+| Route `+page.svelte`                       | ~50–80 lines      | ~120 lines                          |
+| Leaf UI component                          | ~80–150 lines     | ~250 lines                          |
+| Layout / orchestrator (mostly composition) | ~60–100 lines     | ~150 lines                          |
+| Complex widget (e.g. timeline track)       | ~100–200 lines    | ~300 lines                          |
+| `.ts` utils / types                        | ~100–200 lines    | ~300 lines                          |
 
 Auto-generated files are exempt. Routes and layouts compose components — they do not contain large markup blocks or business logic.
 

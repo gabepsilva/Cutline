@@ -1,8 +1,8 @@
 ---
-name: "Epic / tracking issue"
-about: "Parent issue grouping a milestone or the whole design implementation."
-title: "Epic: <summary>"
-labels: ["epic"]
+name: 'Epic / tracking issue'
+about: 'Parent issue grouping a milestone or the whole design implementation.'
+title: 'Epic: <summary>'
+labels: ['epic']
 ---
 
 ## Summary
@@ -23,5 +23,5 @@ labels: ["epic"]
 ## Planning-ID → GitHub # map
 
 | Planning ID | GitHub # | Planning ID | GitHub # |
-|-------------|----------|-------------|----------|
-| | | | |
+| ----------- | -------- | ----------- | -------- |
+|             |          |             |          |

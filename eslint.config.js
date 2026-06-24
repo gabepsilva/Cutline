@@ -10,6 +10,8 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	// Vendored design prototype (React/DCLogic) — reference only, not our code.
+	{ ignores: ['design-by-claude/**'] },
 	js.configs.recommended,
 	ts.configs.recommended,
 	svelte.configs.recommended,

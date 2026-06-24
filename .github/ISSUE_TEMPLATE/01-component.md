@@ -1,11 +1,11 @@
 ---
-name: "Component issue (Template A)"
-about: "Implement a presentational Svelte 5 component from the Claude design (M1 / M2 / M5 UI)."
-title: "<PID>: <ComponentName> component"
-labels: ["ui"]
+name: 'Component issue (Template A)'
+about: 'Implement a presentational Svelte 5 component from the Claude design (M1 / M2 / M5 UI).'
+title: '<PID>: <ComponentName> component'
+labels: ['ui']
 ---
 
-> **Planning-ID:** `<PID>`  ·  **Milestone:** `<Mn>`
+> **Planning-ID:** `<PID>` · **Milestone:** `<Mn>`
 > **Read first** in `PLANNING.md`: Agent runbook & conventions · Design → Svelte translation guide · Design tokens reference · Shared type contracts · Reading the design file
 > **Design source:** `design-by-claude/Cutline.dc.html` (lines `<range>`)
 > **Blocked by:** `<PIDs → map to #NN before starting>`
@@ -53,13 +53,13 @@ Implement `<ComponentName>` from the Claude design as a presentational Svelte 5 
 
 ## Tests to write
 
-| Test | Asserts (behavior, not implementation) |
-|------|----------------------------------------|
-| renders default state | Specific visible text, role, or structure from design |
-| variant / prop | Output changes when prop changes (e.g. `disabled`, `selected`) |
-| user interaction | `click` / `keyboard` → callback fired or DOM updates |
-| a11y | Correct role, `aria-*`, focusable, labelled control |
-| empty / null props | Graceful hide or empty state — no crash |
+| Test                  | Asserts (behavior, not implementation)                         |
+| --------------------- | -------------------------------------------------------------- |
+| renders default state | Specific visible text, role, or structure from design          |
+| variant / prop        | Output changes when prop changes (e.g. `disabled`, `selected`) |
+| user interaction      | `click` / `keyboard` → callback fired or DOM updates           |
+| a11y                  | Correct role, `aria-*`, focusable, labelled control            |
+| empty / null props    | Graceful hide or empty state — no crash                        |
 
 Use fixtures from `src/lib/test/fixtures/` when props need domain objects.
 

@@ -1,98 +1,98 @@
 {
-  "_comment": "Optional per-issue enrichment for create-issues.mjs. PLANNING.md stays the source of truth for inventory/order/labels/deps; this only adds goal + scope bullets. Add entries here to make any issue's body richer; missing entries fall back to sensible template defaults. See PLANNING.md → 'CI/CD pipeline' for the full pipeline design that T-00/T-01/T-05–T-09 implement.",
+	"_comment": "Optional per-issue enrichment for create-issues.mjs. PLANNING.md stays the source of truth for inventory/order/labels/deps; this only adds goal + scope bullets. Add entries here to make any issue's body richer; missing entries fall back to sensible template defaults. See PLANNING.md → 'CI/CD pipeline' for the full pipeline design that T-00/T-01/T-05–T-09 implement.",
 
-  "T-00": {
-    "goal": "Stand up Stage 1 of the pipeline: the code-quality CI workflow. The repo has no `.github/workflows/` yet, so this is the first gate every later PR depends on.",
-    "scope": [
-      "Runner: all jobs `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted. Don't assume a clean VM; gate fork PRs so untrusted code never runs on the self-hosted runner.",
-      "Create `.github/workflows/ci.yml` triggered on `pull_request` and `push` to `master`.",
-      "Job hardening: `permissions: { contents: read }`; `concurrency` group per-ref with `cancel-in-progress: true`; `timeout-minutes`; pin every Action to a full commit SHA.",
-      "Setup: checkout → `oven-sh/setup-bun` → cache Bun store + Playwright browsers → `bun install --frozen-lockfile`.",
-      "Quality steps (fail fast, each its own step): `prettier --check .` → `eslint .` → `bun run check` (svelte-check + tsc, zero errors) → `bun run test:unit -- --run` (Vitest client browser + server projects) → `playwright install --with-deps chromium` + `bun run test:e2e`.",
-      "Do NOT add coverage (T-01), security (T-05–T-07), or build/SBOM (T-08) here — those are separate workflows.",
-      "Acceptance: a red PR (lint/type/test failure) blocks; a clean PR passes; job names are stable so T-09 can require them."
-    ]
-  },
+	"T-00": {
+		"goal": "Stand up Stage 1 of the pipeline: the code-quality CI workflow. The repo has no `.github/workflows/` yet, so this is the first gate every later PR depends on.",
+		"scope": [
+			"Runner: all jobs `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted. Don't assume a clean VM; gate fork PRs so untrusted code never runs on the self-hosted runner.",
+			"Create `.github/workflows/ci.yml` triggered on `pull_request` and `push` to `master`.",
+			"Job hardening: `permissions: { contents: read }`; `concurrency` group per-ref with `cancel-in-progress: true`; `timeout-minutes`; pin every Action to a full commit SHA.",
+			"Setup: checkout → `oven-sh/setup-bun` → cache Bun store + Playwright browsers → `bun install --frozen-lockfile`.",
+			"Quality steps (fail fast, each its own step): `prettier --check .` → `eslint .` → `bun run check` (svelte-check + tsc, zero errors) → `bun run test:unit -- --run` (Vitest client browser + server projects) → `playwright install --with-deps chromium` + `bun run test:e2e`.",
+			"Do NOT add coverage (T-01), security (T-05–T-07), or build/SBOM (T-08) here — those are separate workflows.",
+			"Acceptance: a red PR (lint/type/test failure) blocks; a clean PR passes; job names are stable so T-09 can require them."
+		]
+	},
 
-  "T-01": {
-    "goal": "Stage 2: enforce coverage thresholds in CI. No coverage provider is installed yet.",
-    "scope": [
-      "Runner: the coverage job runs on the `cutline-runner-1` self-hosted runner — `runs-on: [self-hosted, Linux, X64]`.",
-      "`bun add -D @vitest/coverage-v8`.",
-      "Add a `test.coverage` block to `vite.config.ts`: provider `v8`, reporters `['text','html','lcov']`, and per-area `thresholds` from PLANNING.md → Testing strategy (utils ≥95, editor ≥90, ui ≥85, components ≥80, server ≥85, overall ≥80).",
-      "Enable coverage for BOTH the `client` (browser) and `server` projects; verify thresholds aggregate across both.",
-      "Wire `bun run test:unit -- --run --coverage` into `ci.yml`; upload the lcov/html report as an artifact.",
-      "PR fails when coverage drops below threshold. Pre-T-01 PRs mark the coverage checkbox `N/A (pre-T-01)`."
-    ]
-  },
+	"T-01": {
+		"goal": "Stage 2: enforce coverage thresholds in CI. No coverage provider is installed yet.",
+		"scope": [
+			"Runner: the coverage job runs on the `cutline-runner-1` self-hosted runner — `runs-on: [self-hosted, Linux, X64]`.",
+			"`bun add -D @vitest/coverage-v8`.",
+			"Add a `test.coverage` block to `vite.config.ts`: provider `v8`, reporters `['text','html','lcov']`, and per-area `thresholds` from PLANNING.md → Testing strategy (utils ≥95, editor ≥90, ui ≥85, components ≥80, server ≥85, overall ≥80).",
+			"Enable coverage for BOTH the `client` (browser) and `server` projects; verify thresholds aggregate across both.",
+			"Wire `bun run test:unit -- --run --coverage` into `ci.yml`; upload the lcov/html report as an artifact.",
+			"PR fails when coverage drops below threshold. Pre-T-01 PRs mark the coverage checkbox `N/A (pre-T-01)`."
+		]
+	},
 
-  "T-05": {
-    "goal": "Stage 3 (safe code): detect secrets/credentials before they reach history.",
-    "scope": [
-      "Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
-      "Add `gitleaks` to `.github/workflows/security.yml` on `pull_request` + `push`; add a scheduled (weekly) full-history scan.",
-      "Commit `.gitleaks.toml` with the ruleset and a documented allowlist for known false positives.",
-      "Enable repo **secret scanning** + **push protection** (Settings → Code security & analysis) and note it in the issue.",
-      "Least-privilege `permissions`; SHA-pinned action; fail the PR on any detected secret.",
-      "Acceptance: a test commit containing a fake token is blocked by the workflow."
-    ]
-  },
+	"T-05": {
+		"goal": "Stage 3 (safe code): detect secrets/credentials before they reach history.",
+		"scope": [
+			"Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
+			"Add `gitleaks` to `.github/workflows/security.yml` on `pull_request` + `push`; add a scheduled (weekly) full-history scan.",
+			"Commit `.gitleaks.toml` with the ruleset and a documented allowlist for known false positives.",
+			"Enable repo **secret scanning** + **push protection** (Settings → Code security & analysis) and note it in the issue.",
+			"Least-privilege `permissions`; SHA-pinned action; fail the PR on any detected secret.",
+			"Acceptance: a test commit containing a fake token is blocked by the workflow."
+		]
+	},
 
-  "T-06": {
-    "goal": "Stage 4 (safe code): dependency & supply-chain security.",
-    "scope": [
-      "Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
-      "Add a dependency-audit job to `.github/workflows/security.yml`: `bun audit` failing on high/critical (augment with `google/osv-scanner` for transitive coverage).",
-      "Add `actions/dependency-review-action` on `pull_request` to block known-vulnerable deps and disallowed licenses (define an allowed-license policy).",
-      "Add `.github/dependabot.yml` with weekly updates for the npm/bun ecosystem AND `github-actions`.",
-      "Supply-chain hardening: pin ALL third-party Actions to commit SHAs (audit with `zizmor`); ensure `bun.lock` is committed and every job uses `--frozen-lockfile`.",
-      "Acceptance: a PR adding a known-vulnerable dependency is blocked; Dependabot opens update PRs."
-    ]
-  },
+	"T-06": {
+		"goal": "Stage 4 (safe code): dependency & supply-chain security.",
+		"scope": [
+			"Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
+			"Add a dependency-audit job to `.github/workflows/security.yml`: `bun audit` failing on high/critical (augment with `google/osv-scanner` for transitive coverage).",
+			"Add `actions/dependency-review-action` on `pull_request` to block known-vulnerable deps and disallowed licenses (define an allowed-license policy).",
+			"Add `.github/dependabot.yml` with weekly updates for the npm/bun ecosystem AND `github-actions`.",
+			"Supply-chain hardening: pin ALL third-party Actions to commit SHAs (audit with `zizmor`); ensure `bun.lock` is committed and every job uses `--frozen-lockfile`.",
+			"Acceptance: a PR adding a known-vulnerable dependency is blocked; Dependabot opens update PRs."
+		]
+	},
 
-  "T-07": {
-    "goal": "Stage 5 (safe code): static application security testing via CodeQL.",
-    "scope": [
-      "Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted. Ensure the runner meets CodeQL's resource needs.",
-      "Add `.github/workflows/codeql.yml` using `github/codeql-action` (init/analyze) for language `javascript-typescript`.",
-      "Use the `security-extended` query suite; run on `pull_request`, `push: master`, and a weekly schedule.",
-      "`permissions: { security-events: write, contents: read, actions: read }`; SHA-pinned actions.",
-      "Results surface in the repo **Security** tab; PR fails on new high-severity alerts.",
-      "Acceptance: CodeQL completes and uploads results; the Security tab shows the scan."
-    ]
-  },
+	"T-07": {
+		"goal": "Stage 5 (safe code): static application security testing via CodeQL.",
+		"scope": [
+			"Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted. Ensure the runner meets CodeQL's resource needs.",
+			"Add `.github/workflows/codeql.yml` using `github/codeql-action` (init/analyze) for language `javascript-typescript`.",
+			"Use the `security-extended` query suite; run on `pull_request`, `push: master`, and a weekly schedule.",
+			"`permissions: { security-events: write, contents: read, actions: read }`; SHA-pinned actions.",
+			"Results surface in the repo **Security** tab; PR fails on new high-severity alerts.",
+			"Acceptance: CodeQL completes and uploads results; the Security tab shows the scan."
+		]
+	},
 
-  "T-08": {
-    "goal": "Stage 6 (safe binaries): verify the build, produce an SBOM, and scan the output.",
-    "scope": [
-      "Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
-      "Add `.github/workflows/build.yml`: `bun install --frozen-lockfile` → `bun run build` must succeed; upload the build output as a retention-limited artifact.",
-      "Generate a CycloneDX **SBOM** (`@cyclonedx/cyclonedx-npm` or `anchore/sbom-action`) and attach it to the run.",
-      "Run **Trivy** (filesystem + config/misconfig scan) and fail on high/critical.",
-      "Container/release path (guarded — only when a `Dockerfile`/release artifact exists): build image → Trivy image scan → `actions/attest-build-provenance` → verify before any deploy.",
-      "Note in the issue: the app is currently a SvelteKit web build (no native binary); this stage hardens the build output and is ready for containerized deploys.",
-      "Acceptance: build artifact + SBOM are attached to the run; Trivy gate is enforced."
-    ]
-  },
+	"T-08": {
+		"goal": "Stage 6 (safe binaries): verify the build, produce an SBOM, and scan the output.",
+		"scope": [
+			"Runner: `runs-on: [self-hosted, Linux, X64]` (the `cutline-runner-1` self-hosted runner) — not GitHub-hosted.",
+			"Add `.github/workflows/build.yml`: `bun install --frozen-lockfile` → `bun run build` must succeed; upload the build output as a retention-limited artifact.",
+			"Generate a CycloneDX **SBOM** (`@cyclonedx/cyclonedx-npm` or `anchore/sbom-action`) and attach it to the run.",
+			"Run **Trivy** (filesystem + config/misconfig scan) and fail on high/critical.",
+			"Container/release path (guarded — only when a `Dockerfile`/release artifact exists): build image → Trivy image scan → `actions/attest-build-provenance` → verify before any deploy.",
+			"Note in the issue: the app is currently a SvelteKit web build (no native binary); this stage hardens the build output and is ready for containerized deploys.",
+			"Acceptance: build artifact + SBOM are attached to the run; Trivy gate is enforced."
+		]
+	},
 
-  "T-09": {
-    "goal": "Stage 7: turn the workflows into enforced merge requirements and route reviews.",
-    "scope": [
-      "Finalize `.github/pull_request_template.md` (quality + security checklist — already scaffolded).",
-      "Add `.github/CODEOWNERS` routing reviews (e.g. `* @gabepsilva`; refine per area later).",
-      "Configure **branch protection** on `master` (repo Settings or `gh api`): require a PR, ≥1 approving review, dismiss stale approvals, require branches up to date, linear history, no force-push, and require the status checks from T-00/T-01/T-05/T-06/T-07/T-08 to pass.",
-      "Document the exact required-check job names in the issue (taken from the merged workflows).",
-      "Acceptance: a PR cannot merge while any required check is red or without an approving review."
-    ]
-  },
+	"T-09": {
+		"goal": "Stage 7: turn the workflows into enforced merge requirements and route reviews.",
+		"scope": [
+			"Finalize `.github/pull_request_template.md` (quality + security checklist — already scaffolded).",
+			"Add `.github/CODEOWNERS` routing reviews (e.g. `* @gabepsilva`; refine per area later).",
+			"Configure **branch protection** on `master` (repo Settings or `gh api`): require a PR, ≥1 approving review, dismiss stale approvals, require branches up to date, linear history, no force-push, and require the status checks from T-00/T-01/T-05/T-06/T-07/T-08 to pass.",
+			"Document the exact required-check job names in the issue (taken from the merged workflows).",
+			"Acceptance: a PR cannot merge while any required check is red or without an approving review."
+		]
+	},
 
-  "M1-01": {
-    "goal": "Extract the design's global tokens into `src/lib/styles/tokens.css` as the canonical, themeable source consumed by every component. This is a hard gate: M1-04+ / M2 / M4–M6 must not start until token names are final and merged.",
-    "scope": [
-      "Define CSS custom properties for the full Design tokens reference in PLANNING.md: surfaces (`--surface-base`…`--surface-active`), borders (`--border-faint`…`--border-7`), text (`--text-bright`…`--text-placeholder`), accent/danger/highlight, typography (`--font-sans`, `--font-mono`), radii, z-index, motion, elevation, scrollbar, and fixed layout dims (`--sidebar-w`, `--topbar-h`, `--rail-w`, `--timeline-h`, `--track-label-w`, `--ruler-h`).",
-      "Default `--accent: #ff6a3d`; derive accent/danger tints from the accent variable via `color-mix(in srgb, var(--accent) N%, transparent)` so the 4 design accents work without hardcoding orange tints.",
-      "Expose tokens on `:root`; do not include component markup or global resets (those are M1-02).",
-      "Publish the final token-name list in this issue/PR description before dependent issues start (consumers reference these exact names — never raw hex)."
-    ]
-  }
+	"M1-01": {
+		"goal": "Extract the design's global tokens into `src/lib/styles/tokens.css` as the canonical, themeable source consumed by every component. This is a hard gate: M1-04+ / M2 / M4–M6 must not start until token names are final and merged.",
+		"scope": [
+			"Define CSS custom properties for the full Design tokens reference in PLANNING.md: surfaces (`--surface-base`…`--surface-active`), borders (`--border-faint`…`--border-7`), text (`--text-bright`…`--text-placeholder`), accent/danger/highlight, typography (`--font-sans`, `--font-mono`), radii, z-index, motion, elevation, scrollbar, and fixed layout dims (`--sidebar-w`, `--topbar-h`, `--rail-w`, `--timeline-h`, `--track-label-w`, `--ruler-h`).",
+			"Default `--accent: #ff6a3d`; derive accent/danger tints from the accent variable via `color-mix(in srgb, var(--accent) N%, transparent)` so the 4 design accents work without hardcoding orange tints.",
+			"Expose tokens on `:root`; do not include component markup or global resets (those are M1-02).",
+			"Publish the final token-name list in this issue/PR description before dependent issues start (consumers reference these exact names — never raw hex)."
+		]
+	}
 }

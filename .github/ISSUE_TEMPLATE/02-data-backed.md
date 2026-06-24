@@ -1,11 +1,11 @@
 ---
-name: "Data-backed issue (Template B)"
-about: "Wire a feature/route to real server data (M4 / M5 / M6)."
-title: "<PID>: wire <feature> to data"
-labels: ["blocked:data"]
+name: 'Data-backed issue (Template B)'
+about: 'Wire a feature/route to real server data (M4 / M5 / M6).'
+title: '<PID>: wire <feature> to data'
+labels: ['blocked:data']
 ---
 
-> **Planning-ID:** `<PID>`  ·  **Milestone:** `<Mn>`
+> **Planning-ID:** `<PID>` · **Milestone:** `<Mn>`
 > **Read first** in `PLANNING.md`: Agent runbook & conventions · Design → Svelte translation guide · Design tokens reference · Shared type contracts · Reading the design file
 > **Design source:** `design-by-claude/Cutline.dc.html` (lines `<range>`)
 > **Blocked by:** `<PIDs → map to #NN before starting>`
@@ -42,11 +42,11 @@ Wire <feature> to real server data.
 
 ## Tests to write
 
-| Layer | File | Asserts |
-|-------|------|---------|
-| Server | `+page.server.spec.ts` | Test DB / mocked drizzle: empty DB → `[]`; seeded DB → correct shape; unauthorized → redirect/error |
-| Page | `+page.svelte.spec.ts` (optional) | Correct child components receive loaded props |
-| E2E | `<flow>.e2e.ts` | Authenticated user sees empty state OR real seeded data — never hardcoded placeholder |
+| Layer  | File                              | Asserts                                                                                             |
+| ------ | --------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Server | `+page.server.spec.ts`            | Test DB / mocked drizzle: empty DB → `[]`; seeded DB → correct shape; unauthorized → redirect/error |
+| Page   | `+page.svelte.spec.ts` (optional) | Correct child components receive loaded props                                                       |
+| E2E    | `<flow>.e2e.ts`                   | Authenticated user sees empty state OR real seeded data — never hardcoded placeholder               |
 
 ## Test quality review (required before merge)
 
