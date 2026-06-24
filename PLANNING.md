@@ -313,8 +313,11 @@ SHA-pinned Actions; least-privilege `permissions`; `concurrency` per ref.
 2. **T-11 — K8s manifests:** `infra/k8s/` namespace `cutline`, Deployment, Service, Ingress
    (`cutline.i.psilva.org`), cert-manager `Certificate`, ConfigMap/Secret stubs. Ephemeral SQLite
    (`emptyDir` or `/tmp`) is fine until a real DB lands.
-3. **T-12 — CD workflow:** `.github/workflows/deploy.yml` — build + push `ghcr.io/gabepsilva/cutline`,
-   `kubectl set image` + rollout status, verify `https://cutline.i.psilva.org/healthz` via ingress IP.
+3. **T-12 — CD workflow:** `.github/workflows/deploy.yml` — build image → **Trivy image scan (gate)** →
+   push `ghcr.io/gabepsilva/cutline` with a **build-provenance attestation** → `kubectl set image` +
+   rollout status → verify `https://cutline.i.psilva.org/healthz` via ingress IP. The scan gates the
+   rollout (a fixable HIGH/CRITICAL image is never pushed or deployed); verify with
+   `gh attestation verify oci://ghcr.io/gabepsilva/cutline:<tag> -R gabepsilva/Cutline`.
 
 ---
 
