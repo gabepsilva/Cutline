@@ -5,7 +5,7 @@ set -euo pipefail
 REPO="${REPO:-gabepsilva/Cutline}"
 
 declare -a MS=(
-  "M0 — Test infrastructure|Shared test helpers, fixtures, coverage CI gates. Do first."
+  "M0 — Test infrastructure|Shared test helpers, fixtures, coverage CI gates, Kubernetes deploy (T-10–T-12). Do first."
   "M1 — Foundation|Design tokens and shared UI primitives. No backend data required."
   "M2 — Layout shells|Sidebar, dashboard/editor layouts, timeline shell, modal shells."
   "M3 — Auth UI|Login/signup styled to match Cutline (better-auth)."

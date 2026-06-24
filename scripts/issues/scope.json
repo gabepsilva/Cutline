@@ -86,6 +86,50 @@
 		]
 	},
 
+	"T-10": {
+		"goal": "Stage 8a: package Cutline as a production container image ready for Kubernetes.",
+		"scope": [
+			"Replace `@sveltejs/adapter-auto` with `@sveltejs/adapter-node` (add `svelte.config.js` if needed). Listen on `0.0.0.0:${PORT:-3000}`.",
+			"Add multi-stage `Dockerfile` at repo root: `oven/bun` deps → build → slim runtime (`oven/bun` or `node:22-alpine`). Pin base-image digests like `jpegs3/cloud-jpegs3-frontend/Dockerfile`.",
+			"Add `.dockerignore` (exclude `.git`, `node_modules`, `.svelte-kit`, test artifacts, `*.db`).",
+			"Add `GET /healthz` (`src/routes/healthz/+server.ts`) returning `200` + `{ ok: true }` for K8s probes (pattern: `jpegs3-website` `/healthz`).",
+			"Runtime env contract (document in `infra/k8s/README.md`): `ORIGIN=https://cutline.i.psilva.org`, `BETTER_AUTH_SECRET` (32+ chars), `DATABASE_URL=file:/tmp/cutline.db` (ephemeral SQLite — persistent DB deferred). **Do not wire GitHub OAuth yet.**",
+			"Enable the guarded Trivy **image** scan step in `.github/workflows/build.yml` (`docker build` → `cutline:ci` → scan).",
+			"Reference: `jpegs3/cloud-jpegs3-frontend/Dockerfile` (bun multi-stage); SvelteKit adapter-node docs.",
+			"Acceptance: `docker build -t cutline:local .` succeeds; container serves app + `/healthz`; Trivy image scan runs in CI."
+		]
+	},
+
+	"T-11": {
+		"goal": "Stage 8b: Kubernetes manifests for namespace `cutline` with ingress to `cutline.i.psilva.org`.",
+		"scope": [
+			"Add `infra/k8s/` using kustomize (`base/` + `overlays/prod/`). Resources: Namespace, Deployment, Service (ClusterIP :80 → app :3000), Ingress, cert-manager `Certificate`, ConfigMap.",
+			"Ingress host: **`cutline.i.psilva.org`** — `ingressClassName: nginx`; annotations: `cert-manager.io/cluster-issuer: letsencrypt-dns01`, `nginx.ingress.kubernetes.io/ssl-redirect: \"true\"` (match `homelab7/plex/k8s/ingress.yaml` + `image-works` HSTS annotations).",
+			"Deployment hardening (match `jpegs3/website/infra/manifests/overlays/prod/deployment.yaml`): `runAsNonRoot`, `readOnlyRootFilesystem`, dropped caps, http readiness/liveness on `/healthz`, resource requests/limits, `emptyDir` for `/tmp` + SQLite path.",
+			"ConfigMap: `ORIGIN`, `PORT`, `DATABASE_URL=file:/tmp/cutline.db`. Secret `cutline-app` for `BETTER_AUTH_SECRET` — document one-time bootstrap: `kubectl -n cutline create secret generic cutline-app --from-literal=BETTER_AUTH_SECRET=…`.",
+			"If GHCR is private: `imagePullSecrets` (`cutline-regcred`) — document creation from a PAT.",
+			"Placeholder image tag in Deployment (CD updates it): `ghcr.io/gabepsilva/cutline:bootstrap`.",
+			"Add `infra/k8s/README.md` with one-time bootstrap: `kubectl apply -k infra/k8s/overlays/prod`.",
+			"**Out of scope:** persistent DB volume, CNPG/Postgres, GitHub OAuth secrets, Argo CD Application.",
+			"Acceptance: `kubectl apply -k infra/k8s/overlays/prod --dry-run=server` passes; Certificate + Ingress describe `cutline.i.psilva.org`; docs cover secret bootstrap."
+		]
+	},
+
+	"T-12": {
+		"goal": "Stage 8c: CD workflow — build image on merge, push to GHCR, roll out to `cutline` namespace, verify route.",
+		"scope": [
+			"Runner: `runs-on: [self-hosted, Linux, X64]` (`cutline-runner-1`) — same host has `kubectl` access to `tk8s` (admin context). Trusted refs only.",
+			"Add `.github/workflows/deploy.yml` triggered on `push: master` (paths: app source, `Dockerfile`, `infra/k8s/**`, workflow) + `workflow_dispatch`.",
+			"`permissions: { contents: read, packages: write }`; `concurrency` per ref; SHA-pinned Actions.",
+			"Steps (pattern: `jpegs3/.github/workflows/build-WEBSITE.yml`): checkout → `docker/login-action` to `ghcr.io` → `docker/build-push-action` with buildx cache → tag `ghcr.io/gabepsilva/cutline:YYYY-MM-DD_${GITHUB_RUN_NUMBER}` + `:latest`.",
+			"Rollout: `kubectl -n cutline set image deployment/cutline cutline=$DATE_TAG` → `kubectl rollout status` (300s timeout).",
+			"Post-deploy verify: resolve ingress LB IP, `curl -fsS --resolve cutline.i.psilva.org:443:$IP https://cutline.i.psilva.org/healthz`.",
+			"Do **not** auto-deploy on PRs; production rollout is `master` only. Optional manual `workflow_dispatch` input for tag promotion later.",
+			"Depends on T-10 (image builds) and T-11 (manifests applied once on cluster).",
+			"Acceptance: merge to `master` builds + pushes image and updates the running Deployment; health check passes via ingress."
+		]
+	},
+
 	"M1-01": {
 		"goal": "Extract the design's global tokens into `src/lib/styles/tokens.css` as the canonical, themeable source consumed by every component. This is a hard gate: M1-04+ / M2 / M4–M6 must not start until token names are final and merged.",
 		"scope": [

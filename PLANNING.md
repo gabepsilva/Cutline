@@ -210,12 +210,18 @@ Every PR must pass the **Test quality review** checklist in the issue template (
 
 ---
 
-## CI/CD pipeline (quality · security · supply chain · safe binaries)
+## CI/CD pipeline (quality · security · supply chain · deploy to Kubernetes)
 
 **Phase 0 of the build — land before any component work.** Every PR to `master` must
 pass all gates below; `master` is branch-protected to require them (T-09). Each concern
-is a small, independently reviewable workflow/issue (T-00, T-01, T-05–T-09) rather than
+is a small, independently reviewable workflow/issue (T-00, T-01, T-05–T-12) rather than
 one monolithic pipeline.
+
+**Production target:** the app runs on the homelab **`tk8s`** cluster as a container
+(Deployment in namespace `cutline`), exposed at **`https://cutline.i.psilva.org`** via
+nginx ingress + cert-manager TLS. CD is `kubectl set image` from the self-hosted runner
+after merge to `master` (pattern: `jpegs3/.github/workflows/build-WEBSITE.yml`) — not
+Fly/Vercel/serverless. Manifests live in `infra/k8s/` (kustomize).
 
 **Hardening rules for every workflow:**
 
@@ -279,8 +285,7 @@ T-01 is green — see T-01 note.)
 - **Trivy** scan (filesystem + config/misconfig) — fail on high/critical.
 - Container/release path (when a `Dockerfile` or release artifact exists): scan the image with
   Trivy, emit **build-provenance attestation** (`actions/attest-build-provenance`), and verify
-  before deploy. _Today the app is a SvelteKit web build (no native binary); this stage hardens
-  the build output and is ready for containerized deploys._
+  before deploy. Feeds **Stage 8** (T-10–T-12): Kubernetes rollout on `tk8s`.
 
 ### Stage 7 — Repo hardening (T-09)
 
@@ -289,6 +294,27 @@ T-01 is green — see T-01 note.)
 - **Branch protection** on `master`: require PR, ≥1 approving review, all status checks above
   green, up-to-date + linear history, no force-push, dismiss stale approvals. (Set via repo
   settings / API; document exact required-check names in the issue once workflow job names are final.)
+
+### Stage 8 — Container deploy to Kubernetes (T-10–T-12)
+
+**Land after T-08 (build gate) is green.** Delivers a containerized SvelteKit app on the
+`tk8s` cluster at **`https://cutline.i.psilva.org`** via nginx ingress + cert-manager TLS.
+Follow the same patterns as `jpegs3` (GHCR image + `kubectl set image` CD on the self-hosted
+runner) and `homelab7` / `image-works` (ingress, Certificate, hardened Deployment).
+
+**Out of scope for this stage:** persistent database, GitHub OAuth / SSO, Argo CD GitOps
+(can add later — start with direct `kubectl` rollout from CI like `jpegs3/.github/workflows/build-WEBSITE.yml`).
+
+**Hardening rules (same as other workflows):** self-hosted runner for trusted refs only;
+SHA-pinned Actions; least-privilege `permissions`; `concurrency` per ref.
+
+1. **T-10 — Containerize:** `@sveltejs/adapter-node`, multi-stage `Dockerfile`, `.dockerignore`,
+   `GET /healthz` for probes, enable Trivy **image** scan in `build.yml`.
+2. **T-11 — K8s manifests:** `infra/k8s/` namespace `cutline`, Deployment, Service, Ingress
+   (`cutline.i.psilva.org`), cert-manager `Certificate`, ConfigMap/Secret stubs. Ephemeral SQLite
+   (`emptyDir` or `/tmp`) is fine until a real DB lands.
+3. **T-12 — CD workflow:** `.github/workflows/deploy.yml` — build + push `ghcr.io/gabepsilva/cutline`,
+   `kubectl set image` + rollout status, verify `https://cutline.i.psilva.org/healthz` via ingress IP.
 
 ---
 
@@ -325,6 +351,7 @@ Create these labels on the repo:
 | `blocked:data`     | Red             | Real backend/service not wired yet — mocks OK with TODO until closed |
 | `blocked:auth`     | Orange          | Needs auth integration                                               |
 | `testing`          | Yellow          | Test infrastructure or coverage work                                 |
+| `deploy`           | Teal            | Container image, Kubernetes manifests, CD workflow                   |
 | `epic`             | —               | Parent / tracking issue                                              |
 
 ### Epic (parent issue)
@@ -339,9 +366,10 @@ Create one epic issue to group all work:
 
 ## Milestones
 
-### M0 — Test infrastructure
+### M0 — Test infrastructure & deploy
 
-Shared test helpers, fixtures, coverage CI gates. **Do first** alongside M1-01.
+Shared test helpers, fixtures, coverage CI gates, and **Kubernetes deploy** (T-10–T-12).
+**Do first** alongside M1-01. Production URL: `https://cutline.i.psilva.org`.
 
 ### M1 — Foundation
 
@@ -380,28 +408,42 @@ Legend: **Status** = `ready` | `blocked:data` | `blocked:auth`
 
 ### M0 — Test infrastructure
 
-Order = priority. The **CI/CD & safety foundation (T-00, T-01, T-05–T-09) lands first**,
-before any component issue — see the [CI/CD pipeline](#cicd-pipeline-quality--security--supply-chain--safe-binaries)
+Order = priority. The **CI/CD, safety, and Kubernetes deploy foundation (T-00, T-01, T-05–T-12)
+lands first** before any component issue — see the
+[CI/CD pipeline](#cicd-pipeline-quality--security--supply-chain--deploy-to-kubernetes)
 section for the detailed steps each issue implements.
 
-| ID   | Title                                                                                         | Labels    | Target file(s)                                               | Status | Depends on                         |
-| ---- | --------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------ | ------ | ---------------------------------- |
-| T-00 | **CI: code-quality gates** (format, lint, `svelte-check`/tsc, unit+component, e2e)            | `testing` | `.github/workflows/ci.yml`                                   | ready  | —                                  |
-| T-01 | CI: coverage thresholds (`vitest --coverage`)                                                 | `testing` | `vite.config.ts`, `.github/workflows/ci.yml`, `package.json` | ready  | T-00                               |
-| T-05 | CI: secret scanning (gitleaks + push protection)                                              | `testing` | `.github/workflows/security.yml`, `.gitleaks.toml`           | ready  | T-00                               |
-| T-06 | CI: dependency & supply-chain security (audit, dependency-review, Dependabot, pinned actions) | `testing` | `.github/workflows/security.yml`, `.github/dependabot.yml`   | ready  | T-00                               |
-| T-07 | CI: static analysis (CodeQL, JS/TS)                                                           | `testing` | `.github/workflows/codeql.yml`                               | ready  | T-00                               |
-| T-08 | CI: build verification + SBOM + scan (safe binaries)                                          | `testing` | `.github/workflows/build.yml`                                | ready  | T-00                               |
-| T-09 | Repo hardening: PR template + CODEOWNERS + branch protection / required checks                | `testing` | `.github/pull_request_template.md`, `.github/CODEOWNERS`     | ready  | T-00, T-01, T-05, T-06, T-07, T-08 |
-| T-02 | Test helpers + global styles in component tests                                               | `testing` | `src/lib/test/render.ts`, `src/lib/test/setup.ts`            | ready  | M1-01, M1-02                       |
-| T-03 | Domain fixtures package (typed, minimal, realistic)                                           | `testing` | `src/lib/test/fixtures/*.ts`                                 | ready  | T-02                               |
-| T-04 | E2E smoke: app boots + shells route                                                           | `testing` | `src/routes/demo/shells/shells.e2e.ts`                       | ready  | M2-23, T-02                        |
+| ID   | Title                                                                                         | Labels    | Target file(s)                                                                                                                                | Status | Depends on                         |
+| ---- | --------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------- |
+| T-00 | **CI: code-quality gates** (format, lint, `svelte-check`/tsc, unit+component, e2e)            | `testing` | `.github/workflows/ci.yml`                                                                                                                    | ready  | —                                  |
+| T-01 | CI: coverage thresholds (`vitest --coverage`)                                                 | `testing` | `vite.config.ts`, `.github/workflows/ci.yml`, `package.json`                                                                                  | ready  | T-00                               |
+| T-05 | CI: secret scanning (gitleaks + push protection)                                              | `testing` | `.github/workflows/security.yml`, `.gitleaks.toml`                                                                                            | ready  | T-00                               |
+| T-06 | CI: dependency & supply-chain security (audit, dependency-review, Dependabot, pinned actions) | `testing` | `.github/workflows/security.yml`, `.github/dependabot.yml`                                                                                    | ready  | T-00                               |
+| T-07 | CI: static analysis (CodeQL, JS/TS)                                                           | `testing` | `.github/workflows/codeql.yml`                                                                                                                | ready  | T-00                               |
+| T-08 | CI: build verification + SBOM + scan (safe binaries)                                          | `testing` | `.github/workflows/build.yml`                                                                                                                 | ready  | T-00                               |
+| T-09 | Repo hardening: PR template + CODEOWNERS + branch protection / required checks                | `testing` | `.github/pull_request_template.md`, `.github/CODEOWNERS`                                                                                      | ready  | T-00, T-01, T-05, T-06, T-07, T-08 |
+| T-10 | Containerize app (`adapter-node`, Dockerfile, `/healthz`)                                     | `deploy`  | `Dockerfile`, `.dockerignore`, `docker-entrypoint.sh`, `vite.config.ts`, `scripts/migrate.mjs`, `drizzle/**`, `src/routes/healthz/+server.ts` | ready  | T-08                               |
+| T-11 | Kubernetes manifests + ingress (`cutline.i.psilva.org`)                                       | `deploy`  | `infra/k8s/**`                                                                                                                                | ready  | T-10                               |
+| T-12 | CD: build image, push GHCR, `kubectl` rollout + route verify                                  | `deploy`  | `.github/workflows/deploy.yml`                                                                                                                | ready  | T-10, T-11                         |
+| T-02 | Test helpers + global styles in component tests                                               | `testing` | `src/lib/test/render.ts`, `src/lib/test/setup.ts`                                                                                             | ready  | M1-01, M1-02                       |
+| T-03 | Domain fixtures package (typed, minimal, realistic)                                           | `testing` | `src/lib/test/fixtures/*.ts`                                                                                                                  | ready  | T-02                               |
+| T-04 | E2E smoke: app boots + shells route                                                           | `testing` | `src/routes/demo/shells/shells.e2e.ts`                                                                                                        | ready  | M2-23, T-02                        |
 
 **T-00 (no CI exists yet):** The repo has **no `.github/workflows/`**. T-00 lands first — the Stage 1 quality workflow (`bun install` → `prettier --check` → `eslint` → `bun run check` → `bun run test:unit -- --run` → `bun run test:e2e`). T-01 extends it with coverage. T-05–T-08 add security/supply-chain/build workflows; T-09 wires required checks + branch protection. Do **not** assume CI exists in any other issue.
 
-**T-05–T-08 (safety pipeline):** Each is an independent workflow following the hardening rules in the [CI/CD pipeline](#cicd-pipeline-quality--security--supply-chain--safe-binaries) section (least-privilege `permissions`, SHA-pinned actions, `concurrency`). They depend only on T-00 (so the base CI exists) and can run in parallel.
+**T-05–T-08 (safety pipeline):** Each is an independent workflow following the hardening rules in the [CI/CD pipeline](#cicd-pipeline-quality--security--supply-chain--deploy-to-kubernetes) section (least-privilege `permissions`, SHA-pinned actions, `concurrency`). They depend only on T-00 (so the base CI exists) and can run in parallel.
 
 **T-09 (gate everything):** Turns the workflows into enforced merge requirements — branch protection on `master` requiring the T-00/T-01/T-05–T-08 checks, PR template, and CODEOWNERS. Must be done **after** the workflows exist so the required-check names are final.
+
+**T-10–T-12 (deploy):** Container + K8s + CD pipeline for `https://cutline.i.psilva.org`. Reference implementations: `jpegs3` (`website/Dockerfile`, `website/infra/`, `.github/workflows/build-WEBSITE.yml`), `homelab7/plex/k8s/` (ingress + cert-manager on `*.i.psilva.org`), `image-works/docs/k8s/` (hardened Deployment probes). SSO (GitHub OAuth) and a persistent database are **explicitly deferred** — use ephemeral SQLite and a generated `BETTER_AUTH_SECRET` until M3+.
+
+**✅ Implemented & live (2026-06-24) — `https://cutline.i.psilva.org` is serving on `tk8s` (Let's Encrypt TLS, `/healthz` 200).** Implementation deltas worth noting:
+
+- **No `svelte.config.js`** — this repo configures the SvelteKit adapter inline in `vite.config.ts`, so the `adapter-auto` → `adapter-node` switch lives there. `@libsql/client`/`libsql` are also marked `ssr.external` (native binding must not be bundled).
+- **Runtime deps promoted** — `@libsql/client`, `drizzle-orm`, `better-auth` moved from `devDependencies` to `dependencies`; otherwise Vite bundles them into the SSR output and the libsql native binding breaks at runtime.
+- **DB bootstrap at startup** — `drizzle-kit push` needs a TTY, so the image ships generated migrations (`drizzle/`) applied by `scripts/migrate.mjs` (drizzle-orm libsql migrator) in `docker-entrypoint.sh`. Idempotent, runs every start.
+- **Runtime is `bun`** (glibc `oven/bun` base) to match the `@libsql/linux-x64-gnu` prebuilt binding; an alpine/musl runtime would fail to load it. `better-sqlite3` (transitive `drizzle-kit` dep) is skipped via `--ignore-scripts` (unused).
+- **GHCR package is private** → the Deployment carries `imagePullSecrets: [cutline-regcred]`; the `cutline-app` Secret (`BETTER_AUTH_SECRET`) and the regcred are one-time manual bootstraps (see `infra/k8s/README.md`).
 
 **T-01 dependency gap:** No coverage provider is installed. T-01 must `bun add -D @vitest/coverage-v8` and add a `test.coverage` block to `vite.config.ts` (provider `v8`, `reporter` `['text','html','lcov']`, per-area `thresholds` from the [Testing strategy](#testing-strategy) table). The browser (`client`) project needs coverage enabled too; verify thresholds aggregate across both `client` and `server` projects.
 
@@ -633,13 +675,16 @@ These are deterministic given inputs → ideal table-driven tests (Template C). 
 ```text
 Epic: Implement Claude design
 │
-├── M0 DevEx & safety foundation (do first)
+├── M0 DevEx, safety & Kubernetes deploy (do first)
 │   T-00 quality CI ── T-01 coverage CI
 │   T-00 ──┬── T-05 secret scan
 │          ├── T-06 supply-chain / deps
 │          ├── T-07 CodeQL SAST
 │          └── T-08 build + SBOM + scan
 │   T-00..T-08 ── T-09 repo hardening (PR template, CODEOWNERS, branch protection)
+│   T-08 ── T-10 containerize (adapter-node, Dockerfile, /healthz)
+│   T-10 ── T-11 K8s manifests (namespace cutline, ingress cutline.i.psilva.org)
+│   T-10 + T-11 ── T-12 CD (GHCR push + kubectl rollout)
 │   T-00 ── T-02 test helpers ── T-03 fixtures ── T-04 E2E shells ── M2-25
 │
 ├── M1 Foundation
@@ -1099,14 +1144,17 @@ T-01
 
 ## Suggested sprint order
 
-### Sprint 0 — DevEx & safety foundation (do FIRST, before any component work)
+### Sprint 0 — DevEx, safety & Kubernetes deploy (do FIRST, before any component work)
 
 1. **T-00** quality CI → **T-01** coverage gate
 2. **T-05** secret scanning · **T-06** supply-chain/deps · **T-07** CodeQL · **T-08** build + SBOM (parallel, after T-00)
 3. **T-09** repo hardening: PR template + CODEOWNERS + branch protection requiring all the above checks
-4. **T-02** → **T-03** (test helpers + typed fixtures — parallel with Sprint 1)
+4. **T-10** containerize (`adapter-node`, Dockerfile, `/healthz`) → **T-11** K8s manifests (`infra/k8s/`, ingress `cutline.i.psilva.org`) → **T-12** CD workflow (`deploy.yml`, GHCR + `kubectl`)
+5. **T-02** → **T-03** (test helpers + typed fixtures — parallel with Sprint 1)
 
-**Outcome:** every PR runs quality + coverage + secret/dependency/SAST + build/SBOM checks; `master` is protected; shared `render()` helper + fixtures ready.
+**Outcome:** every PR runs quality + coverage + secret/dependency/SAST + build/SBOM checks; `master`
+is protected; merges to `master` roll out to **`https://cutline.i.psilva.org`** on `tk8s`; shared
+`render()` helper + fixtures ready.
 
 ### Sprint 1 — Visual foundation
 
@@ -1168,6 +1216,8 @@ Do not create implementation issues for these until design and data exist:
 | **Filler-hint toggle UI**                      | `showFillerHints` is a tool prop with no on-screen control — render filler hints **on** by default; no toggle component.                                                                                                  |
 | **Timeline zoom**                              | The `− [slider] +` control (design lines 263–266) has **no zoom logic** in the prototype (purely visual). Render the control in `TimelineToolbar` (M2-12) as inert/visual; do not build zoom math until specified.        |
 | **Timeline "Snap" toggle behavior**            | Toggle is shown (line 275) but does nothing in the design — render as a visual `Toggle`; no snapping logic.                                                                                                               |
+| **Argo CD / GitOps** for Cutline               | Start with direct `kubectl` CD from GitHub Actions (T-12); Argo Application can follow later.                                                                                                                             |
+| **Persistent database on Kubernetes**          | T-11 uses ephemeral SQLite (`emptyDir` / `/tmp`) until CNPG or external DB is specified; SSO/GitHub OAuth secrets deferred to M3+.                                                                                        |
 
 Track these as future epics or product tickets — not as part of the initial Claude design implementation batch.
 

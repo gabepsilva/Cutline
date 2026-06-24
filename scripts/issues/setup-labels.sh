@@ -14,6 +14,7 @@ label "design-system"  "8957e5" "Tokens, primitives, shared CSS"
 label "layout"         "2da44e" "Shell / page structure"
 label "component"      "5319e7" "Reusable Svelte component"
 label "testing"        "fbca04" "Test infrastructure or coverage work"
+label "deploy"         "006b75" "Container, Kubernetes, CD pipeline"
 label "chore"          "ededed" "Cleanup / infra not tied to a design region"
 
 # Screen area
