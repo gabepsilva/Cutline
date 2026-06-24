@@ -7,7 +7,8 @@ useDefault = true
 [allowlist]
 description = "Known false positives and test fixtures"
 paths = [
-  '''^\.github/workflows/.*$''',
+  # Workflow files are intentionally scanned — never blanket-allowlist them,
+  # or a hardcoded secret in a workflow would slip past secret scanning.
   '''^playwright\.config\.ts$''',
   '''^scripts/issues/.*$''',
   '''^PLANNING\.md$''',
