@@ -1,18 +1,25 @@
 <script lang="ts">
-	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import TimelineTrack from './TimelineTrack.svelte';
 
 	interface Props {
-		showEmpty?: boolean;
+		label?: string;
+		variant?: 'default' | 'waveform';
 	}
 
-	let { showEmpty = true }: Props = $props();
+	let { label = 'Track content', variant = 'default' }: Props = $props();
 </script>
 
-<TimelineTrack>
-	{#if showEmpty}
-		<EmptyState title="Record or add B-roll — clips drop here at the playhead" />
-	{:else}
-		<div data-testid="track-content">Clip content</div>
-	{/if}
-</TimelineTrack>
+<div class="timeline-track-harness">
+	<TimelineTrack {variant} padded={variant !== 'waveform'}>
+		<div data-testid="track-content">{label}</div>
+	</TimelineTrack>
+</div>
+
+<style>
+	.timeline-track-harness {
+		position: relative;
+		width: 400px;
+		height: 80px;
+		display: flex;
+	}
+</style>
