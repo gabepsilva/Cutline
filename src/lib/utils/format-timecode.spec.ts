@@ -20,4 +20,8 @@ describe('formatTimecode', () => {
 	it('floors fractional seconds', () => {
 		expect(formatTimecode(90.9)).toBe('1:30');
 	});
+
+	it.each([NaN, Infinity, -Infinity])('guards non-finite input %p as 0:00', (input) => {
+		expect(formatTimecode(input)).toBe('0:00');
+	});
 });
