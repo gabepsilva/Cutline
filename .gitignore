@@ -24,5 +24,7 @@ vite.config.ts.timestamp-*
 # Playwright
 test-results
 coverage
+osv-scanner
+.ci-bin/
 # SQLite
 *.db
