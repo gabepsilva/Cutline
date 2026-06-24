@@ -49,7 +49,7 @@ Every PR to `master` must pass the workflows in `.github/workflows/`:
 | ----------------- | -------------- | ------------------------------------------------------------------ |
 | Code quality      | `ci.yml`       | `prettier --check`, `eslint`, `check`, `test:unit`, Playwright e2e |
 | Coverage          | `ci.yml`       | `bun run test:unit:coverage`                                       |
-| Secret scanning   | `security.yml` | — (gitleaks in CI)                                                 |
+| Secret scanning   | `security.yml` | `bash scripts/ci/gitleaks.sh` (requires full git history)          |
 | Dependency audit  | `security.yml` | `bash scripts/ci/audit-deps.sh`                                    |
 | Dependency review | `security.yml` | — (PR-only, GitHub-hosted)                                         |
 | CodeQL            | `codeql.yml`   | —                                                                  |
