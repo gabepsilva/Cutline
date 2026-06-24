@@ -56,7 +56,7 @@
 	}
 
 	.timeline-waveform__bar--unplayed {
-		background: var(--surface-active);
+		background: var(--text-9);
 	}
 
 	.timeline-waveform__bar--played {
