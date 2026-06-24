@@ -1,7 +1,8 @@
 name: Deploy
 
-# Continuous delivery to the tk8s cluster (T-12). On merge to master, build + push
-# the image to GHCR and roll out the cutline Deployment, then verify the public route.
+# Continuous delivery to the tk8s cluster (T-12). On merge to master: build the
+# image, scan it (gate), push to GHCR with a build-provenance attestation, roll out
+# the cutline Deployment, then verify the public route.
 # Production rollout is master-only; PRs never deploy.
 
 on:
@@ -24,6 +25,8 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write # mint the OIDC token for build-provenance attestation
+  attestations: write # write the attestation to the GHCR package
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -60,13 +63,38 @@ jobs:
           set -eu
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Build and push image
+      - name: Build image
         run: |
           set -eu
           docker build --provenance=false --sbom=false \
             -t "$DATE_TAG" -t "$LATEST_TAG" .
+
+      # Gate the rollout on the image we actually ship: nothing is pushed or
+      # deployed if the built image has a fixable HIGH/CRITICAL vulnerability.
+      - name: Trivy image scan (gate)
+        uses: aquasecurity/trivy-action@cf5c088a69634cd13ccddc735d7926162c31f9a6 # v0.28.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.DATE_TAG }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+
+      - name: Push image
+        run: |
+          set -eu
           docker push "$DATE_TAG"
           docker push "$LATEST_TAG"
+          # Capture the pushed manifest digest for the provenance attestation.
+          digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$DATE_TAG" | cut -d@ -f2)"
+          echo "IMAGE_DIGEST=${digest}" >> "$GITHUB_ENV"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ env.IMAGE_DIGEST }}
+          push-to-registry: true
 
       - name: Apply manifests and roll out
         run: |
