@@ -16,6 +16,9 @@ jobs:
   build:
     name: Build verify
     timeout-minutes: 30
+    env:
+      DATABASE_URL: file:./ci-build.db
+      BETTER_AUTH_SECRET: ci-build-placeholder-secret-32chars
     runs-on: ${{ (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted", "Linux", "X64"]') || 'ubuntu-latest' }}
     steps:
       - name: Checkout
