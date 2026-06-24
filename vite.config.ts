@@ -62,6 +62,9 @@ export default defineConfig({
 				extends: './vite.config.ts',
 				test: {
 					name: 'client',
+					coverage: {
+						provider: 'istanbul'
+					},
 					browser: {
 						enabled: true,
 						provider: playwright(),
