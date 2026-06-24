@@ -5,8 +5,10 @@
 #   docker build -t cutline:local .
 #
 # Pinned digests — bump tag + digest together when upgrading.
-# oven/bun:1.3.13 — debian-slim (glibc) base; matches the @libsql/linux-x64-gnu
-#   native binding (an alpine/musl runtime would fail to load it).
+# oven/bun:1.3.13 (debian) — build stages; oven/bun:1.3.13-alpine — runtime, for a
+#   minimal low-CVE image. @libsql/client ships both gnu and musl prebuilt bindings,
+#   so the musl one loads on alpine. esbuild/tsx (build-only, transitive) are stripped
+#   from the runtime image — they carry Go-stdlib CVEs and are never run at runtime.
 
 # --- install all deps (incl. dev) for the build ---
 FROM oven/bun:1.3.13@sha256:87416c977a612a204eb54ab9f3927023c2a3c971f4f345a01da08ea6262ae30e AS deps
@@ -30,14 +32,18 @@ RUN DATABASE_URL="file:/tmp/build.db" \
     BETTER_AUTH_SECRET="build-time-placeholder-not-used-at-runtime-000" \
     bun run build
 
-# --- production-only deps (drizzle-orm + @libsql/client for runtime/migrations) ---
-FROM oven/bun:1.3.13@sha256:87416c977a612a204eb54ab9f3927023c2a3c971f4f345a01da08ea6262ae30e AS prod-deps
+# --- production-only deps (alpine/musl, to match the runtime base) ---
+FROM oven/bun:1.3.13-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664e9ae5726f94d7bb5349 AS prod-deps
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production --ignore-scripts
+# Strip build-only tooling that leaks into the prod tree (never used at runtime —
+# the server is pre-built and migrate.mjs only needs drizzle-orm + @libsql/client).
+RUN rm -rf node_modules/esbuild node_modules/@esbuild node_modules/@esbuild-kit \
+           node_modules/tsx node_modules/.bin/esbuild node_modules/.bin/tsx
 
-# --- slim runtime ---
-FROM oven/bun:1.3.13@sha256:87416c977a612a204eb54ab9f3927023c2a3c971f4f345a01da08ea6262ae30e AS runner
+# --- slim runtime (alpine) ---
+FROM oven/bun:1.3.13-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664e9ae5726f94d7bb5349 AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \

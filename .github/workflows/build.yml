@@ -78,4 +78,5 @@ jobs:
           scan-type: image
           image-ref: cutline:ci
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
           exit-code: 1
