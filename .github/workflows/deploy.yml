@@ -1,0 +1,89 @@
+name: Deploy
+
+# Continuous delivery to the tk8s cluster (T-12). On merge to master, build + push
+# the image to GHCR and roll out the cutline Deployment, then verify the public route.
+# Production rollout is master-only; PRs never deploy.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/**'
+      - 'static/**'
+      - 'drizzle/**'
+      - 'scripts/migrate.mjs'
+      - 'Dockerfile'
+      - 'docker-entrypoint.sh'
+      - 'package.json'
+      - 'bun.lock'
+      - 'vite.config.ts'
+      - 'infra/k8s/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build, push & roll out
+    timeout-minutes: 30
+    # Self-hosted runner has kubectl access to tk8s; deploy triggers are trusted refs only.
+    runs-on: [self-hosted, Linux, X64]
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/cutline
+      NAMESPACE: cutline
+      DEPLOYMENT: cutline
+      CONTAINER: cutline
+      INGRESS: cutline
+      HOST: cutline.i.psilva.org
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4.2.2
+
+      - name: Prepare image tags
+        run: |
+          set -eu
+          DATE_TAG="${IMAGE_NAME}:$(date -u +'%Y-%m-%d')_${GITHUB_RUN_NUMBER}"
+          {
+            echo "DATE_TAG=${DATE_TAG}"
+            echo "LATEST_TAG=${IMAGE_NAME}:latest"
+          } >> "$GITHUB_ENV"
+
+      - name: Log in to GitHub Container Registry
+        run: |
+          set -eu
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push image
+        run: |
+          set -eu
+          docker build --provenance=false --sbom=false \
+            -t "$DATE_TAG" -t "$LATEST_TAG" .
+          docker push "$DATE_TAG"
+          docker push "$LATEST_TAG"
+
+      - name: Apply manifests and roll out
+        run: |
+          set -eu
+          # Idempotent: keeps namespace/config/service/ingress/cert in sync, then
+          # pins the freshly built image on the Deployment.
+          kubectl apply -k infra/k8s/overlays/prod
+          kubectl -n "$NAMESPACE" set image "deployment/${DEPLOYMENT}" "${CONTAINER}=${DATE_TAG}"
+          kubectl -n "$NAMESPACE" rollout status "deployment/${DEPLOYMENT}" --timeout=300s
+
+      - name: Verify route
+        run: |
+          set -eu
+          ingress_ip="$(kubectl -n "$NAMESPACE" get ingress "$INGRESS" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+          if [ -z "$ingress_ip" ]; then
+            echo "Ingress ${NAMESPACE}/${INGRESS} has no load balancer IP yet." >&2
+            exit 1
+          fi
+          curl -fsS --resolve "${HOST}:443:${ingress_ip}" "https://${HOST}/healthz" >/dev/null
+          echo "OK: https://${HOST}/healthz reachable via ${ingress_ip}"
