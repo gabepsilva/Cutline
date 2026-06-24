@@ -21,10 +21,8 @@
 	{#snippet actions()}
 		{#if showCta}
 			<Button variant="primary" size="lg" onclick={onnewProject} class="dashboard-header__cta">
-				{#snippet children()}
-					<span class="dashboard-header__cta-icon" aria-hidden="true"></span>
-					New project
-				{/snippet}
+				<span class="dashboard-header__cta-icon" aria-hidden="true"></span>
+				New project
 			</Button>
 		{/if}
 	{/snippet}
