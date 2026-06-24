@@ -27,6 +27,36 @@ export default defineConfig({
 	],
 	test: {
 		expect: { requireAssertions: true },
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'html', 'lcov'],
+			include: [
+				'src/lib/**/*.{ts,svelte}',
+				'src/routes/**/+page.server.ts',
+				'src/routes/**/+server.ts'
+			],
+			exclude: [
+				'src/**/*.d.ts',
+				'src/**/*.spec.ts',
+				'src/**/*.svelte.spec.ts',
+				'src/**/*.e2e.ts',
+				'src/**/*.test.ts',
+				// Scaffold/demo routes — coverage enforced when real routes land (M3+).
+				'src/routes/demo/**',
+				'src/hooks.server.ts',
+				// Server layer — enable in coverage when server tests land (M3+).
+				'src/lib/server/**'
+			],
+			thresholds: {
+				lines: 80,
+				'src/lib/utils/**': { lines: 95 },
+				'src/lib/editor/**': { lines: 90 },
+				'src/lib/components/ui/**': { lines: 85 },
+				'src/lib/components/**': { lines: 80 },
+				'src/routes/**/+page.server.ts': { lines: 85 },
+				'src/routes/**/+server.ts': { lines: 85 }
+			}
+		},
 		projects: [
 			{
 				extends: './vite.config.ts',

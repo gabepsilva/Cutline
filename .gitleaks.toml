@@ -1,0 +1,20 @@
+title = "Cutline gitleaks config"
+
+[extend]
+# Use the default gitleaks ruleset.
+useDefault = true
+
+[allowlist]
+description = "Known false positives and test fixtures"
+paths = [
+  '''^\.github/workflows/.*$''',
+  '''^scripts/issues/.*$''',
+  '''^PLANNING\.md$''',
+]
+
+# Example tokens in documentation or issue templates are not real secrets.
+regexes = [
+  '''fake[_-]?token''',
+  '''example[_-]?secret''',
+  '''<your[_-]?api[_-]?key>''',
+]

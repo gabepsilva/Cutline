@@ -119,3 +119,23 @@ Auto-generated files are exempt. Routes and layouts compose components — they 
 **PR scope:** one component or one small, related group (e.g. `Button` + `IconButton`). Do not land whole screens in a single PR unless the screen is only wiring existing pieces together.
 
 **Rule of thumb:** if you cannot describe the file in one short phrase, or a new contributor cannot find what they need quickly, split it — even when under the target.
+
+---
+
+## CI dev loop
+
+Run the same gates locally before opening a PR (mirrors `.github/workflows/ci.yml`):
+
+```sh
+bun install --frozen-lockfile
+bunx prettier --check .
+bunx eslint .
+bun run check
+bunx playwright install chromium
+bun run test:unit -- --run
+bunx playwright install --with-deps chromium
+bunx playwright test
+bun run test:unit:coverage   # coverage thresholds (T-01)
+```
+
+Security and build workflows run on the self-hosted runner in CI; locally you can run `bash scripts/ci/audit-deps.sh`, `bun audit`, and `bun run build`. Fork PRs use GitHub-hosted runners — only same-repo PRs and pushes to `master` run on `cutline-runner-1`.
