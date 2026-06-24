@@ -21,6 +21,9 @@ node scripts/issues/create-issues.mjs --list
 # Preview a body without creating anything:
 node scripts/issues/create-issues.mjs --pids M1-04 --dry-run
 
+# Refresh an already-created issue's title + body (e.g. after editing the plan/scope):
+node scripts/issues/create-issues.mjs --pids T-00 --update
+
 # The reviewed first batch (already created): epic + T-00 + M1-01
 node scripts/issues/create-issues.mjs --epic --pids T-00,M1-01
 

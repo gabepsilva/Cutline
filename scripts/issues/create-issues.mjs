@@ -16,6 +16,7 @@
  *   node create-issues.mjs --from 1 --to 2        # create the first 2 (1-indexed, by priority order)
  *   node create-issues.mjs --all                  # create every issue
  *   node create-issues.mjs --pids T-00 --dry-run  # print body, create nothing
+ *   node create-issues.mjs --pids T-00 --update   # refresh title+body of an already-created issue
  *   node create-issues.mjs --relink               # rewrite "Blocked by" with resolved #numbers
  *
  * Env: REPO (default gabepsilva/Cutline), PLAN (default ../../PLANNING.md)
@@ -40,6 +41,7 @@ const val = (f) => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 const DRY = has('--dry-run');
+const UPDATE = has('--update');
 
 // ---------- helpers ----------
 const sh = (cmd, a) => execFileSync(cmd, a, { encoding: 'utf8' }).trim();
@@ -423,15 +425,30 @@ function existingPidIssue(id) {
 }
 
 function createIssue(it) {
-  const existing = existingPidIssue(it.id);
-  if (existing) {
-    console.log(`skip  ${it.id} (already #${existing})`);
-    pidMap[it.id] = existing;
-    return;
-  }
   const title = `${it.id}: ${it.title}`;
   const body = composeBody(it);
   const labels = [...new Set([...it.labels, `pid:${it.id}`])];
+
+  const existing = existingPidIssue(it.id);
+  if (existing) {
+    pidMap[it.id] = existing;
+    if (!UPDATE) {
+      console.log(`skip  ${it.id} (already #${existing})`);
+      return;
+    }
+    if (DRY) {
+      console.log(`\n===== DRY UPDATE #${existing} ${title} =====\n${body}`);
+      return;
+    }
+    ensureLabel(`pid:${it.id}`, 'd0d7de', `Planning ID ${it.id}`);
+    for (const l of it.labels) ensureLabel(l);
+    const ea = ['issue', 'edit', String(existing), '--repo', REPO, '--title', title, '--body', body, '--milestone', milestoneTitles[it.ms]];
+    for (const l of labels) ea.push('--add-label', l);
+    sh('gh', ea);
+    saveMap(pidMap);
+    console.log(`update ${it.id} → #${existing}`);
+    return;
+  }
 
   if (DRY) {
     console.log(`\n===== DRY ${title} =====`);

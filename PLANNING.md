@@ -210,6 +210,82 @@ Every PR must pass the **Test quality review** checklist in the issue template (
 
 ---
 
+## CI/CD pipeline (quality · security · supply chain · safe binaries)
+
+**Phase 0 of the build — land before any component work.** Every PR to `master` must
+pass all gates below; `master` is branch-protected to require them (T-09). Each concern
+is a small, independently reviewable workflow/issue (T-00, T-01, T-05–T-09) rather than
+one monolithic pipeline.
+
+**Hardening rules for every workflow:**
+
+- Least-privilege `permissions:` — default `contents: read`; grant `security-events: write`,
+  `id-token: write`, etc. only to the job that needs it.
+- **Pin all third-party Actions to a full commit SHA** (not `@v4`) — supply-chain integrity.
+- `concurrency` with `cancel-in-progress` per ref; `timeout-minutes` on every job.
+- Bun via `oven-sh/setup-bun`; `bun install --frozen-lockfile` (no lockfile drift).
+- Cache Bun store + Playwright browsers.
+
+### Stage 1 — Code quality gates (T-00)
+
+`.github/workflows/ci.yml`, on `pull_request` + `push: master`:
+
+1. `bun install --frozen-lockfile`
+2. `prettier --check .` (`bun run format` is write — use `--check` in CI)
+3. `eslint .` (`bun run lint`)
+4. `bun run check` — `svelte-check` + `tsc`, **zero errors**
+5. `bun run test:unit -- --run` — Vitest `client` (browser/Chromium) + `server` projects
+6. `bun run test:e2e` — Playwright (`playwright install --with-deps chromium`)
+
+Fail fast on any non-zero exit. These are the required "good code / code quality" checks.
+
+### Stage 2 — Coverage gate (T-01)
+
+Adds `@vitest/coverage-v8` + `test.coverage` thresholds (provider `v8`, reporters
+`text`/`html`/`lcov`, per-area thresholds from [Testing strategy](#testing-strategy));
+aggregate across `client` + `server`. PR fails below threshold. (N/A for PRs merged before
+T-01 is green — see T-01 note.)
+
+### Stage 3 — Safe code: secret scanning (T-05)
+
+- **gitleaks** action on PR + push; scheduled **full-history** scan.
+- Enable repo **secret scanning** + **push protection** (Settings → Code security).
+- Fail on any detected credential; document allowlist in `.gitleaks.toml`.
+
+### Stage 4 — Safe code: dependencies & supply chain (T-06)
+
+- `bun audit` — fail on **high/critical** (fallback/augment: `google/osv-scanner` for
+  transitive coverage).
+- `actions/dependency-review-action` on PRs — block known-vulnerable deps + disallowed licenses.
+- `.github/dependabot.yml` — weekly updates for the npm/bun ecosystem **and** GitHub Actions.
+- Pin Actions to SHAs (audit with `zizmor`); verify `bun.lock` committed + frozen everywhere.
+
+### Stage 5 — Safe code: static analysis / SAST (T-07)
+
+- GitHub **CodeQL** (`github/codeql-action`), language `javascript-typescript`,
+  `security-extended` query suite.
+- On PR + weekly schedule; results in the **Security** tab; PR fails on new high-severity alerts.
+
+### Stage 6 — Safe binaries: build, SBOM, scan, provenance (T-08)
+
+- `bun run build` must succeed; upload build output as a CI artifact (retention-limited).
+- Generate an **SBOM** (CycloneDX — `@cyclonedx/cyclonedx-npm` or `anchore/sbom-action`) and attach it.
+- **Trivy** scan (filesystem + config/misconfig) — fail on high/critical.
+- Container/release path (when a `Dockerfile` or release artifact exists): scan the image with
+  Trivy, emit **build-provenance attestation** (`actions/attest-build-provenance`), and verify
+  before deploy. _Today the app is a SvelteKit web build (no native binary); this stage hardens
+  the build output and is ready for containerized deploys._
+
+### Stage 7 — Repo hardening (T-09)
+
+- PR template (`.github/pull_request_template.md`) with quality + security checklist.
+- `.github/CODEOWNERS` for required-review routing.
+- **Branch protection** on `master`: require PR, ≥1 approving review, all status checks above
+  green, up-to-date + linear history, no force-push, dismiss stale approvals. (Set via repo
+  settings / API; document exact required-check names in the issue once workflow job names are final.)
+
+---
+
 ## GitHub setup
 
 ### Project board
@@ -298,15 +374,28 @@ Legend: **Status** = `ready` | `blocked:data` | `blocked:auth`
 
 ### M0 — Test infrastructure
 
+Order = priority. The **CI/CD & safety foundation (T-00, T-01, T-05–T-09) lands first**,
+before any component issue — see the [CI/CD pipeline](#cicd-pipeline-quality--security--supply-chain--safe-binaries)
+section for the detailed steps each issue implements.
+
 | ID | Title | Labels | Target file(s) | Status | Depends on |
 |----|-------|--------|----------------|--------|------------|
-| T-00 | **Base CI** workflow (lint + `svelte-check` + unit/e2e) | `testing` | `.github/workflows/ci.yml` | ready | — |
-| T-01 | Coverage thresholds in CI (`vitest --coverage`) | `testing` | `vite.config.ts`, `.github/workflows/ci.yml`, `package.json` | ready | T-00 |
+| T-00 | **CI: code-quality gates** (format, lint, `svelte-check`/tsc, unit+component, e2e) | `testing` | `.github/workflows/ci.yml` | ready | — |
+| T-01 | CI: coverage thresholds (`vitest --coverage`) | `testing` | `vite.config.ts`, `.github/workflows/ci.yml`, `package.json` | ready | T-00 |
+| T-05 | CI: secret scanning (gitleaks + push protection) | `testing` | `.github/workflows/security.yml`, `.gitleaks.toml` | ready | T-00 |
+| T-06 | CI: dependency & supply-chain security (audit, dependency-review, Dependabot, pinned actions) | `testing` | `.github/workflows/security.yml`, `.github/dependabot.yml` | ready | T-00 |
+| T-07 | CI: static analysis (CodeQL, JS/TS) | `testing` | `.github/workflows/codeql.yml` | ready | T-00 |
+| T-08 | CI: build verification + SBOM + scan (safe binaries) | `testing` | `.github/workflows/build.yml` | ready | T-00 |
+| T-09 | Repo hardening: PR template + CODEOWNERS + branch protection / required checks | `testing` | `.github/pull_request_template.md`, `.github/CODEOWNERS` | ready | T-00, T-01, T-05, T-06, T-07, T-08 |
 | T-02 | Test helpers + global styles in component tests | `testing` | `src/lib/test/render.ts`, `src/lib/test/setup.ts` | ready | M1-01, M1-02 |
 | T-03 | Domain fixtures package (typed, minimal, realistic) | `testing` | `src/lib/test/fixtures/*.ts` | ready | T-02 |
 | T-04 | E2E smoke: app boots + shells route | `testing` | `src/routes/demo/shells/shells.e2e.ts` | ready | M2-23, T-02 |
 
-**T-00 (new — no CI exists yet):** The repo currently has **no `.github/workflows/`**. T-00 must land first: a workflow running `bun install`, `bun run lint`, `bun run check`, `bun run test:unit -- --run`, and `bun run test:e2e`. T-01 then extends it with coverage gates. Do **not** assume CI exists in any other issue.
+**T-00 (no CI exists yet):** The repo has **no `.github/workflows/`**. T-00 lands first — the Stage 1 quality workflow (`bun install` → `prettier --check` → `eslint` → `bun run check` → `bun run test:unit -- --run` → `bun run test:e2e`). T-01 extends it with coverage. T-05–T-08 add security/supply-chain/build workflows; T-09 wires required checks + branch protection. Do **not** assume CI exists in any other issue.
+
+**T-05–T-08 (safety pipeline):** Each is an independent workflow following the hardening rules in the [CI/CD pipeline](#cicd-pipeline-quality--security--supply-chain--safe-binaries) section (least-privilege `permissions`, SHA-pinned actions, `concurrency`). They depend only on T-00 (so the base CI exists) and can run in parallel.
+
+**T-09 (gate everything):** Turns the workflows into enforced merge requirements — branch protection on `master` requiring the T-00/T-01/T-05–T-08 checks, PR template, and CODEOWNERS. Must be done **after** the workflows exist so the required-check names are final.
 
 **T-01 dependency gap:** No coverage provider is installed. T-01 must `bun add -D @vitest/coverage-v8` and add a `test.coverage` block to `vite.config.ts` (provider `v8`, `reporter` `['text','html','lcov']`, per-area `thresholds` from the [Testing strategy](#testing-strategy) table). The browser (`client`) project needs coverage enabled too; verify thresholds aggregate across both `client` and `server` projects.
 
@@ -538,9 +627,14 @@ These are deterministic given inputs → ideal table-driven tests (Template C). 
 ```text
 Epic: Implement Claude design
 │
-├── M0 Test infrastructure
-│   T-00 base CI ── T-01 coverage CI ── T-02 test helpers ── T-03 fixtures
-│   T-04 E2E shells ── M2-25
+├── M0 DevEx & safety foundation (do first)
+│   T-00 quality CI ── T-01 coverage CI
+│   T-00 ──┬── T-05 secret scan
+│          ├── T-06 supply-chain / deps
+│          ├── T-07 CodeQL SAST
+│          └── T-08 build + SBOM + scan
+│   T-00..T-08 ── T-09 repo hardening (PR template, CODEOWNERS, branch protection)
+│   T-00 ── T-02 test helpers ── T-03 fixtures ── T-04 E2E shells ── M2-25
 │
 ├── M1 Foundation
 │   M1-01 tokens
@@ -968,11 +1062,14 @@ T-01
 
 ## Suggested sprint order
 
-### Sprint 0 — Test infrastructure (parallel with Sprint 1)
+### Sprint 0 — DevEx & safety foundation (do FIRST, before any component work)
 
-1. T-01 → T-02 → T-03  
+1. **T-00** quality CI → **T-01** coverage gate
+2. **T-05** secret scanning · **T-06** supply-chain/deps · **T-07** CodeQL · **T-08** build + SBOM (parallel, after T-00)
+3. **T-09** repo hardening: PR template + CODEOWNERS + branch protection requiring all the above checks
+4. **T-02** → **T-03** (test helpers + typed fixtures — parallel with Sprint 1)
 
-**Outcome:** Coverage CI, shared `render()` helper, typed fixtures.
+**Outcome:** every PR runs quality + coverage + secret/dependency/SAST + build/SBOM checks; `master` is protected; shared `render()` helper + fixtures ready.
 
 ### Sprint 1 — Visual foundation
 
@@ -1449,10 +1546,10 @@ How agents should use it:
 
 | Metric | Count |
 |--------|-------|
-| Total planned issues | **80** (1 epic + 5 test infra + 74 implementable) |
-| Ready to start now (M0 + M1 + M2 + M3 + M5-00b) | **48** (M0:5 + M1:14 + M2:25 + M3:3 + M5-00b:1) |
+| Total planned issues | **85** (1 epic + 10 test/CI-safety infra + 74 implementable) |
+| Ready to start now (M0 + M1 + M2 + M3 + M5-00b) | **53** (M0:10 + M1:14 + M2:25 + M3:3 + M5-00b:1) |
 | Blocked on data (M4 + M5 + M6, excl. M5-00b) | **31** (M4:7 + M5:13 + M6:11) — UI may use `$lib/mocks/`; issue closes when real backend wired |
-| Buckets reconcile | 48 ready + 31 blocked = **79 work issues**; + 1 epic = **80 total** |
+| Buckets reconcile | 53 ready + 31 blocked = **84 work issues**; + 1 epic = **85 total** |
 | Milestones | **7** (M0–M6) |
 | Co-located test files | **Required on every component/util PR** |
 | Coverage gate | **≥ 80% overall `src/lib/**` (CI via T-01)** |
