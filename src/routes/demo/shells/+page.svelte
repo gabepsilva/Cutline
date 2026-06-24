@@ -3,6 +3,14 @@
 	import DashboardLayout from '$lib/components/layout/DashboardLayout.svelte';
 	import DashboardHeader from '$lib/components/dashboard/DashboardHeader.svelte';
 	import EditorLayout from '$lib/components/editor/EditorLayout.svelte';
+	import Timeline from '$lib/components/editor/timeline/Timeline.svelte';
+	import {
+		mockTimelineBars,
+		mockTimelineClips,
+		mockTimelinePlayheadPercent,
+		mockTimelineResourceCount,
+		mockTimelineTicks
+	} from '$lib/mocks/timeline.mock';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -39,15 +47,17 @@
 
 	<section class="shells-preview__section" data-testid="shells-editor" aria-label="Editor shell">
 		<EditorLayout title={data.editorTitle} meta={data.editorMeta}>
-			<div
-				class="shells-preview__placeholder"
-				data-testid="editor-timeline-placeholder"
-				role="status"
-			>
-				<p class="shells-preview__placeholder-title">Timeline pending — M2-17</p>
-				<p class="shells-preview__placeholder-detail">
-					Editor workspace shell is wired; timeline tracks land in a follow-up PR.
+			<div class="shells-preview__editor" data-testid="editor-shell-body">
+				<p class="shells-preview__note shells-preview__editor-note">
+					Editor workspace shell — transcript and preview panels land in M5.
 				</p>
+				<Timeline
+					ticks={mockTimelineTicks}
+					bars={mockTimelineBars}
+					clips={mockTimelineClips}
+					playheadPercent={mockTimelinePlayheadPercent}
+					resourceCount={mockTimelineResourceCount}
+				/>
 			</div>
 		</EditorLayout>
 	</section>
@@ -65,34 +75,16 @@
 		line-height: 1.5;
 	}
 
-	.shells-preview__placeholder {
+	.shells-preview__editor {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-		margin: 24px;
-		padding: 32px 24px;
-		border: 1px dashed var(--border-7);
-		border-radius: 12px;
-		background: var(--surface-2);
-		text-align: center;
+		min-height: 0;
+		min-width: 0;
 	}
 
-	.shells-preview__placeholder-title {
-		margin: 0;
-		font-size: 15px;
-		font-weight: 600;
-		color: var(--text-3);
-	}
-
-	.shells-preview__placeholder-detail {
-		margin: 0;
-		max-width: 420px;
-		font-size: 13px;
-		color: var(--text-6);
-		line-height: 1.5;
+	.shells-preview__editor-note {
+		margin: 16px 24px 0;
 	}
 
 	:global(.shells-preview__cta) {
