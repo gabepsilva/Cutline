@@ -50,8 +50,8 @@
 </script>
 
 <Modal {open} title="Record" layer="record" {onclose} class={className}>
-	{#snippet header()}
-		<h2 class="record-modal__title">
+	{#snippet header({ titleId })}
+		<h2 id={titleId} class="record-modal__title">
 			<span class="record-modal__title-dot" aria-hidden="true"></span>
 			Record
 		</h2>

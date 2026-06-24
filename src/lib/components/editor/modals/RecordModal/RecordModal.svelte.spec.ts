@@ -7,7 +7,7 @@ describe('RecordModal.svelte', () => {
 	it('renders record dialog with source tabs in preview step', async () => {
 		render(RecordModalHarness, { open: true, step: 'preview' });
 
-		await expect.element(page.getByRole('dialog')).toBeInTheDocument();
+		await expect.element(page.getByRole('dialog', { name: 'Record' })).toBeInTheDocument();
 		await expect.element(page.getByRole('heading', { name: 'Record' })).toBeInTheDocument();
 		await expect.element(page.getByRole('group', { name: 'Recording source' })).toBeInTheDocument();
 		await expect.element(page.getByRole('button', { name: 'Start recording' })).toBeInTheDocument();
