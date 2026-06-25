@@ -72,6 +72,18 @@ test.describe('editor route', () => {
 		await expect(transport.getByRole('button', { name: 'Play' })).toBeVisible();
 	});
 
+	test('Remove fillers action soft-deletes all filler words', async ({ page }) => {
+		await page.goto('/projects/proj-hero');
+
+		const removeFillers = page.getByRole('button', { name: /^Remove fillers · [1-9]/ });
+		await expect(removeFillers).toBeVisible();
+
+		await removeFillers.click();
+
+		await expect(page.getByRole('button', { name: 'Remove fillers · 0' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'um,, deleted' })).toBeVisible();
+	});
+
 	test('Delete key toggles delete on the selected word', async ({ page }) => {
 		await page.goto('/projects/proj-hero');
 

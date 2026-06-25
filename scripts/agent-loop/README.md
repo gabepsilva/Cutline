@@ -9,6 +9,7 @@ When open issues exist:
 
 ```sh
 ./scripts/agent-loop/run.sh
+./scripts/agent-loop/run.sh --cursor-lead   # lead review via cursor-agent (--model auto)
 ```
 
 `AGENT_LOOP_INTERVAL=60` — idle poll when no open issues.  
