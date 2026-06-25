@@ -27,4 +27,13 @@ describe('AppSidebarStorage.svelte', () => {
 
 		await expect.element(page.getByRole('progressbar')).toBeInTheDocument();
 	});
+
+	it('renders gracefully with zero usage', async () => {
+		render(AppSidebarStorageHarness, {
+			usage: { percentUsed: 0, usageLabel: '' }
+		});
+
+		await expect.element(page.getByText('0%')).toBeInTheDocument();
+		await expect.element(page.getByLabelText('Storage usage')).toBeInTheDocument();
+	});
 });

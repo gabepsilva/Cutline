@@ -27,4 +27,12 @@ describe('AppSidebarUser.svelte', () => {
 		await expect.element(page.getByText('Jordan Lee')).toBeInTheDocument();
 		await expect.element(page.getByText('Free plan')).toBeInTheDocument();
 	});
+
+	it('renders gracefully with minimal user fields', async () => {
+		render(AppSidebarUserHarness, {
+			user: { id: 'user-empty', name: ' ', initials: '?', planLabel: ' ' }
+		});
+
+		await expect.element(page.getByText('?')).toBeInTheDocument();
+	});
 });
