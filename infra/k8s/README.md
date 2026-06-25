@@ -33,7 +33,7 @@ Secrets are synced by the cluster's **1Password operator** (`OnePasswordItem` CR
 | 1Password item (homelab7)              | K8s Secret        | Field / type                |
 | -------------------------------------- | ----------------- | --------------------------- |
 | `Cutline-PROD`                         | `cutline-app`     | text field labeled `dotenv` |
-| `GHCR pull jpegs3 kubernetes` (shared) | `cutline-regcred` | `.dockerconfigjson`         |
+| `GHCR pull cutline kubernetes`         | `cutline-regcred` | `.dockerconfigjson`         |
 
 **`dotenv` content** (in the labeled field, not the Secure Note body alone):
 
