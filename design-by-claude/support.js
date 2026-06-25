@@ -1199,6 +1199,18 @@
       }
     }
     window.addEventListener("message", (e) => {
+      if (e.source !== window.parent || window.parent === window) return;
+      let parentOrigin;
+      try {
+        parentOrigin = window.parent.location.origin;
+      } catch {
+        try {
+          parentOrigin = document.referrer ? new URL(document.referrer).origin : null;
+        } catch {
+          parentOrigin = null;
+        }
+      }
+      if (parentOrigin === null || e.origin !== parentOrigin) return;
       if (!designDocMode || (e.data && e.data.type) !== "__dc_probe") return;
       postDesignMode(designDocMode);
     });
