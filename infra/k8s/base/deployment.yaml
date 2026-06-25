@@ -38,7 +38,7 @@ spec:
           imagePullPolicy: IfNotPresent
           # Source /app/.env before entrypoint until the running image ships the
           # dotenv loader in docker-entrypoint.sh (rebuild + deploy after merge).
-          command: ["/bin/sh", "-ec"]
+          command: ['/bin/sh', '-ec']
           args:
             - |
               if [ -f /app/.env ]; then set -a; . /app/.env; set +a; fi

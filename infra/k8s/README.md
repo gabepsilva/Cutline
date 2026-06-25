@@ -30,10 +30,10 @@ migrations at startup, and serves the K8s probe at `GET /healthz`.
 Secrets are synced by the cluster's **1Password operator** (`OnePasswordItem` CRDs in
 `base/`). No manual `kubectl create secret` for app or registry credentials.
 
-| 1Password item (homelab7) | K8s Secret       | Field / type              |
-| ------------------------- | ---------------- | ------------------------- |
-| `Cutline-PROD`            | `cutline-app`    | text field labeled `dotenv` |
-| `GHCR pull jpegs3 kubernetes` (shared) | `cutline-regcred` | `.dockerconfigjson` |
+| 1Password item (homelab7)              | K8s Secret        | Field / type                |
+| -------------------------------------- | ----------------- | --------------------------- |
+| `Cutline-PROD`                         | `cutline-app`     | text field labeled `dotenv` |
+| `GHCR pull jpegs3 kubernetes` (shared) | `cutline-regcred` | `.dockerconfigjson`         |
 
 **`dotenv` content** (in the labeled field, not the Secure Note body alone):
 
