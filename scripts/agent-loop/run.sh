@@ -27,7 +27,7 @@ LEAD_MODEL="${AGENT_LOOP_LEAD_MODEL:-opus}"
 ABORT_FILE="$SCRIPT_DIR/abort"
 
 read -r -d '' PROMPT <<EOF || true
-Look at the open GitHub issues for this repo and decide what issue or set of issues comes next.
+Look at the open GitHub issues for this repo and decide what issue or set of issues comes next (try to batch some issues if they are super small).
 
 Then do the full workflow for that one issue:
 1. Implement it (read the issue, PLANNING.md, AGENTS.md).
