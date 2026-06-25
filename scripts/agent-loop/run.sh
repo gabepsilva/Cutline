@@ -8,7 +8,8 @@
 #   AGENT_LOOP_INTERVAL       seconds between polls when idle (default: 30)
 #   AGENT_LOOP_CYCLE_PAUSE    seconds after a full cycle (default: 60)
 #   CURSOR_AGENT_BIN          default: cursor-agent
-#   AGENT_LOOP_MODEL          optional --model for cursor-agent
+#   AGENT_LOOP_MODEL          cursor-agent --model (default: auto)
+#   AGENT_LOOP_LEAD_MODEL     claude --model (default: opus)
 #   LEAD_AGENT_BIN            default: claude
 #   AGENT_LOOP_WORKSPACE      default: repo root
 
@@ -21,10 +22,12 @@ AGENT_BIN="${CURSOR_AGENT_BIN:-cursor-agent}"
 LEAD_BIN="${LEAD_AGENT_BIN:-claude}"
 INTERVAL="${AGENT_LOOP_INTERVAL:-30}"
 CYCLE_PAUSE="${AGENT_LOOP_CYCLE_PAUSE:-60}"
+CURSOR_MODEL="${AGENT_LOOP_MODEL:-auto}"
+LEAD_MODEL="${AGENT_LOOP_LEAD_MODEL:-opus}"
 ABORT_FILE="$SCRIPT_DIR/abort"
 
 read -r -d '' PROMPT <<EOF || true
-Look at the open GitHub issues for this repo and decide what comes next.
+Look at the open GitHub issues for this repo and decide what issue or set of issues comes next.
 
 Then do the full workflow for that one issue:
 1. Implement it (read the issue, PLANNING.md, AGENTS.md).
@@ -54,18 +57,18 @@ Review the latest updated pull request:
 Work autonomously. When merge and post-merge CI/deploy look good, stop.
 EOF
 
-agent_args=(-p --trust --yolo --approve-mcps --workspace "$WORKSPACE")
-[[ -n "${AGENT_LOOP_MODEL:-}" ]] && agent_args+=(--model "$AGENT_LOOP_MODEL")
+agent_args=(-p --trust --yolo --approve-mcps --workspace "$WORKSPACE" --model "$CURSOR_MODEL")
+lead_args=(-p --dangerously-skip-permissions --model "$LEAD_MODEL")
 
 has_open_issues() {
 	[[ $(gh issue list --state open --limit 1 --json number -q 'length') -gt 0 ]]
 }
 
 run_lead_review() {
-	echo "[$(date -Iseconds)] running lead review ($LEAD_BIN -p)"
+	echo "[$(date -Iseconds)] running lead review ($LEAD_BIN --model $LEAD_MODEL)"
 	cd "$REPO_ROOT"
 	# --dangerously-skip-permissions ≈ cursor-agent --yolo / --force
-	if ! "$LEAD_BIN" -p --dangerously-skip-permissions "$LEAD_PROMPT"; then
+	if ! "$LEAD_BIN" "${lead_args[@]}" "$LEAD_PROMPT" < /dev/null; then
 		echo "[$(date -Iseconds)] WARN: lead review exited non-zero — continuing loop"
 		return 1
 	fi
@@ -74,9 +77,9 @@ run_lead_review() {
 
 run_agent() {
 	rm -f "$ABORT_FILE"
-	echo "[$(date -Iseconds)] open issues found — running cursor-agent"
+	echo "[$(date -Iseconds)] open issues found — running cursor-agent (--model $CURSOR_MODEL)"
 	# shellcheck disable=SC2068
-	"$AGENT_BIN" "${agent_args[@]}" "$PROMPT"
+	"$AGENT_BIN" "${agent_args[@]}" "$PROMPT" < /dev/null
 
 	if [[ -f "$ABORT_FILE" ]]; then
 		echo "[$(date -Iseconds)] abort file present — exiting loop"
@@ -90,7 +93,7 @@ run_agent() {
 	sleep "$CYCLE_PAUSE"
 }
 
-echo "[$(date -Iseconds)] agent-loop started (poll every ${INTERVAL}s)"
+echo "[$(date -Iseconds)] agent-loop started (poll every ${INTERVAL}s, cursor=$CURSOR_MODEL, lead=$LEAD_MODEL)"
 
 while true; do
 	if has_open_issues; then
