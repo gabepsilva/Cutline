@@ -6,19 +6,8 @@
 	import Timeline from '$lib/components/editor/timeline/Timeline.svelte';
 	import TranscriptPanel from '$lib/components/editor/transcript/TranscriptPanel.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
-	import {
-		captionWordsForCurrentSentence,
-		rulerTicks,
-		trackClips,
-		trimmedLabel,
-		waveformBars
-	} from '$lib/editor/editor-derive';
+	import { captionWordsForCurrentSentence, trimmedLabel } from '$lib/editor/editor-derive';
 	import { EditorState } from '$lib/editor/editor-state.svelte';
-	import {
-		toTimelineBars,
-		toTimelineClips,
-		toTimelineTicks
-	} from '$lib/editor/editor-timeline-view';
 	import type { EditorProjectLoad } from '$lib/mocks/editor.mock';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 
@@ -32,14 +21,6 @@
 
 	const selectedWord = $derived(
 		editor.selectedId ? editor.words.find((word) => word.id === editor.selectedId) : null
-	);
-
-	const timelineTicks = $derived(toTimelineTicks(rulerTicks(editor.duration)));
-	const timelineBars = $derived(
-		toTimelineBars(waveformBars(editor.active, editor.startMap, editor.duration))
-	);
-	const timelineClips = $derived(
-		toTimelineClips(trackClips(editor.words, editor.startMap, editor.duration))
 	);
 
 	const captionTokens = $derived(
@@ -85,13 +66,7 @@
 					oncaptionstylechange={(style) => (editor.captionStyle = style)}
 				/>
 			</div>
-			<Timeline
-				ticks={timelineTicks}
-				bars={timelineBars}
-				clips={timelineClips}
-				playheadPercent={editor.playheadPct}
-				resourceCount={editor.resources.length}
-			/>
+			<Timeline {editor} />
 		{:else}
 			<EmptyState
 				title="No transcript yet"

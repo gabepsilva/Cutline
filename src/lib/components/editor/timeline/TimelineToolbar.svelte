@@ -4,6 +4,7 @@
 	interface Props {
 		resourceCount?: number;
 		snapEnabled?: boolean;
+		snapDisabled?: boolean;
 		zoomThumbPercent?: number;
 		onrecord?: () => void;
 		onmedia?: () => void;
@@ -14,6 +15,7 @@
 	let {
 		resourceCount = 0,
 		snapEnabled = true,
+		snapDisabled = false,
 		zoomThumbPercent = 38,
 		onrecord,
 		onmedia,
@@ -64,7 +66,13 @@
 
 		<div class="timeline-toolbar__snap">
 			<span class="timeline-toolbar__snap-label">Snap</span>
-			<Toggle label="Snap" size="sm" checked={snapEnabled} onchange={onsnapchange} />
+			<Toggle
+				label="Snap"
+				size="sm"
+				checked={snapEnabled}
+				disabled={snapDisabled}
+				onchange={onsnapchange}
+			/>
 		</div>
 	</div>
 </header>

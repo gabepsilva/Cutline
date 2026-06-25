@@ -3,6 +3,7 @@ import {
 	buildStartMap,
 	clampTime,
 	currentWordId as deriveCurrentWordId,
+	seekTimeFromTimelineClick,
 	totalDuration
 } from '$lib/editor/editor-derive';
 import type { ExportPhase, RecordPhase } from '$lib/types/editor';
@@ -84,6 +85,10 @@ export class EditorState {
 
 	seek = (time: number) => {
 		this.currentTime = clampTime(time, this.duration);
+	};
+
+	seekFromTimelineClick = (event: MouseEvent) => {
+		this.seek(seekTimeFromTimelineClick(event, this.duration));
 	};
 
 	/** Advance playback — call from `startEditorPlaybackLoop` (M5-11). */
