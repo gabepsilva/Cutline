@@ -8,6 +8,7 @@ import {
 	rulerTicks,
 	totalDuration,
 	trackClips,
+	trimmedLabel,
 	waveformBars,
 	WORD_GAP
 } from './editor-derive';
@@ -145,8 +146,8 @@ describe('editor-derive', () => {
 	describe('captionWords', () => {
 		it('marks the current word for karaoke styling', () => {
 			const tokens = captionWords(fixtureTranscriptWords, 'w1', 'karaoke');
-			expect(tokens.find((t) => t.display.startsWith('so,'))?.isCurrent).toBe(true);
-			expect(tokens.find((t) => t.display.startsWith('Okay'))?.isCurrent).toBe(false);
+			expect(tokens.find((t) => t.id === 'w1')?.isCurrent).toBe(true);
+			expect(tokens.find((t) => t.id === 'w0')?.isCurrent).toBe(false);
 		});
 
 		it('omits deleted words', () => {
@@ -155,6 +156,16 @@ describe('editor-derive', () => {
 			);
 			const tokens = captionWords(words, null, 'clean');
 			expect(tokens.some((t) => t.display.includes('um'))).toBe(false);
+		});
+	});
+
+	describe('trimmedLabel', () => {
+		it('returns original cut when nothing was deleted', () => {
+			expect(trimmedLabel(0)).toBe('Original cut');
+		});
+
+		it('returns trimmed count when words were deleted', () => {
+			expect(trimmedLabel(3)).toBe('−3 words trimmed');
 		});
 	});
 });
