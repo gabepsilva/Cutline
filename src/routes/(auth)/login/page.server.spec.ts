@@ -49,7 +49,7 @@ describe('login/+page.server', () => {
 	});
 
 	it('signInEmail redirects after a successful sign-in', async () => {
-		signInEmail.mockResolvedValueOnce({} as Awaited<ReturnType<typeof signInEmail>>);
+		signInEmail.mockResolvedValueOnce({} as never);
 
 		try {
 			await actions.signInEmail?.(
@@ -98,7 +98,7 @@ describe('login/+page.server', () => {
 	});
 
 	it('signInSocial redirects to the provider URL', async () => {
-		signInSocial.mockResolvedValueOnce({ url: 'https://github.com/login/oauth' });
+		signInSocial.mockResolvedValueOnce({ url: 'https://github.com/login/oauth' } as never);
 
 		try {
 			await actions.signInSocial?.(createActionEvent({ provider: 'github', callbackURL: '/' }));
@@ -109,7 +109,7 @@ describe('login/+page.server', () => {
 	});
 
 	it('signInSocial fails when the provider does not return a URL', async () => {
-		signInSocial.mockResolvedValueOnce({ url: undefined });
+		signInSocial.mockResolvedValueOnce({ url: undefined } as never);
 
 		const result = await actions.signInSocial?.(createActionEvent({ provider: 'github' }));
 

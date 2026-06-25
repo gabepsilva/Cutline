@@ -47,7 +47,7 @@ describe('signup/+page.server', () => {
 	});
 
 	it('signUpEmail redirects after a successful registration', async () => {
-		signUpEmail.mockResolvedValueOnce({} as Awaited<ReturnType<typeof signUpEmail>>);
+		signUpEmail.mockResolvedValueOnce({} as never);
 
 		try {
 			await actions.signUpEmail?.(
