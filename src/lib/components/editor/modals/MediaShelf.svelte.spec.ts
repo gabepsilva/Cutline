@@ -49,4 +49,12 @@ describe('MediaShelf.svelte', () => {
 		expect(onresourceclick).toHaveBeenCalledOnce();
 		expect(onresourceclick).toHaveBeenCalledWith(mockMediaResources[1]);
 	});
+
+	it('renders gracefully with an empty resource list', async () => {
+		render(MediaShelfHarness, { open: true, resources: [] });
+
+		await expect.element(page.getByRole('region', { name: 'Media library' })).toBeInTheDocument();
+		await expect.element(page.getByRole('button', { name: 'Record new' })).toBeInTheDocument();
+		await expect.element(page.getByText(mockMediaResources[0].name)).not.toBeInTheDocument();
+	});
 });

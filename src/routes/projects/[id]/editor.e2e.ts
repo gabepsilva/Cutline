@@ -98,4 +98,34 @@ test.describe('editor route', () => {
 		await page.keyboard.press('Backspace');
 		await expect(page.getByRole('button', { name: 'people, current' })).toBeVisible();
 	});
+
+	test('media shelf opens and adds a clip to the timeline', async ({ page }) => {
+		await page.goto('/projects/proj-hero');
+
+		await page.getByRole('button', { name: /Media ·/ }).click();
+		await expect(page.getByRole('region', { name: 'Media library' })).toBeVisible();
+		await expect(page.getByText('City timelapse')).toBeVisible();
+
+		await page.getByRole('button', { name: 'City timelapse' }).click();
+		await expect(page.getByRole('region', { name: 'Media library' })).not.toBeVisible();
+	});
+
+	test('export modal runs through config and progress states', async ({ page }) => {
+		await page.goto('/projects/proj-hero');
+
+		await page.getByRole('button', { name: 'Export' }).click();
+		await expect(page.getByRole('dialog', { name: 'Export video' })).toBeVisible();
+		await expect(page.getByRole('button', { name: /Export ·/ })).toBeVisible();
+
+		await page.getByRole('button', { name: /Export ·/ }).click();
+		await expect(page.getByText('Exporting…')).toBeVisible();
+	});
+
+	test('record modal opens from timeline toolbar', async ({ page }) => {
+		await page.goto('/projects/proj-hero');
+
+		await page.getByRole('region', { name: 'Timeline' }).getByRole('button', { name: 'Record' }).click();
+		await expect(page.getByRole('dialog', { name: 'Record' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Start recording' })).toBeVisible();
+	});
 });

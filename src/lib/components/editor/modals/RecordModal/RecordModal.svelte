@@ -17,6 +17,8 @@
 		reviewName?: string;
 		reviewDurationLabel?: string;
 		reviewThumb?: string;
+		camDenied?: boolean;
+		onvideomount?: (el: HTMLVideoElement | null) => void;
 		onclose?: () => void;
 		onsourcechange?: (source: RecordSource) => void;
 		onstart?: () => void;
@@ -37,6 +39,8 @@
 		reviewName = 'New recording',
 		reviewDurationLabel = '0:12',
 		reviewThumb = 'repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px)',
+		camDenied = true,
+		onvideomount,
 		onclose,
 		onsourcechange,
 		onstart,
@@ -66,7 +70,14 @@
 			{onaddtotimeline}
 		/>
 	{:else}
-		<RecordPreview {recording} {countingDown} {countdown} {elapsedLabel} />
+		<RecordPreview
+			{recording}
+			{countingDown}
+			{countdown}
+			{elapsedLabel}
+			simulated={camDenied}
+			{onvideomount}
+		/>
 		<RecordSourceTabs selected={source} onselect={onsourcechange} />
 
 		{#if idle}

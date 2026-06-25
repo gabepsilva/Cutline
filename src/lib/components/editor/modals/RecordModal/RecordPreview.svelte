@@ -7,6 +7,7 @@
 		countdown?: number;
 		elapsedLabel?: string;
 		simulated?: boolean;
+		onvideomount?: (el: HTMLVideoElement | null) => void;
 		class?: string;
 	}
 
@@ -16,12 +17,21 @@
 		countdown = 3,
 		elapsedLabel = '0:00',
 		simulated = true,
+		onvideomount,
 		class: className = ''
 	}: Props = $props();
+
+	let videoEl = $state<HTMLVideoElement | null>(null);
+
+	$effect(() => {
+		onvideomount?.(videoEl);
+	});
 </script>
 
 <div class={['record-preview', className]}>
-	{#if simulated}
+	{#if !simulated}
+		<video bind:this={videoEl} class="record-preview__video" autoplay muted playsinline></video>
+	{:else}
 		<div class="record-preview__simulated" aria-hidden="true">
 			<div class="record-preview__simulated-glow"></div>
 			<div class="record-preview__simulated-subject"></div>
@@ -52,6 +62,14 @@
 		background: var(--surface-base);
 		border: 1px solid var(--border-4);
 		margin-bottom: 16px;
+	}
+
+	.record-preview__video {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 
 	.record-preview__simulated {

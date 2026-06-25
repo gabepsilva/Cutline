@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import EditorLayout from '$lib/components/editor/EditorLayout.svelte';
+	import EditorModals from '$lib/components/editor/EditorModals.svelte';
 	import PreviewPanel from '$lib/components/editor/preview/PreviewPanel.svelte';
 	import Timeline from '$lib/components/editor/timeline/Timeline.svelte';
 	import TranscriptPanel from '$lib/components/editor/transcript/TranscriptPanel.svelte';
@@ -63,39 +64,42 @@
 <EditorLayout title={project.title} {meta} {editor} onback={() => goto(resolve('/'))}>
 	<div class="editor-workspace" data-testid="editor-workspace">
 		{#if hasTranscript}
-			<div class="editor-workspace__panels">
-				<TranscriptPanel
-					sentences={editor.sentences}
-					{speaker}
-					searchQuery={editor.query}
-					fillerCount={editor.fillerCount}
-					hasSelection={selectedWord !== null && selectedWord !== undefined}
-					selectedText={selectedWord?.text ?? ''}
-					deleteLabel={selectedWord?.deleted ? 'Restore word' : 'Delete word'}
-					currentWordId={editor.currentWordId}
-					selectedWordId={editor.selectedId}
-					onsearch={(event) => editor.setQuery(event.currentTarget.value)}
-					onremovefillers={() => editor.removeFillers()}
-					ondelete={() => editor.deleteSelected()}
-					onsentenceclick={(sentence) => editor.seekSentence(sentence)}
-					onwordclick={(word) => editor.selectWord(word)}
-				/>
-				<PreviewPanel
-					playing={editor.playing}
-					currentTime={editor.clampedTime}
-					{totalLabel}
-					{savedLabel}
-					deletedCount={editor.deletedCount}
-					wordCount={editor.active.length}
-					{captionTokens}
-					captionStyle={editor.captionStyle}
-					showCaptions={editor.showCaptions}
-					{videoUrl}
-					ontogglePlay={() => editor.togglePlay()}
-					oncaptionstylechange={(style) => (editor.captionStyle = style)}
-				/>
+			<div class="editor-workspace__stage">
+				<div class="editor-workspace__panels">
+					<TranscriptPanel
+						sentences={editor.sentences}
+						{speaker}
+						searchQuery={editor.query}
+						fillerCount={editor.fillerCount}
+						hasSelection={selectedWord !== null && selectedWord !== undefined}
+						selectedText={selectedWord?.text ?? ''}
+						deleteLabel={selectedWord?.deleted ? 'Restore word' : 'Delete word'}
+						currentWordId={editor.currentWordId}
+						selectedWordId={editor.selectedId}
+						onsearch={(event) => editor.setQuery(event.currentTarget.value)}
+						onremovefillers={() => editor.removeFillers()}
+						ondelete={() => editor.deleteSelected()}
+						onsentenceclick={(sentence) => editor.seekSentence(sentence)}
+						onwordclick={(word) => editor.selectWord(word)}
+					/>
+					<PreviewPanel
+						playing={editor.playing}
+						currentTime={editor.clampedTime}
+						{totalLabel}
+						{savedLabel}
+						deletedCount={editor.deletedCount}
+						wordCount={editor.active.length}
+						{captionTokens}
+						captionStyle={editor.captionStyle}
+						showCaptions={editor.showCaptions}
+						{videoUrl}
+						ontogglePlay={() => editor.togglePlay()}
+						oncaptionstylechange={(style) => (editor.captionStyle = style)}
+					/>
+				</div>
+				<Timeline {editor} />
+				<EditorModals {editor} projectTitle={project.title} />
 			</div>
-			<Timeline {editor} />
 		{:else}
 			<EmptyState
 				title="No transcript yet"
@@ -114,6 +118,15 @@
 		flex: 1;
 		min-width: 0;
 		min-height: 0;
+	}
+
+	.editor-workspace__stage {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-height: 0;
+		min-width: 0;
 	}
 
 	.editor-workspace__panels {
