@@ -30,10 +30,14 @@ migrations at startup, and serves the K8s probe at `GET /healthz`.
 Secrets are synced by the cluster's **1Password operator** (`OnePasswordItem` CRDs in
 `base/`). No manual `kubectl create secret` for app or registry credentials.
 
-| 1Password item (homelab7)              | K8s Secret        | Field / type                |
-| -------------------------------------- | ----------------- | --------------------------- |
-| `Cutline-PROD`                         | `cutline-app`     | text field labeled `dotenv` |
-| `GHCR pull cutline kubernetes`         | `cutline-regcred` | `.dockerconfigjson`         |
+All secrets live in **one** 1Password item, `Cutline-PROD`; each `OnePasswordItem` CRD syncs
+it into a separate K8s Secret (every field syncs to both, so each Secret carries one unused
+extra key — harmless):
+
+| 1Password item (homelab7) | K8s Secret        | Field used          |
+| ------------------------- | ----------------- | ------------------- |
+| `Cutline-PROD`            | `cutline-app`     | `dotenv`            |
+| `Cutline-PROD`            | `cutline-regcred` | `.dockerconfigjson` |
 
 The `dotenv` field holds `KEY=value` lines. The operator syncs it to Secret key `dotenv`,
 the Deployment mounts it as `/app/.env`, and **Bun auto-loads `.env` from the working dir
