@@ -29,4 +29,17 @@ describe('TimelineClip.svelte', () => {
 
 		await expect.element(page.getByText('today we are going to')).toBeInTheDocument();
 	});
+
+	it('renders a caption clip with an empty label without crashing', async () => {
+		render(TimelineClipHarness, {
+			variant: 'caption',
+			clip: { leftPct: 0, widthPct: 0, label: '' }
+		});
+
+		const clip = document.querySelector<HTMLElement>('.timeline-clip--caption');
+		expect(clip).not.toBeNull();
+		expect(clip?.querySelector('.timeline-clip__label')?.textContent).toBe('');
+		expect(clip?.style.left).toBe('0%');
+		expect(clip?.style.width).toBe('0%');
+	});
 });
