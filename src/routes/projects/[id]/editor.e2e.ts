@@ -33,4 +33,20 @@ test.describe('editor route', () => {
 		await playButton.click();
 		await expect(transport.getByRole('button', { name: 'Pause' })).toBeVisible();
 	});
+
+	test('timeline lane click seeks playback', async ({ page }) => {
+		await page.goto('/projects/proj-hero');
+
+		const transport = page.getByRole('group', { name: 'Transport controls' });
+		const currentTime = transport.locator('.timecode-display__current');
+		await expect(currentTime).toHaveText('0:00');
+
+		const timelineLanes = page.getByRole('button', { name: 'Timeline tracks' });
+		const box = await timelineLanes.boundingBox();
+		expect(box).not.toBeNull();
+		if (!box) return;
+
+		await timelineLanes.click({ position: { x: box.width * 0.75, y: box.height * 0.5 } });
+		await expect(currentTime).not.toHaveText('0:00');
+	});
 });

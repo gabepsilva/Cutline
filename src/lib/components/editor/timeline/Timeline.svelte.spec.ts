@@ -1,7 +1,22 @@
 import { page, userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
+import { EditorState } from '$lib/editor/editor-state.svelte';
+import { fixtureSentence, fixtureTranscriptWords } from '$lib/test/fixtures';
 import { render } from '$lib/test/render';
+import TimelineEditorHarness from './TimelineEditor.harness.svelte';
 import TimelineHarness from './Timeline.harness.svelte';
+
+function createEditorState() {
+	return new EditorState({
+		words: fixtureTranscriptWords.map((w) => ({ ...w })),
+		sentences: [
+			{
+				...fixtureSentence,
+				words: fixtureTranscriptWords.map((w) => ({ ...w }))
+			}
+		]
+	});
+}
 
 describe('Timeline.svelte', () => {
 	it('renders timeline region with track labels and ruler ticks', async () => {
@@ -32,10 +47,36 @@ describe('Timeline.svelte', () => {
 
 		await userEvent.click(page.getByRole('button', { name: 'Record' }));
 		await userEvent.click(page.getByRole('button', { name: /Media ·/ }));
-		await userEvent.click(page.getByText('0:00'));
+		await userEvent.click(page.getByRole('button', { name: 'Timeline tracks' }));
 
 		expect(onrecord).toHaveBeenCalledOnce();
 		expect(onmedia).toHaveBeenCalledOnce();
 		expect(onseek).toHaveBeenCalledOnce();
+	});
+
+	it('derives track clips from EditorState', async () => {
+		render(TimelineEditorHarness, { editor: createEditorState() });
+
+		await expect.element(page.getByText('Okay', { exact: false })).toBeInTheDocument();
+	});
+
+	it('wires lane click to EditorState.seekFromTimelineClick', async () => {
+		const editor = createEditorState();
+		render(TimelineEditorHarness, { editor });
+
+		await userEvent.click(page.getByRole('button', { name: 'Timeline tracks' }));
+
+		expect(editor.currentTime).toBeGreaterThan(0);
+	});
+
+	it('wires Record and Media toolbar actions to EditorState', async () => {
+		const editor = createEditorState();
+		render(TimelineEditorHarness, { editor });
+
+		await userEvent.click(page.getByRole('button', { name: 'Record' }));
+		expect(editor.recordPhase).toBe('live');
+
+		await userEvent.click(page.getByRole('button', { name: /Media ·/ }));
+		expect(editor.showMedia).toBe(true);
 	});
 });

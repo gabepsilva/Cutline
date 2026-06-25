@@ -40,6 +40,21 @@ describe('EditorState', () => {
 		expect(editor.currentTime).toBe(editor.duration);
 	});
 
+	it('seeks from a timeline lane click', () => {
+		const editor = createEditor();
+		const target = {
+			getBoundingClientRect: () => ({ left: 0, width: 200 })
+		};
+		const event = {
+			currentTarget: target,
+			clientX: 100
+		} as unknown as MouseEvent;
+
+		editor.seekFromTimelineClick(event);
+
+		expect(editor.currentTime).toBeCloseTo(editor.duration / 2, 5);
+	});
+
 	it('advances time while playing and stops at the end', () => {
 		const editor = createEditor();
 		editor.playing = true;

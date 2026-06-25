@@ -34,6 +34,16 @@ export function clampTime(time: number, duration: number): number {
 	return Math.min(Math.max(0, safe), duration);
 }
 
+/** Map a timeline lane click to a seek time — mirrors design `onTimelineClick`. */
+export function seekTimeFromTimelineClick(event: MouseEvent, duration: number): number {
+	const target = event.currentTarget;
+	if (!target || typeof (target as Element).getBoundingClientRect !== 'function') return 0;
+	const rect = (target as Element).getBoundingClientRect();
+	if (rect.width <= 0) return 0;
+	const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+	return clampTime(ratio * duration, duration);
+}
+
 /** Word under the playhead, or first/last active word at the edges. */
 export function currentWordId(
 	active: Word[],

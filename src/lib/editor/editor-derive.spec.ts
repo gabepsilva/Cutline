@@ -6,6 +6,7 @@ import {
 	clampTime,
 	currentWordId,
 	rulerTicks,
+	seekTimeFromTimelineClick,
 	totalDuration,
 	trackClips,
 	trimmedLabel,
@@ -61,6 +62,31 @@ describe('editor-derive', () => {
 
 		it('treats non-finite input as zero', () => {
 			expect(clampTime(NaN, 10)).toBe(0);
+		});
+	});
+
+	describe('seekTimeFromTimelineClick', () => {
+		function timelineClick(clientX: number, width = 200) {
+			const target = {
+				getBoundingClientRect: () => ({ left: 0, width })
+			};
+			return {
+				currentTarget: target,
+				clientX
+			} as unknown as MouseEvent;
+		}
+
+		it('maps click position to a time within duration', () => {
+			expect(seekTimeFromTimelineClick(timelineClick(100), 10)).toBe(5);
+		});
+
+		it('clamps clicks outside the lane bounds', () => {
+			expect(seekTimeFromTimelineClick(timelineClick(-20), 10)).toBe(0);
+			expect(seekTimeFromTimelineClick(timelineClick(300), 10)).toBe(10);
+		});
+
+		it('returns zero when the lane has no width', () => {
+			expect(seekTimeFromTimelineClick(timelineClick(50, 0), 10)).toBe(0);
 		});
 	});
 

@@ -1,36 +1,29 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import { rulerTicks, trackClips, waveformBars } from '$lib/editor/editor-derive';
+	import {
+		toTimelineBars,
+		toTimelineClips,
+		toTimelineTicks
+	} from '$lib/editor/editor-timeline-view';
 	import TimelinePlayhead from './TimelinePlayhead.svelte';
 	import TimelineRuler from './TimelineRuler.svelte';
 	import TimelineToolbar from './TimelineToolbar.svelte';
 	import TimelineClip from './TimelineClip.svelte';
 	import TimelineTrack from './TimelineTrack.svelte';
 	import { parsePercent } from '$lib/types/timeline';
-	import type {
-		TimelineBar,
-		TimelineClipPlaceholder,
-		TimelineTick,
-		TimelineTrackLabel
-	} from './Timeline.types';
+	import type { TimelineClipPlaceholder, TimelineProps } from './Timeline.types';
 	import TimelineWaveform from './TimelineWaveform.svelte';
 
-	interface Props {
-		ticks: TimelineTick[];
-		bars: TimelineBar[];
-		clips: TimelineClipPlaceholder[];
-		playheadPercent: number;
-		resourceCount?: number;
-		snapEnabled?: boolean;
-		brollEmpty?: boolean;
-		trackLabels?: TimelineTrackLabel[];
-		onrecord?: () => void;
-		onmedia?: () => void;
-		onsnapchange?: (enabled: boolean) => void;
-		onseek?: (event: MouseEvent) => void;
-		class?: string;
-	}
+	const defaultTrackLabels: NonNullable<TimelineProps['trackLabels']> = [
+		{ id: 'broll', label: 'B-ROLL', variant: 'broll' },
+		{ id: 'v1', label: 'V1' },
+		{ id: 'a1', label: 'A1' },
+		{ id: 'cc', label: 'CC' }
+	];
 
 	let {
+		editor,
 		ticks,
 		bars,
 		clips,
@@ -38,22 +31,35 @@
 		resourceCount = 0,
 		snapEnabled = true,
 		brollEmpty = true,
-		trackLabels = [
-			{ id: 'broll', label: 'B-ROLL', variant: 'broll' },
-			{ id: 'v1', label: 'V1' },
-			{ id: 'a1', label: 'A1' },
-			{ id: 'cc', label: 'CC' }
-		],
+		trackLabels = defaultTrackLabels,
 		onrecord,
 		onmedia,
 		onsnapchange,
 		onseek,
 		class: className = ''
-	}: Props = $props();
+	}: TimelineProps = $props();
 
-	function handleLanesClick(event: MouseEvent) {
-		onseek?.(event);
-	}
+	const resolvedTicks = $derived(
+		editor ? toTimelineTicks(rulerTicks(editor.duration)) : (ticks ?? [])
+	);
+	const resolvedBars = $derived(
+		editor
+			? toTimelineBars(waveformBars(editor.active, editor.startMap, editor.duration))
+			: (bars ?? [])
+	);
+	const resolvedClips = $derived(
+		editor
+			? toTimelineClips(trackClips(editor.words, editor.startMap, editor.duration))
+			: (clips ?? [])
+	);
+	const resolvedPlayheadPercent = $derived(editor ? editor.playheadPct : (playheadPercent ?? 0));
+	const resolvedResourceCount = $derived(editor ? editor.resources.length : resourceCount);
+	const resolvedBrollEmpty = $derived(editor ? editor.overlays.length === 0 : brollEmpty);
+
+	const handleRecord = () => (editor ? editor.openRecord() : onrecord?.());
+	const handleMedia = () => (editor ? editor.toggleMedia() : onmedia?.());
+	const handleSeek = (event: MouseEvent) =>
+		editor ? editor.seekFromTimelineClick(event) : onseek?.(event);
 
 	function placeholderToClip(clip: TimelineClipPlaceholder) {
 		return {
@@ -65,7 +71,13 @@
 </script>
 
 <section class={['timeline', className]} aria-label="Timeline">
-	<TimelineToolbar {resourceCount} {snapEnabled} {onrecord} {onmedia} {onsnapchange} />
+	<TimelineToolbar
+		resourceCount={resolvedResourceCount}
+		{snapEnabled}
+		onrecord={handleRecord}
+		onmedia={handleMedia}
+		{onsnapchange}
+	/>
 
 	<div class="timeline__body">
 		<div class="timeline__labels" aria-hidden="true">
@@ -84,13 +96,13 @@
 			type="button"
 			class="timeline__lanes"
 			aria-label="Timeline tracks"
-			disabled={!onseek}
-			onclick={handleLanesClick}
+			disabled={!editor && !onseek}
+			onclick={handleSeek}
 		>
-			<TimelineRuler {ticks} />
+			<TimelineRuler ticks={resolvedTicks} />
 
 			<TimelineTrack>
-				{#if brollEmpty}
+				{#if resolvedBrollEmpty}
 					<EmptyState
 						title="Record or add B-roll — clips drop here at the playhead"
 						align="start"
@@ -99,22 +111,22 @@
 			</TimelineTrack>
 
 			<TimelineTrack>
-				{#each clips as clip (clip.id)}
+				{#each resolvedClips as clip (clip.id)}
 					<TimelineClip id={clip.id} clip={placeholderToClip(clip)} variant="video" />
 				{/each}
 			</TimelineTrack>
 
 			<TimelineTrack variant="waveform" padded={false}>
-				<TimelineWaveform {bars} playedPercent={playheadPercent} />
+				<TimelineWaveform bars={resolvedBars} playedPercent={resolvedPlayheadPercent} />
 			</TimelineTrack>
 
 			<TimelineTrack>
-				{#each clips as clip (clip.id)}
+				{#each resolvedClips as clip (clip.id)}
 					<TimelineClip id={clip.id} clip={placeholderToClip(clip)} variant="caption" />
 				{/each}
 			</TimelineTrack>
 
-			<TimelinePlayhead positionPercent={playheadPercent} />
+			<TimelinePlayhead positionPercent={resolvedPlayheadPercent} />
 		</button>
 	</div>
 </section>
