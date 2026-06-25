@@ -4,6 +4,15 @@
 # every start, including the ephemeral SQLite used on Kubernetes.
 set -eu
 
+# 1Password operator mounts dotenv at /app/.env; Bun does not auto-load it for
+# `bun /app/build/index.js`, so export vars before migrate + server start.
+if [ -f /app/.env ]; then
+	set -a
+	# shellcheck disable=SC1091
+	. /app/.env
+	set +a
+fi
+
 echo "[entrypoint] applying database migrations..."
 bun /app/scripts/migrate.mjs
 

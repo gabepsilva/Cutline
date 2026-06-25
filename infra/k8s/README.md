@@ -7,7 +7,7 @@ Layout (kustomize):
 
 ```
 infra/k8s/
-  base/            namespace, configmap, deployment, service, certificate, ingress
+  base/            namespace, configmap, OnePasswordItems, deployment, service, certificate, ingress
   overlays/prod/   namespace + image tag pin
 ```
 
@@ -16,7 +16,8 @@ infra/k8s/
 | Source                     | Keys                                                                                    |
 | -------------------------- | --------------------------------------------------------------------------------------- |
 | ConfigMap `cutline-config` | `ORIGIN=https://cutline.i.psilva.org`, `PORT=3000`, `DATABASE_URL=file:/tmp/cutline.db` |
-| Secret `cutline-app`       | `BETTER_AUTH_SECRET` (32+ chars)                                                        |
+| Secret `cutline-app`       | `dotenv` — mounted at `/app/.env`; Bun loads at startup (see **1Password** below)       |
+| Secret `cutline-regcred`   | `kubernetes.io/dockerconfigjson` — GHCR image pulls                                     |
 
 The image (`@sveltejs/adapter-node`) listens on `0.0.0.0:3000`, applies drizzle
 migrations at startup, and serves the K8s probe at `GET /healthz`.
@@ -24,21 +25,47 @@ migrations at startup, and serves the K8s probe at `GET /healthz`.
 > **Ephemeral data:** the database is SQLite on the pod's `emptyDir` `/tmp` — it is
 > wiped on every restart. A persistent DB and GitHub OAuth are deferred (see PLANNING.md).
 
-## One-time bootstrap
+## 1Password operator
+
+Secrets are synced by the cluster's **1Password operator** (`OnePasswordItem` CRDs in
+`base/`). No manual `kubectl create secret` for app or registry credentials.
+
+| 1Password item (homelab7) | K8s Secret       | Field / type              |
+| ------------------------- | ---------------- | ------------------------- |
+| `Cutline-PROD`            | `cutline-app`    | text field labeled `dotenv` |
+| `GHCR pull jpegs3 kubernetes` (shared) | `cutline-regcred` | `.dockerconfigjson` |
+
+**`dotenv` content** (in the labeled field, not the Secure Note body alone):
+
+```dotenv
+BETTER_AUTH_SECRET=<32+ chars>
+```
+
+The operator maps **labeled fields** to Secret keys. A note body without a `dotenv` field
+syncs an empty Secret. ConfigMap env vars take precedence over the same key in `.env`.
+
+Refresh `spec.itemPath` in the YAML if an item is recreated:
 
 ```sh
-# 1) Namespace + manifests
-kubectl apply -k infra/k8s/overlays/prod
-
-# 2) App secret (NOT in git) — generate a strong value once
-kubectl -n cutline create secret generic cutline-app \
-  --from-literal=BETTER_AUTH_SECRET="$(openssl rand -base64 32)"
-
-# 3) GHCR pull secret — required (the ghcr.io/gabepsilva/cutline package is private,
-#    and the Deployment references imagePullSecrets: [cutline-regcred]).
-kubectl -n cutline create secret docker-registry cutline-regcred \
-  --docker-server=ghcr.io --docker-username=<gh-user> --docker-password=<token-with-read:packages>
+op item get "Cutline-PROD" --vault homelab7 --format json \
+  | jq -r '"vaults/" + .vault.id + "/items/" + .id'
 ```
+
+Verify sync:
+
+```sh
+kubectl -n cutline get onepassworditems
+kubectl -n cutline get secret cutline-app -o jsonpath='{.data}' | jq 'keys'
+```
+
+## Bootstrap
+
+```sh
+kubectl apply -k infra/k8s/overlays/prod
+```
+
+Wait for `OnePasswordItem` resources to reach `Ready=True` and secrets to populate before
+the Deployment can start cleanly.
 
 ## Deploys
 
