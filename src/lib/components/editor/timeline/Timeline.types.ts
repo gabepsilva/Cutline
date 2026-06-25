@@ -1,4 +1,5 @@
 import type { EditorState } from '$lib/editor/editor-state.svelte';
+import type { Overlay } from '$lib/types/timeline';
 
 export interface TimelineTick {
 	id: string;
@@ -44,6 +45,10 @@ export type TimelineProps = TimelineBase &
 				playheadPercent?: never;
 				resourceCount?: never;
 				brollEmpty?: never;
+				overlays?: never;
+				totalDuration?: never;
+				onoverlayclick?: never;
+				onoverlayremove?: never;
 				onrecord?: never;
 				onmedia?: never;
 				onsnapchange?: never;
@@ -57,6 +62,10 @@ export type TimelineProps = TimelineBase &
 				playheadPercent: number;
 				resourceCount?: number;
 				brollEmpty?: boolean;
+				overlays?: Overlay[];
+				totalDuration?: number;
+				onoverlayclick?: (overlay: Overlay) => void;
+				onoverlayremove?: (id: string) => void;
 				onrecord?: () => void;
 				onmedia?: () => void;
 				onsnapchange?: (enabled: boolean) => void;

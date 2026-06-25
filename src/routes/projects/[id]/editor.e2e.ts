@@ -48,7 +48,7 @@ test.describe('editor route', () => {
 		const currentTime = transport.locator('.timecode-display__current');
 		await expect(currentTime).toHaveText('0:00');
 
-		const timelineLanes = page.getByRole('button', { name: 'Timeline tracks' });
+		const timelineLanes = page.getByRole('group', { name: 'Timeline tracks' });
 		const box = await timelineLanes.boundingBox();
 		expect(box).not.toBeNull();
 

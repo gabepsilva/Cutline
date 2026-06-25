@@ -5,6 +5,7 @@ import type {
 	TimelineClipPlaceholder,
 	TimelineTick
 } from '$lib/components/editor/timeline/Timeline.types';
+import type { Overlay } from '$lib/types/timeline';
 
 const TOTAL_SECONDS = 272;
 
@@ -48,3 +49,23 @@ export const mockTimelineClips: TimelineClipPlaceholder[] = [
 export const mockTimelinePlayheadPercent = 23.897;
 export const mockTimelineResourceCount = 3;
 export const mockTimelineDurationSeconds = TOTAL_SECONDS;
+
+/** B-roll overlays for timeline shell preview until EditorState wiring (M5-12). */
+export const mockTimelineOverlays: Overlay[] = [
+	{
+		id: 'o-r1-0',
+		resId: 'r1',
+		name: 'City timelapse',
+		start: 18,
+		dur: 6,
+		thumb: 'repeating-linear-gradient(135deg,#1c2330 0 11px,#171d28 11px 22px)'
+	},
+	{
+		id: 'o-r2-0',
+		resId: 'r2',
+		name: 'Keyboard close-up',
+		start: 42,
+		dur: 4,
+		thumb: 'repeating-linear-gradient(135deg,#2a2017 0 11px,#221a12 11px 22px)'
+	}
+];
