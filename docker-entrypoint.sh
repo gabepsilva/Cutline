@@ -5,13 +5,10 @@
 set -eu
 
 # 1Password operator mounts dotenv at /app/.env; Bun does not auto-load it for
-# `bun /app/build/index.js`, so export vars before migrate + server start.
-if [ -f /app/.env ]; then
-	set -a
-	# shellcheck disable=SC1091
-	. /app/.env
-	set +a
-fi
+# `bun /app/build/index.js`. Fill only unset vars so ConfigMap env wins (#129).
+# shellcheck disable=SC1091
+. /app/scripts/load-dotenv.sh
+load_dotenv
 
 echo "[entrypoint] applying database migrations..."
 bun /app/scripts/migrate.mjs

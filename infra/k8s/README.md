@@ -42,7 +42,9 @@ BETTER_AUTH_SECRET=<32+ chars>
 ```
 
 The operator maps **labeled fields** to Secret keys. A note body without a `dotenv` field
-syncs an empty Secret. ConfigMap env vars take precedence over the same key in `.env`.
+syncs an empty Secret. **ConfigMap env vars take precedence** over the same key in `.env`
+(`scripts/load-dotenv.sh` only exports unset variables). Stash future Turso keys in dotenv
+before #129 — they are ignored until removed from the ConfigMap.
 
 Refresh `spec.itemPath` in the YAML if an item is recreated:
 
