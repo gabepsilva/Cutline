@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Poll for open GitHub issues; when any exist, run cursor-agent once, then lead review.
+# Poll for open, non-draft GitHub issues; when any exist, run cursor-agent once, then lead review.
 #
 # Usage:
 #   ./scripts/agent-loop/run.sh [--cursor-lead]
@@ -52,7 +52,7 @@ else
 fi
 
 read -r -d '' PROMPT <<EOF || true
-Look at the open GitHub issues for this repo and decide what set of issues comes next (try to batch some issues if they are super small or tackle one issue at a time if they are bigger).
+Look at the open GitHub issues for this repo (ignore issues in draft state) and decide what set of issues comes next (try to batch some issues if they are super small or tackle one issue at a time if they are bigger).
 
 Then do the full workflow for that set of issues (or issue):
 1. Implement it (read the issues, PLANNING.md, AGENTS.md).
@@ -82,7 +82,7 @@ EOF
 agent_args=(-p --trust --yolo --approve-mcps --workspace "$WORKSPACE" --model "$CURSOR_MODEL")
 
 has_open_issues() {
-	[[ $(gh issue list --state open --limit 1 --json number -q 'length') -gt 0 ]]
+	[[ $(gh issue list --search 'is:open is:issue -draft:true' --limit 1 --json number -q 'length') -gt 0 ]]
 }
 
 run_lead_review() {
@@ -124,7 +124,7 @@ while true; do
 	if has_open_issues; then
 		run_agent
 	else
-		echo "[$(date -Iseconds)] no open issues — sleeping ${INTERVAL}s"
+		echo "[$(date -Iseconds)] no actionable issues (open, non-draft) — sleeping ${INTERVAL}s"
 		sleep "$INTERVAL"
 	fi
 done
