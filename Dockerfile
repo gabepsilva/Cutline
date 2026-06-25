@@ -56,7 +56,6 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
 COPY drizzle ./drizzle
 COPY scripts/migrate.mjs ./scripts/migrate.mjs
-COPY scripts/load-dotenv.sh ./scripts/load-dotenv.sh
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 COPY package.json ./package.json
 RUN chmod +x /app/docker-entrypoint.sh

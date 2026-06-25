@@ -4,12 +4,9 @@
 # every start, including the ephemeral SQLite used on Kubernetes.
 set -eu
 
-# 1Password operator mounts dotenv at /app/.env; Bun does not auto-load it for
-# `bun /app/build/index.js`. Fill only unset vars so ConfigMap env wins (#129).
-# shellcheck disable=SC1091
-. /app/scripts/load-dotenv.sh
-load_dotenv
-
+# Secrets arrive as /app/.env (k8s mounts the 1Password-synced Secret blob there;
+# docker/compose can mount or --env-file it). Bun auto-loads .env from CWD (/app) for
+# both commands below — no loader needed. Real env (ConfigMap) wins on conflicts.
 echo "[entrypoint] applying database migrations..."
 bun /app/scripts/migrate.mjs
 

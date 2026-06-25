@@ -13,11 +13,11 @@ infra/k8s/
 
 ## Runtime contract
 
-| Source                     | Keys                                                                                    |
-| -------------------------- | --------------------------------------------------------------------------------------- |
-| ConfigMap `cutline-config` | `ORIGIN=https://cutline.i.psilva.org`, `PORT=3000`, `DATABASE_URL=file:/tmp/cutline.db` |
-| Secret `cutline-app`       | `dotenv` — mounted at `/app/.env`; Bun loads at startup (see **1Password** below)       |
-| Secret `cutline-regcred`   | `kubernetes.io/dockerconfigjson` — GHCR image pulls                                     |
+| Source                     | Keys                                                                                     |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| ConfigMap `cutline-config` | `ORIGIN=https://cutline.i.psilva.org`, `PORT=3000`, `DATABASE_URL=file:/tmp/cutline.db`  |
+| Secret `cutline-app`       | `dotenv` blob — mounted at `/app/.env`; Bun auto-loads it at startup (see **1Password**) |
+| Secret `cutline-regcred`   | `kubernetes.io/dockerconfigjson` — GHCR image pulls                                      |
 
 The image (`@sveltejs/adapter-node`) listens on `0.0.0.0:3000`, applies drizzle
 migrations at startup, and serves the K8s probe at `GET /healthz`.
@@ -35,16 +35,19 @@ Secrets are synced by the cluster's **1Password operator** (`OnePasswordItem` CR
 | `Cutline-PROD`                         | `cutline-app`     | text field labeled `dotenv` |
 | `GHCR pull cutline kubernetes`         | `cutline-regcred` | `.dockerconfigjson`         |
 
-**`dotenv` content** (in the labeled field, not the Secure Note body alone):
+The `dotenv` field holds `KEY=value` lines. The operator syncs it to Secret key `dotenv`,
+the Deployment mounts it as `/app/.env`, and **Bun auto-loads `.env` from the working dir
+(`/app`)** at startup — no loader script, no per-key fields:
 
 ```dotenv
 BETTER_AUTH_SECRET=<32+ chars>
+# DATABASE_URL=libsql://…        (stage for #129; ignored until removed from ConfigMap)
+# DATABASE_AUTH_TOKEN=<turso token>   (stage for #129)
 ```
 
-The operator maps **labeled fields** to Secret keys. A note body without a `dotenv` field
-syncs an empty Secret. **ConfigMap env vars take precedence** over the same key in `.env`
-(`scripts/load-dotenv.sh` only exports unset variables). Stash future Turso keys in dotenv
-before #129 — they are ignored until removed from the ConfigMap.
+**Precedence:** Bun's `.env` does **not** override real environment variables, so ConfigMap
+env wins on a conflict. ConfigMap's `DATABASE_URL=file:/tmp/cutline.db` therefore overrides
+any Turso `DATABASE_URL` staged in the blob until #129 drops it from the ConfigMap.
 
 Refresh `spec.itemPath` in the YAML if an item is recreated:
 
