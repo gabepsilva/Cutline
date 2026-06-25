@@ -36,28 +36,6 @@ spec:
           # Overlay/CD sets the real tag (kustomize images / `kubectl set image`).
           image: ghcr.io/gabepsilva/cutline:bootstrap
           imagePullPolicy: IfNotPresent
-          # Inline startup: load dotenv without overriding ConfigMap, then migrate +
-          # server. Skips docker-entrypoint.sh so an older image cannot re-source
-          # /app/.env and override DATABASE_URL (Turso keys in vault pre-#129).
-          command: ['/bin/sh', '-ec']
-          args:
-            - |
-              if [ -f /app/.env ]; then
-                while IFS= read -r line || [ -n "$line" ]; do
-                  [ -z "$line" ] && continue
-                  [ "${line#\#}" != "$line" ] && continue
-                  case "$line" in *=*) ;; *) continue ;; esac
-                  key="${line%%=*}"
-                  val="${line#*=}"
-                  if ! printenv "$key" >/dev/null 2>&1; then
-                    export "$key=$val"
-                  fi
-                done < /app/.env
-              fi
-              echo "[entrypoint] applying database migrations..."
-              bun /app/scripts/migrate.mjs
-              echo "[entrypoint] starting Cutline on ${HOST:-0.0.0.0}:${PORT:-3000}"
-              exec bun /app/build/index.js
           ports:
             - name: http
               containerPort: 3000
@@ -97,6 +75,10 @@ spec:
               drop:
                 - ALL
           volumeMounts:
+            # 1Password-synced Secret blob mounted as /app/.env. Bun auto-loads it at
+            # startup (CWD is /app); real env (ConfigMap) wins on conflicts, so the
+            # Turso keys staged here stay gated until #129 drops DATABASE_URL from the
+            # ConfigMap. subPath mounts don't live-update — `auto-restart` handles that.
             - name: app-dotenv
               mountPath: /app/.env
               subPath: dotenv
