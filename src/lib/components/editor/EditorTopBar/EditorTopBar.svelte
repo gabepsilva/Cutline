@@ -1,10 +1,12 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import type { EditorState } from '$lib/editor/editor-state.svelte';
 	import TransportControls from './TransportControls.svelte';
 
 	interface Props {
 		title: string;
 		meta: string;
+		editor?: EditorState;
 		backLabel?: string;
 		playing?: boolean;
 		current?: number;
@@ -22,6 +24,7 @@
 	let {
 		title,
 		meta,
+		editor,
 		backLabel = 'Projects',
 		playing = false,
 		current = 0,
@@ -35,6 +38,9 @@
 		onexport,
 		class: className = ''
 	}: Props = $props();
+
+	const handleCaptions = () => (editor ? editor.toggleCaptions() : ontoggleCaptions?.());
+	const handleExport = () => (editor ? editor.startExport() : onexport?.());
 </script>
 
 <header class={['editor-top-bar', className]}>
@@ -50,9 +56,13 @@
 		<div class="editor-top-bar__meta">{meta}</div>
 	</div>
 
-	<TransportControls {playing} {current} {total} {ontoStart} {ontogglePlay} {ontoEnd} />
+	{#if editor}
+		<TransportControls {editor} />
+	{:else}
+		<TransportControls {playing} {current} {total} {ontoStart} {ontogglePlay} {ontoEnd} />
+	{/if}
 
-	<button type="button" class="editor-top-bar__captions" onclick={ontoggleCaptions}>
+	<button type="button" class="editor-top-bar__captions" onclick={handleCaptions}>
 		<span class="editor-top-bar__captions-icon" aria-hidden="true"></span>
 		Captions
 	</button>
@@ -61,7 +71,7 @@
 		Share
 	</Button>
 
-	<Button variant="primary" size="md" onclick={onexport}>Export</Button>
+	<Button variant="primary" size="md" onclick={handleExport}>Export</Button>
 </header>
 
 <style>
