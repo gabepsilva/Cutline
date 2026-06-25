@@ -70,7 +70,9 @@ describe('login/+page.server', () => {
 	});
 
 	it('signInEmail returns API errors to the form', async () => {
-		signInEmail.mockRejectedValueOnce(new APIError('BAD_REQUEST', { message: 'Invalid credentials' }));
+		signInEmail.mockRejectedValueOnce(
+			new APIError('BAD_REQUEST', { message: 'Invalid credentials' })
+		);
 
 		const result = await actions.signInEmail?.(
 			createActionEvent({ email: 'alex@cutline.test', password: 'wrong' })
@@ -99,9 +101,7 @@ describe('login/+page.server', () => {
 		signInSocial.mockResolvedValueOnce({ url: 'https://github.com/login/oauth' });
 
 		try {
-			await actions.signInSocial?.(
-				createActionEvent({ provider: 'github', callbackURL: '/' })
-			);
+			await actions.signInSocial?.(createActionEvent({ provider: 'github', callbackURL: '/' }));
 			expect.unreachable('expected redirect');
 		} catch (error) {
 			expect(error).toMatchObject({ status: 302, location: 'https://github.com/login/oauth' });

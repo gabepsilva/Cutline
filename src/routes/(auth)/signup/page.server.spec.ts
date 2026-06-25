@@ -73,7 +73,9 @@ describe('signup/+page.server', () => {
 	});
 
 	it('signUpEmail returns API errors to the form', async () => {
-		signUpEmail.mockRejectedValueOnce(new APIError('BAD_REQUEST', { message: 'Email already in use' }));
+		signUpEmail.mockRejectedValueOnce(
+			new APIError('BAD_REQUEST', { message: 'Email already in use' })
+		);
 
 		const result = await actions.signUpEmail?.(
 			createActionEvent({
