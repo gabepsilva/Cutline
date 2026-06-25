@@ -1,18 +1,11 @@
 <script lang="ts">
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import TimecodeDisplay from '$lib/components/ui/TimecodeDisplay.svelte';
-
-	interface Props {
-		playing: boolean;
-		current: number;
-		total: number;
-		ontoStart?: () => void;
-		ontogglePlay?: () => void;
-		ontoEnd?: () => void;
-		class?: string;
-	}
+	import { startEditorPlaybackLoop } from '$lib/editor/editor-playback';
+	import type { TransportControlsProps } from './TransportControls.types';
 
 	let {
+		editor,
 		playing,
 		current,
 		total,
@@ -20,13 +13,26 @@
 		ontogglePlay,
 		ontoEnd,
 		class: className = ''
-	}: Props = $props();
+	}: TransportControlsProps = $props();
 
-	const playLabel = $derived(playing ? 'Pause' : 'Play');
+	const playingValue = $derived(editor ? editor.playing : (playing ?? false));
+	const currentValue = $derived(editor ? editor.clampedTime : (current ?? 0));
+	const totalValue = $derived(editor ? editor.duration : (total ?? 0));
+
+	const playLabel = $derived(playingValue ? 'Pause' : 'Play');
+
+	const handleStart = () => (editor ? editor.toStart() : ontoStart?.());
+	const handleToggle = () => (editor ? editor.togglePlay() : ontogglePlay?.());
+	const handleEnd = () => (editor ? editor.toEnd() : ontoEnd?.());
+
+	$effect(() => {
+		if (!editor) return;
+		return startEditorPlaybackLoop(editor);
+	});
 </script>
 
 <div class={['transport-controls', className]} role="group" aria-label="Transport controls">
-	<IconButton label="Skip to start" variant="ghost" size="md" onclick={ontoStart}>
+	<IconButton label="Skip to start" variant="ghost" size="md" onclick={handleStart}>
 		<svg
 			class="transport-controls__icon"
 			width="15"
@@ -44,9 +50,9 @@
 		variant="primary"
 		size="lg"
 		class="transport-controls__play"
-		onclick={ontogglePlay}
+		onclick={handleToggle}
 	>
-		{#if playing}
+		{#if playingValue}
 			<svg
 				class="transport-controls__icon"
 				width="16"
@@ -70,7 +76,7 @@
 		{/if}
 	</IconButton>
 
-	<IconButton label="Skip to end" variant="ghost" size="md" onclick={ontoEnd}>
+	<IconButton label="Skip to end" variant="ghost" size="md" onclick={handleEnd}>
 		<svg
 			class="transport-controls__icon"
 			width="15"
@@ -84,7 +90,7 @@
 	</IconButton>
 
 	<div class="transport-controls__divider" aria-hidden="true"></div>
-	<TimecodeDisplay {current} {total} />
+	<TimecodeDisplay current={currentValue} total={totalValue} />
 </div>
 
 <style>
