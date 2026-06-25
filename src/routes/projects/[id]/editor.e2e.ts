@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { MOCK_EMPTY_TRANSCRIPT_PROJECT_ID } from '$lib/mocks/editor.mock';
+import { totalDuration } from '$lib/editor/editor-derive';
+import { loadMockEditorProject, MOCK_EMPTY_TRANSCRIPT_PROJECT_ID } from '$lib/mocks/editor.mock';
+import { formatTimecode } from '$lib/utils/format-timecode';
 
 test.describe('editor route', () => {
 	test('renders editor workspace with transcript and preview for a seeded project', async ({
@@ -37,6 +39,11 @@ test.describe('editor route', () => {
 	test('timeline lane click seeks playback', async ({ page }) => {
 		await page.goto('/projects/proj-hero');
 
+		const project = loadMockEditorProject('proj-hero');
+		expect(project).not.toBeNull();
+		const seekRatio = 0.75;
+		const expectedTime = formatTimecode(totalDuration(project!.words) * seekRatio);
+
 		const transport = page.getByRole('group', { name: 'Transport controls' });
 		const currentTime = transport.locator('.timecode-display__current');
 		await expect(currentTime).toHaveText('0:00');
@@ -44,9 +51,10 @@ test.describe('editor route', () => {
 		const timelineLanes = page.getByRole('button', { name: 'Timeline tracks' });
 		const box = await timelineLanes.boundingBox();
 		expect(box).not.toBeNull();
-		if (!box) return;
 
-		await timelineLanes.click({ position: { x: box.width * 0.75, y: box.height * 0.5 } });
-		await expect(currentTime).not.toHaveText('0:00');
+		await timelineLanes.click({
+			position: { x: box!.width * seekRatio, y: box!.height * 0.5 }
+		});
+		await expect(currentTime).toHaveText(expectedTime);
 	});
 });

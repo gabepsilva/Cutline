@@ -54,7 +54,8 @@
 	);
 	const resolvedPlayheadPercent = $derived(editor ? editor.playheadPct : (playheadPercent ?? 0));
 	const resolvedResourceCount = $derived(editor ? editor.resources.length : resourceCount);
-	const resolvedBrollEmpty = $derived(editor ? editor.overlays.length === 0 : brollEmpty);
+	// M6-06: drive from editor.overlays once B-roll clips render on the track.
+	const resolvedBrollEmpty = $derived(editor ? true : brollEmpty);
 
 	const handleRecord = () => (editor ? editor.openRecord() : onrecord?.());
 	const handleMedia = () => (editor ? editor.toggleMedia() : onmedia?.());
@@ -74,9 +75,10 @@
 	<TimelineToolbar
 		resourceCount={resolvedResourceCount}
 		{snapEnabled}
+		snapDisabled={Boolean(editor)}
 		onrecord={handleRecord}
 		onmedia={handleMedia}
-		{onsnapchange}
+		onsnapchange={editor ? undefined : onsnapchange}
 	/>
 
 	<div class="timeline__body">

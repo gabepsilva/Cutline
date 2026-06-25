@@ -66,7 +66,7 @@ describe('Timeline.svelte', () => {
 
 		await userEvent.click(page.getByRole('button', { name: 'Timeline tracks' }));
 
-		expect(editor.currentTime).toBeGreaterThan(0);
+		expect(editor.currentTime).toBeCloseTo(editor.duration / 2, 1);
 	});
 
 	it('wires Record and Media toolbar actions to EditorState', async () => {
