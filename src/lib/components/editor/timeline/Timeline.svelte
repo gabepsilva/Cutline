@@ -3,7 +3,9 @@
 	import TimelinePlayhead from './TimelinePlayhead.svelte';
 	import TimelineRuler from './TimelineRuler.svelte';
 	import TimelineToolbar from './TimelineToolbar.svelte';
+	import TimelineClip from './TimelineClip.svelte';
 	import TimelineTrack from './TimelineTrack.svelte';
+	import { parsePercent } from '$lib/types/timeline';
 	import type {
 		TimelineBar,
 		TimelineClipPlaceholder,
@@ -52,6 +54,14 @@
 	function handleLanesClick(event: MouseEvent) {
 		onseek?.(event);
 	}
+
+	function placeholderToClip(clip: TimelineClipPlaceholder) {
+		return {
+			leftPct: parsePercent(clip.left),
+			widthPct: parsePercent(clip.width),
+			label: clip.label ?? ''
+		};
+	}
 </script>
 
 <section class={['timeline', className]} aria-label="Timeline">
@@ -90,9 +100,7 @@
 
 			<TimelineTrack>
 				{#each clips as clip (clip.id)}
-					<div class="timeline__video-clip" style:left={clip.left} style:width={clip.width}>
-						<div class="timeline__video-clip-glow" aria-hidden="true"></div>
-					</div>
+					<TimelineClip id={clip.id} clip={placeholderToClip(clip)} variant="video" />
 				{/each}
 			</TimelineTrack>
 
@@ -102,9 +110,7 @@
 
 			<TimelineTrack>
 				{#each clips as clip (clip.id)}
-					<div class="timeline__caption-clip" style:left={clip.left} style:width={clip.width}>
-						<span class="timeline__caption-label">{clip.label ?? ''}</span>
-					</div>
+					<TimelineClip id={clip.id} clip={placeholderToClip(clip)} variant="caption" />
 				{/each}
 			</TimelineTrack>
 
@@ -183,46 +189,5 @@
 
 	.timeline__lanes:disabled {
 		cursor: text;
-	}
-
-	.timeline__video-clip {
-		position: absolute;
-		top: 5px;
-		bottom: 5px;
-		border-radius: var(--radius-xs);
-		overflow: hidden;
-		border: 1px solid var(--border-7);
-		background: repeating-linear-gradient(
-			135deg,
-			var(--surface-active) 0 8px,
-			var(--surface-7) 8px 16px
-		);
-	}
-
-	.timeline__video-clip-glow {
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(60% 90% at 40% 40%, var(--accent-tint-10), transparent 70%);
-	}
-
-	.timeline__caption-clip {
-		position: absolute;
-		top: 5px;
-		bottom: 5px;
-		display: flex;
-		align-items: center;
-		padding: 0 7px;
-		border-radius: var(--radius-xs);
-		overflow: hidden;
-		background: var(--accent-tint-10);
-		border: 1px solid var(--accent-tint-32);
-	}
-
-	.timeline__caption-label {
-		font-size: 10px;
-		color: color-mix(in srgb, var(--accent) 35%, var(--text-2));
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 </style>
