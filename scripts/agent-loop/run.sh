@@ -27,15 +27,12 @@ LEAD_MODEL="${AGENT_LOOP_LEAD_MODEL:-opus}"
 ABORT_FILE="$SCRIPT_DIR/abort"
 
 read -r -d '' PROMPT <<EOF || true
-Look at the open GitHub issues for this repo and decide what issue or set of issues comes next (try to batch some issues if they are super small).
+Look at the open GitHub issues for this repo and decide what set of issues comes next (try to batch some issues if they are super small or tackle one issue at a time if they are bigger).
 
-Then do the full workflow for that one issue:
-1. Implement it (read the issue, PLANNING.md, AGENTS.md).
+Then do the full workflow for that set of issues (or issue):
+1. Implement it (read the issues, PLANNING.md, AGENTS.md).
 2. Open a PR.
 3. Watch CI and fix anything that fails until checks are green.
-4. If useful for the lead, add a short "Notes for lead" section to the PR body.
-
-Work on a single issue only.
 
 If you finish successfully (PR open, CI green, ready for lead review), stop without creating any abort file.
 
@@ -69,10 +66,9 @@ run_lead_review() {
 	cd "$REPO_ROOT"
 	# --dangerously-skip-permissions ≈ cursor-agent --yolo / --force
 	if ! "$LEAD_BIN" "${lead_args[@]}" "$LEAD_PROMPT" < /dev/null; then
-		echo "[$(date -Iseconds)] WARN: lead review exited non-zero — continuing loop"
-		return 1
+		echo "[$(date -Iseconds)] lead review failed — exiting loop"
+		exit 1
 	fi
-	return 0
 }
 
 run_agent() {
@@ -87,7 +83,7 @@ run_agent() {
 		exit 1
 	fi
 
-	run_lead_review || true
+	run_lead_review
 
 	echo "[$(date -Iseconds)] cycle complete — sleeping ${CYCLE_PAUSE}s"
 	sleep "$CYCLE_PAUSE"
