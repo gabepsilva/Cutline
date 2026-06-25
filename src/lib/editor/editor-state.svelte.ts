@@ -86,7 +86,7 @@ export class EditorState {
 		this.currentTime = clampTime(time, this.duration);
 	};
 
-	/** Advance playback — call from a single rAF loop in the editor route (M5-11). */
+	/** Advance playback — call from `startEditorPlaybackLoop` (M5-11). */
 	tick = (deltaSeconds: number) => {
 		if (!this.playing) return;
 
