@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [master]
+  workflow_dispatch:
   schedule:
     # Weekly full-history secret scan (Sunday 03:00 UTC)
     - cron: '0 3 * * 0'

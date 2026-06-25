@@ -57,4 +57,33 @@ test.describe('editor route', () => {
 		});
 		await expect(currentTime).toHaveText(expectedTime);
 	});
+
+	test('spacebar toggles playback when focus is outside inputs', async ({ page }) => {
+		await page.goto('/projects/proj-hero');
+
+		const transport = page.getByRole('group', { name: 'Transport controls' });
+		await expect(transport.getByRole('button', { name: 'Play' })).toBeVisible();
+
+		await page.getByTestId('editor-workspace').click();
+		await page.keyboard.press('Space');
+		await expect(transport.getByRole('button', { name: 'Pause' })).toBeVisible();
+
+		await page.keyboard.press('Space');
+		await expect(transport.getByRole('button', { name: 'Play' })).toBeVisible();
+	});
+
+	test('Delete key toggles delete on the selected word', async ({ page }) => {
+		await page.goto('/projects/proj-hero');
+
+		const word = page.getByRole('button', { name: 'people', exact: true });
+		await word.click();
+		await expect(page.getByText('Selected')).toBeVisible();
+
+		await page.getByTestId('editor-workspace').click();
+		await page.keyboard.press('Delete');
+		await expect(page.getByRole('button', { name: 'people, deleted' })).toBeVisible();
+
+		await page.keyboard.press('Backspace');
+		await expect(page.getByRole('button', { name: 'people, current' })).toBeVisible();
+	});
 });
