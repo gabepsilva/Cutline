@@ -15,6 +15,15 @@ describe('TranscriptSentence.svelte', () => {
 		await expect.element(page.getByText(fillerWord.text)).toBeInTheDocument();
 	});
 
+	it('separates adjacent words with whitespace', async () => {
+		render(TranscriptSentenceHarness);
+
+		const word = await page.getByRole('button', { name: okayWord.text }).element();
+		const body = word.closest('.transcript-sentence__body');
+
+		expect(body?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Okay so, um, this');
+	});
+
 	it('formats startTime prop as the sentence timecode label', async () => {
 		render(TranscriptSentenceHarness, { startTime: 92 });
 

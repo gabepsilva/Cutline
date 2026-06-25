@@ -40,7 +40,9 @@
 	aria-current={isCurrent ? 'true' : undefined}
 	onclick={(event) => onclick?.(word, event)}
 >
-	{word.text}
+	<!-- Trailing space mirrors the design's `display: w.text + ' '` so adjacent words
+	     stay separated and the highlight pill includes the inter-word gap. -->
+	{word.text + ' '}
 </button>
 
 <style>
