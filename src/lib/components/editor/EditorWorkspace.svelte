@@ -10,6 +10,7 @@
 	import { EditorState } from '$lib/editor/editor-state.svelte';
 	import type { EditorProjectLoad } from '$lib/mocks/editor.mock';
 	import { formatTimecode } from '$lib/utils/format-timecode';
+	import { resolveEditorKeyAction, shouldPreventDefault } from '$lib/utils/editor-keyboard';
 
 	type Props = EditorProjectLoad;
 
@@ -29,7 +30,35 @@
 
 	const totalLabel = $derived(formatTimecode(editor.duration));
 	const savedLabel = $derived(trimmedLabel(editor.deletedCount));
+
+	function handleWindowKeydown(event: KeyboardEvent) {
+		const target = event.target;
+		const tagName = target instanceof HTMLElement ? target.tagName : '';
+
+		const action = resolveEditorKeyAction({
+			key: event.key,
+			targetTagName: tagName,
+			hasSelection: editor.selectedId !== null
+		});
+
+		if (!action) return;
+
+		if (shouldPreventDefault(action)) {
+			event.preventDefault();
+		}
+
+		if (action === 'toggle-play') {
+			editor.togglePlay();
+			return;
+		}
+
+		if (action === 'delete-selected') {
+			editor.deleteSelected();
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleWindowKeydown} />
 
 <EditorLayout title={project.title} {meta} {editor} onback={() => goto(resolve('/'))}>
 	<div class="editor-workspace" data-testid="editor-workspace">
