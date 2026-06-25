@@ -124,7 +124,10 @@ test.describe('editor route', () => {
 	test('record modal opens from timeline toolbar', async ({ page }) => {
 		await page.goto('/projects/proj-hero');
 
-		await page.getByRole('region', { name: 'Timeline' }).getByRole('button', { name: 'Record' }).click();
+		await page
+			.getByRole('region', { name: 'Timeline' })
+			.getByRole('button', { name: 'Record' })
+			.click();
 		await expect(page.getByRole('dialog', { name: 'Record' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Start recording' })).toBeVisible();
 	});
