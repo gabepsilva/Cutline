@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { EditorState } from '$lib/editor/editor-state.svelte';
 	import EditorIconRail from './EditorIconRail.svelte';
 	import type { EditorRailItem } from './EditorIconRail.types';
 	import { defaultEditorRailItems } from './EditorIconRail.fixtures';
@@ -8,6 +9,7 @@
 	interface Props {
 		title: string;
 		meta: string;
+		editor?: EditorState;
 		playing?: boolean;
 		current?: number;
 		total?: number;
@@ -27,6 +29,7 @@
 	let {
 		title,
 		meta,
+		editor,
 		playing = false,
 		current = 0,
 		total = 0,
@@ -48,6 +51,7 @@
 	<EditorTopBar
 		{title}
 		{meta}
+		{editor}
 		{playing}
 		{current}
 		{total}

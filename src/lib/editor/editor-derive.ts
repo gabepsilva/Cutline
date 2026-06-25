@@ -138,6 +138,19 @@ export function captionWords(
 		}));
 }
 
+/** Caption tokens for the sentence under the playhead. */
+export function captionWordsForCurrentSentence(
+	words: Word[],
+	currentId: string | null,
+	style: CaptionStyle
+): CaptionToken[] {
+	if (!currentId) return [];
+	const current = words.find((word) => word.id === currentId);
+	if (!current) return [];
+	const sentenceWords = words.filter((word) => word.sid === current.sid);
+	return captionWords(sentenceWords, currentId, style);
+}
+
 /** Subtitle under clip length — mirrors design `savedLabel`. */
 export function trimmedLabel(deletedCount: number): string {
 	return deletedCount > 0 ? `−${deletedCount} words trimmed` : 'Original cut';
