@@ -117,6 +117,7 @@ export function rulerTicks(total: number, count = 8): Tick[] {
 }
 
 export interface CaptionToken {
+	id: string;
 	display: string;
 	isCurrent: boolean;
 }
@@ -131,7 +132,13 @@ export function captionWords(
 	return sentenceWords
 		.filter((w) => !w.deleted)
 		.map((w) => ({
+			id: w.id,
 			display: `${w.text} `,
 			isCurrent: w.id === currentId
 		}));
+}
+
+/** Subtitle under clip length — mirrors design `savedLabel`. */
+export function trimmedLabel(deletedCount: number): string {
+	return deletedCount > 0 ? `−${deletedCount} words trimmed` : 'Original cut';
 }
