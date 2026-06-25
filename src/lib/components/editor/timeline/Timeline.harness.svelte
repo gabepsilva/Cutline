@@ -1,7 +1,9 @@
 <script lang="ts">
+	import type { Overlay } from '$lib/types/timeline';
 	import {
 		mockTimelineBars,
 		mockTimelineClips,
+		mockTimelineOverlays,
 		mockTimelinePlayheadPercent,
 		mockTimelineResourceCount,
 		mockTimelineTicks
@@ -9,13 +11,24 @@
 	import Timeline from './Timeline.svelte';
 
 	interface Props {
+		brollEmpty?: boolean;
+		overlays?: Overlay[];
+		onoverlayclick?: (overlay: Overlay) => void;
 		onrecord?: () => void;
 		onmedia?: () => void;
 		onsnapchange?: (enabled: boolean) => void;
 		onseek?: (event: MouseEvent) => void;
 	}
 
-	let { onrecord, onmedia, onsnapchange, onseek }: Props = $props();
+	let {
+		brollEmpty = false,
+		overlays = mockTimelineOverlays,
+		onoverlayclick,
+		onrecord,
+		onmedia,
+		onsnapchange,
+		onseek
+	}: Props = $props();
 </script>
 
 <Timeline
@@ -24,6 +37,9 @@
 	clips={mockTimelineClips}
 	playheadPercent={mockTimelinePlayheadPercent}
 	resourceCount={mockTimelineResourceCount}
+	{overlays}
+	{brollEmpty}
+	{onoverlayclick}
 	{onrecord}
 	{onmedia}
 	{onsnapchange}

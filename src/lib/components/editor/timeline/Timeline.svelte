@@ -1,11 +1,11 @@
 <script lang="ts">
-	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { rulerTicks, trackClips, waveformBars } from '$lib/editor/editor-derive';
 	import {
 		toTimelineBars,
 		toTimelineClips,
 		toTimelineTicks
 	} from '$lib/editor/editor-timeline-view';
+	import { mockTimelineDurationSeconds } from '$lib/mocks/timeline.mock';
 	import TimelinePlayhead from './TimelinePlayhead.svelte';
 	import TimelineRuler from './TimelineRuler.svelte';
 	import TimelineToolbar from './TimelineToolbar.svelte';
@@ -31,6 +31,10 @@
 		resourceCount = 0,
 		snapEnabled = true,
 		brollEmpty = true,
+		overlays,
+		totalDuration,
+		onoverlayclick,
+		onoverlayremove,
 		trackLabels = defaultTrackLabels,
 		onrecord,
 		onmedia,
@@ -54,13 +58,28 @@
 	);
 	const resolvedPlayheadPercent = $derived(editor ? editor.playheadPct : (playheadPercent ?? 0));
 	const resolvedResourceCount = $derived(editor ? editor.resources.length : resourceCount);
-	// M6-06: drive from editor.overlays once B-roll clips render on the track.
-	const resolvedBrollEmpty = $derived(editor ? true : brollEmpty);
+	const resolvedOverlays = $derived(editor ? editor.overlays : (overlays ?? []));
+	const resolvedTotalDuration = $derived(
+		editor ? editor.duration : (totalDuration ?? mockTimelineDurationSeconds)
+	);
+	const resolvedBrollEmpty = $derived(
+		editor ? editor.overlays.length === 0 : brollEmpty && resolvedOverlays.length === 0
+	);
+
+	const handleOverlayClick = (overlay: (typeof resolvedOverlays)[number]) =>
+		editor ? editor.seek(overlay.start) : onoverlayclick?.(overlay);
+	const handleOverlayRemove = (id: string) =>
+		editor ? editor.removeOverlay(id) : onoverlayremove?.(id);
 
 	const handleRecord = () => (editor ? editor.openRecord() : onrecord?.());
 	const handleMedia = () => (editor ? editor.toggleMedia() : onmedia?.());
-	const handleSeek = (event: MouseEvent) =>
-		editor ? editor.seekFromTimelineClick(event) : onseek?.(event);
+	const handleSeek = (event: MouseEvent) => {
+		if (!editor && !onseek) return;
+		const target = event.target;
+		if (target instanceof Element && target.closest('.timeline-track__overlay')) return;
+		if (editor) editor.seekFromTimelineClick(event);
+		else onseek?.(event);
+	};
 
 	function placeholderToClip(clip: TimelineClipPlaceholder) {
 		return {
@@ -94,23 +113,23 @@
 			{/each}
 		</div>
 
-		<button
-			type="button"
-			class="timeline__lanes"
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<div
+			class={['timeline__lanes', !editor && !onseek && 'timeline__lanes--disabled']}
+			role="group"
 			aria-label="Timeline tracks"
-			disabled={!editor && !onseek}
 			onclick={handleSeek}
 		>
 			<TimelineRuler ticks={resolvedTicks} />
 
-			<TimelineTrack>
-				{#if resolvedBrollEmpty}
-					<EmptyState
-						title="Record or add B-roll — clips drop here at the playhead"
-						align="start"
-					/>
-				{/if}
-			</TimelineTrack>
+			<TimelineTrack
+				variant="broll"
+				overlays={resolvedBrollEmpty ? [] : resolvedOverlays}
+				totalDuration={resolvedTotalDuration}
+				onoverlayclick={handleOverlayClick}
+				onoverlayremove={handleOverlayRemove}
+			/>
 
 			<TimelineTrack>
 				{#each resolvedClips as clip (clip.id)}
@@ -129,7 +148,7 @@
 			</TimelineTrack>
 
 			<TimelinePlayhead positionPercent={resolvedPlayheadPercent} />
-		</button>
+		</div>
 	</div>
 </section>
 
@@ -201,7 +220,8 @@
 		cursor: text;
 	}
 
-	.timeline__lanes:disabled {
+	.timeline__lanes:disabled,
+	.timeline__lanes--disabled {
 		cursor: text;
 	}
 </style>
