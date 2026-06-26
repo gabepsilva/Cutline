@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.23@sha256:2780b5c3bab67f1f76c781860de469442999ed1a0d7992a5efdf2cffc0e3d769
 #
 # Cutline production image (T-10). SvelteKit SSR via @sveltejs/adapter-node, run
-# with bun. Build from repo root:
+# with bun. Schema migrations run via the cutline-migrate k8s Job before deploy
+# (M7-01); the entrypoint starts the server only.
 #   docker build -t cutline:local .
 #
 # Pinned digests — bump tag + digest together when upgrading.

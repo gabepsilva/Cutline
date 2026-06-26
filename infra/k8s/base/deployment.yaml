@@ -76,14 +76,14 @@ spec:
                 - ALL
           volumeMounts:
             # 1Password-synced Secret blob mounted as /app/.env. Bun auto-loads it at
-            # startup (CWD is /app); real env (ConfigMap) wins on conflicts, so the
-            # Turso keys staged here stay gated until #129 drops DATABASE_URL from the
-            # ConfigMap. subPath mounts don't live-update — `auto-restart` handles that.
+            # startup (CWD is /app); ConfigMap env wins on conflicts for ORIGIN/PORT.
+            # DATABASE_URL + DATABASE_AUTH_TOKEN come from dotenv (Turso). subPath mounts
+            # don't live-update — `auto-restart` handles that.
             - name: app-dotenv
               mountPath: /app/.env
               subPath: dotenv
               readOnly: true
-            # Writable scratch for the ephemeral SQLite DB + bun cache (HOME=/tmp).
+            # Writable scratch for bun cache (HOME=/tmp).
             - name: tmp
               mountPath: /tmp
       volumes:

@@ -7,6 +7,7 @@ resources:
   - onepassworditem-cutline-app.yaml
   - onepassworditem-regcred.yaml
   - deployment.yaml
+  - migrate-job.yaml
   - service.yaml
   - certificate.yaml
   - ingress.yaml

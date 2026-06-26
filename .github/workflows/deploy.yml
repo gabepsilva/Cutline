@@ -96,12 +96,15 @@ jobs:
           subject-digest: ${{ env.IMAGE_DIGEST }}
           push-to-registry: true
 
-      - name: Apply manifests and roll out
+      - name: Apply manifests, migrate, and roll out
         run: |
           set -eu
-          # Idempotent: keeps namespace/config/service/ingress/cert in sync, then
-          # pins the freshly built image on the Deployment.
+          MIGRATE_JOB="cutline-migrate-${GITHUB_RUN_NUMBER}"
+          # Idempotent: keeps namespace/config/service/ingress/cert/migrate template in sync.
           kubectl apply -k infra/k8s/overlays/prod
+          kubectl -n "$NAMESPACE" set image "cronjob/cutline-migrate" "migrate=${DATE_TAG}"
+          kubectl -n "$NAMESPACE" create job "$MIGRATE_JOB" --from=cronjob/cutline-migrate
+          kubectl -n "$NAMESPACE" wait --for=condition=complete "job/${MIGRATE_JOB}" --timeout=120s
           kubectl -n "$NAMESPACE" set image "deployment/${DEPLOYMENT}" "${CONTAINER}=${DATE_TAG}"
           kubectl -n "$NAMESPACE" rollout status "deployment/${DEPLOYMENT}" --timeout=300s
 
