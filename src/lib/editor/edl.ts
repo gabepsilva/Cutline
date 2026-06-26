@@ -113,10 +113,8 @@ export function editedToSource(edl: EditDecisionList, editedTime: number): numbe
 		return hit.segment.sourceStart + (editedTime - hit.segment.editedStart);
 	}
 
-	const first = edl.segments[0]!;
-	const last = edl.segments.at(-1)!;
-	if (editedTime < first.editedStart) return null;
-	if (editedTime >= last.editedEnd + edl.wordGap) return null;
+	// No segment owns this time: before the first word, after the last gap, or in a
+	// cut region the edited timeline never exposes — all map to "no source frame".
 	return null;
 }
 
