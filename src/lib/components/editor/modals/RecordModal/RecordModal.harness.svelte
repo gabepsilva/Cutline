@@ -1,5 +1,6 @@
 <script lang="ts">
 	import RecordModal from './RecordModal.svelte';
+	import { DEFAULT_RECORD_THUMB } from '$lib/types/media';
 	import type { RecordModalStep, RecordSource } from '../RecordModal.types';
 
 	interface Props {
@@ -32,7 +33,7 @@
 		elapsedLabel = '0:00',
 		reviewName = 'New recording',
 		reviewDurationLabel = '0:12',
-		reviewThumb = 'repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px)',
+		reviewThumb = DEFAULT_RECORD_THUMB,
 		onclose,
 		onsourcechange,
 		onstart,

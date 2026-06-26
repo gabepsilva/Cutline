@@ -1,5 +1,6 @@
 <script lang="ts">
 	import RecBadge from '$lib/components/ui/RecBadge.svelte';
+	import SimulatedVideoFrame from '$lib/components/ui/SimulatedVideoFrame.svelte';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import type { PreviewPlayerProps } from './PreviewPlayer.types';
 
@@ -31,10 +32,7 @@
 	{/if}
 
 	{#if useSimulated}
-		<div class="preview-player__simulated" aria-hidden="true">
-			<div class="preview-player__simulated-glow"></div>
-			<div class="preview-player__simulated-subject"></div>
-		</div>
+		<SimulatedVideoFrame glowPos="38% 42%" subjectX="32%" subjectY="46%" />
 	{/if}
 
 	<RecBadge label={recLabel} class="preview-player__rec" />
@@ -80,29 +78,6 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-	}
-
-	.preview-player__simulated {
-		position: absolute;
-		inset: 0;
-	}
-
-	.preview-player__simulated-glow {
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(58% 75% at 38% 42%, var(--accent-tint-14), transparent 68%);
-	}
-
-	.preview-player__simulated-subject {
-		position: absolute;
-		left: 32%;
-		top: 46%;
-		transform: translate(-50%, -50%);
-		width: 120px;
-		height: 120px;
-		border-radius: var(--radius-pill);
-		background: radial-gradient(circle at 40% 35%, var(--border-7), var(--surface-5));
-		border: 1px solid var(--border-7);
 	}
 
 	.preview-player :global(.preview-player__rec) {

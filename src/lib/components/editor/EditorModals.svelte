@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { EditorState } from '$lib/editor/editor-state.svelte';
-	import { formatMediaDuration } from '$lib/types/media';
+	import { DEFAULT_RECORD_THUMB, formatMediaDuration } from '$lib/types/media';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import {
 		startCamera,
@@ -37,9 +37,7 @@
 	const reviewDurationLabel = $derived(
 		lastRecording ? formatMediaDuration(lastRecording.dur) : '0:00'
 	);
-	const reviewThumb = $derived(
-		lastRecording?.thumb ?? 'repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px)'
-	);
+	const reviewThumb = $derived(lastRecording?.thumb ?? DEFAULT_RECORD_THUMB);
 
 	$effect(() => {
 		const needsCamera =

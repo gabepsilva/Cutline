@@ -31,6 +31,10 @@ export function recordingThumb(): string {
 	return 'repeating-linear-gradient(135deg,#2a1715 0 11px,#221210 11px 22px)';
 }
 
+/** Neutral fallback thumb shown for a captured clip before a real thumbnail exists. */
+export const DEFAULT_RECORD_THUMB =
+	'repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px)';
+
 /** Build a recording resource after capture stops. */
 export function createRecordingResource(counter: number, durationSeconds: number): MediaResource {
 	const duration = Math.max(1, Math.round(durationSeconds));
