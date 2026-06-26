@@ -37,9 +37,9 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Unit and component tests
-        # Normally ~45s. Step timeout guards against rare Vitest browser stalls on CI runners.
+        # Normally ~45s. scripts/ci/test-unit.sh adds a hard timeout if Vitest stalls.
         timeout-minutes: 2.5
-        run: bun run test:unit -- --run
+        run: bash scripts/ci/test-unit.sh
 
       - name: E2E tests
         # Normally ~25s. Cap so a stuck Playwright run fails fast.
@@ -70,9 +70,9 @@ jobs:
         run: bunx playwright install chromium
 
       - name: Coverage
-        # Normally ~45s. Same guard as the unit step on self-hosted runners.
+        # Normally ~45s. Same hard-timeout guard as the unit step.
         timeout-minutes: 3
-        run: bun run test:unit:coverage
+        run: bash scripts/ci/test-unit.sh --run --coverage
 
       - name: Upload coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4.6.0

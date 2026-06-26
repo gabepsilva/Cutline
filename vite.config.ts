@@ -1,10 +1,13 @@
+import './src/lib/test/vitest-shim.ts';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { failOnTeardownTimeout } from './src/lib/test/vitest-ci-reporter.ts';
 
 const appPathsMock = fileURLToPath(new URL('./src/lib/test/mocks/app-paths.ts', import.meta.url));
+const isCI = !!process.env.CI;
 
 export default defineConfig({
 	// @libsql/client loads a native binding (@libsql/<platform> .node) via dynamic
@@ -36,6 +39,11 @@ export default defineConfig({
 	],
 	test: {
 		expect: { requireAssertions: true },
+		...(isCI && {
+			bail: 1,
+			teardownTimeout: 15_000,
+			reporters: ['default', failOnTeardownTimeout]
+		}),
 		coverage: {
 			// istanbul: browser (client) project does not support v8 coverage APIs.
 			provider: 'istanbul',
