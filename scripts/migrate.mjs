@@ -10,6 +10,8 @@ const url = process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL is not set');
 
 const client = createClient({ url });
+// SQLite/libSQL default foreign_keys=OFF per connection — enable before migrate.
+await client.execute('PRAGMA foreign_keys = ON');
 const db = drizzle(client);
 
 await migrate(db, { migrationsFolder: 'drizzle' });
