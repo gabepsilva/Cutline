@@ -95,6 +95,7 @@ describe('loadEditorProject', () => {
 				durationLabel: '4:32'
 			});
 			expect(data!.meta).toBe('Auto-saved');
+			expect(data!.captionStyle).toBe('karaoke');
 			expect(data!.words.length).toBeGreaterThan(0);
 			expect(data!.sentences.length).toBeGreaterThan(0);
 			expect(data!.speaker).toEqual({ name: 'Alex Chen', initials: 'AC' });

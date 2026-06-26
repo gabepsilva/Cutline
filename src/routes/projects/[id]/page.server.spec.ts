@@ -34,6 +34,7 @@ const editorLoadFixture: EditorProjectLoad = {
 	},
 	meta: 'Auto-saved',
 	words: [],
+	captionStyle: 'karaoke',
 	sentences: [],
 	speaker: { name: 'Alex Chen', initials: 'AC' },
 	videoUrl: null,
