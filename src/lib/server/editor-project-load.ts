@@ -7,7 +7,7 @@ import type * as schema from '$lib/server/db/schema';
 import { mapProjectRow } from '$lib/server/map-project-row';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
 import type { MediaResource } from '$lib/types/media';
-import type { Word } from '$lib/types/transcript';
+import type { CaptionStyle, Word } from '$lib/types/transcript';
 import { deriveUserInitials } from '$lib/utils/user-initials';
 
 type Database = LibSQLDatabase<typeof schema>;
@@ -59,11 +59,13 @@ export async function loadEditorProject(
 	const mediaRows = await database.select().from(media).where(eq(media.projectId, projectId));
 
 	const words = parseWords(transcriptRow?.words);
+	const captionStyle = (transcriptRow?.captionStyle as CaptionStyle | undefined) ?? 'karaoke';
 
 	return {
 		project: mapProjectRow(row),
 		meta: editorMeta(words),
 		words,
+		captionStyle,
 		sentences: deriveSentences(words),
 		speaker: {
 			name: user.name,

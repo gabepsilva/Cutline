@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import EditorLayout from '$lib/components/editor/EditorLayout.svelte';
@@ -8,6 +9,11 @@
 	import TranscriptPanel from '$lib/components/editor/transcript/TranscriptPanel.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { captionWordsForCurrentSentence, trimmedLabel } from '$lib/editor/editor-derive';
+	import {
+		createEditorAutosave,
+		editorSaveMeta,
+		type EditorSaveStatus
+	} from '$lib/editor/editor-save';
 	import { EditorState } from '$lib/editor/editor-state.svelte';
 	import type { EditorProjectLoad } from '$lib/types/editor-load';
 	import { formatTimecode } from '$lib/utils/format-timecode';
@@ -15,9 +21,41 @@
 
 	type Props = EditorProjectLoad;
 
-	let { project, meta, words, sentences, speaker, videoUrl, resources }: Props = $props();
+	let { project, meta, words, captionStyle, sentences, speaker, videoUrl, resources }: Props =
+		$props();
 
-	const editor = $derived.by(() => new EditorState({ words, sentences, resources }));
+	const editor = $derived.by(() => new EditorState({ words, sentences, resources, captionStyle }));
+
+	let saveStatus = $state<EditorSaveStatus>('idle');
+
+	const autosave = createEditorAutosave({
+		onStatus: (status) => {
+			saveStatus = status;
+		}
+	});
+
+	let savedEditor: EditorState | undefined;
+
+	$effect(() => {
+		const payload = {
+			words: editor.words,
+			captionStyle: editor.captionStyle
+		};
+
+		// Skip the first run for each freshly loaded editor: the loaded transcript is
+		// already persisted, so autosaving it would write identical data and flash the
+		// save status on every open. Only schedule once a real edit mutates this instance.
+		if (savedEditor !== editor) {
+			savedEditor = editor;
+			return;
+		}
+
+		autosave.schedule(project.id, payload);
+	});
+
+	onDestroy(() => autosave.dispose());
+
+	const topBarMeta = $derived(editorSaveMeta(saveStatus, meta));
 
 	const hasTranscript = $derived(sentences.length > 0);
 
@@ -61,7 +99,7 @@
 
 <svelte:window onkeydown={handleWindowKeydown} />
 
-<EditorLayout title={project.title} {meta} {editor} onback={() => goto(resolve('/'))}>
+<EditorLayout title={project.title} meta={topBarMeta} {editor} onback={() => goto(resolve('/'))}>
 	<div class="editor-workspace" data-testid="editor-workspace">
 		{#if hasTranscript}
 			<div class="editor-workspace__stage">
