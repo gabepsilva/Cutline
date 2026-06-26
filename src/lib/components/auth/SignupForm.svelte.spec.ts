@@ -1,11 +1,11 @@
 import { page } from 'vitest/browser';
 import { describe, expect, it } from 'vitest';
 import { render } from '$lib/test/render';
-import SignupPageHarness from '$lib/test/signup-page.harness.svelte';
+import SignupFormHarness from './SignupForm.harness.svelte';
 
-describe('signup/+page.svelte', () => {
+describe('SignupForm.svelte', () => {
 	it('renders signup form with name, email, and password fields', async () => {
-		render(SignupPageHarness);
+		render(SignupFormHarness);
 
 		await expect
 			.element(page.getByRole('heading', { name: 'Create your account', level: 1 }))
@@ -17,13 +17,13 @@ describe('signup/+page.svelte', () => {
 	});
 
 	it('shows server error message when provided', async () => {
-		render(SignupPageHarness, { message: 'Email already in use' });
+		render(SignupFormHarness, { message: 'Email already in use' });
 
 		await expect.element(page.getByRole('alert')).toHaveTextContent('Email already in use');
 	});
 
 	it('links to login page', async () => {
-		render(SignupPageHarness);
+		render(SignupFormHarness);
 
 		await expect
 			.element(page.getByRole('link', { name: 'Sign in' }))
