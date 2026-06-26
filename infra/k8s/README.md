@@ -97,8 +97,10 @@ kubectl -n cutline create job cutline-migrate-manual --from=cronjob/cutline-migr
 kubectl -n cutline wait --for=condition=complete job/cutline-migrate-manual --timeout=120s
 ```
 
-**Rollback:** re-add `DATABASE_URL=file:/tmp/cutline.db` to `configmap.yaml` and redeploy —
-pods revert to ephemeral SQLite (Turso data untouched).
+**Rollback:** not a concern pre-launch — Turso holds no production data yet. To revert the
+cutover, redeploy the previous image tag (or revert the cutover commit). Note: re-adding
+`DATABASE_URL=file:…` to the ConfigMap is **not** a valid rollback — the entrypoint no longer
+migrates, so web pods would start against an empty, unmigrated SQLite and fail on first query.
 
 ## Bootstrap
 
