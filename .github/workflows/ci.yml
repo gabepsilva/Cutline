@@ -37,9 +37,13 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Unit and component tests
+        # Normally ~45s. Step timeout guards against rare Vitest browser stalls on CI runners.
+        timeout-minutes: 2.5
         run: bun run test:unit -- --run
 
       - name: E2E tests
+        # Normally ~25s. Cap so a stuck Playwright run fails fast.
+        timeout-minutes: 4
         env:
           DATABASE_URL: file:./ci-e2e.db
           ORIGIN: http://localhost:4173
@@ -66,6 +70,8 @@ jobs:
         run: bunx playwright install chromium
 
       - name: Coverage
+        # Normally ~45s. Same guard as the unit step on self-hosted runners.
+        timeout-minutes: 3
         run: bun run test:unit:coverage
 
       - name: Upload coverage report

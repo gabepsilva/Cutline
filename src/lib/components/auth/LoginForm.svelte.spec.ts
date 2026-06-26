@@ -1,11 +1,11 @@
 import { page } from 'vitest/browser';
 import { describe, expect, it } from 'vitest';
 import { render } from '$lib/test/render';
-import LoginPageHarness from '$lib/test/login-page.harness.svelte';
+import LoginFormHarness from './LoginForm.harness.svelte';
 
-describe('login/+page.svelte', () => {
+describe('LoginForm.svelte', () => {
 	it('renders sign-in form with email and password fields', async () => {
-		render(LoginPageHarness);
+		render(LoginFormHarness);
 
 		await expect
 			.element(page.getByRole('heading', { name: 'Welcome back', level: 1 }))
@@ -16,13 +16,13 @@ describe('login/+page.svelte', () => {
 	});
 
 	it('shows server error message when provided', async () => {
-		render(LoginPageHarness, { message: 'Invalid credentials' });
+		render(LoginFormHarness, { message: 'Invalid credentials' });
 
 		await expect.element(page.getByRole('alert')).toHaveTextContent('Invalid credentials');
 	});
 
 	it('links to signup page', async () => {
-		render(LoginPageHarness);
+		render(LoginFormHarness);
 
 		await expect
 			.element(page.getByRole('link', { name: 'Create one' }))
@@ -30,7 +30,7 @@ describe('login/+page.svelte', () => {
 	});
 
 	it('renders GitHub social sign-in button', async () => {
-		render(LoginPageHarness);
+		render(LoginFormHarness);
 
 		await expect
 			.element(page.getByRole('button', { name: 'Continue with GitHub' }))

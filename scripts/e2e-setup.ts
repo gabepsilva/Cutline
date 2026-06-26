@@ -68,7 +68,7 @@ await db
 			durationSeconds: 272,
 			thumb: 'repeating-linear-gradient(135deg,#1c1c20 0 12px,#191920 12px 24px)',
 			createdAt: new Date('2026-06-20T00:00:00.000Z'),
-			updatedAt: new Date('2026-06-26T10:00:00.000Z')
+			updatedAt: new Date('2026-06-26T12:00:00.000Z')
 		},
 		{
 			id: MOCK_EMPTY_TRANSCRIPT_PROJECT_ID,
@@ -79,7 +79,18 @@ await db
 			durationSeconds: 0,
 			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
 			createdAt: new Date('2026-06-26T10:00:00.000Z'),
-			updatedAt: new Date('2026-06-26T10:00:00.000Z')
+			updatedAt: new Date('2026-06-26T11:00:00.000Z')
+		},
+		{
+			id: 'proj-q3-recap',
+			userId,
+			title: 'Q3 launch recap',
+			kind: 'WEBINAR',
+			description: null,
+			durationSeconds: 438,
+			thumb: 'repeating-linear-gradient(135deg,#1f1a2c 0 12px,#191622 12px 24px)',
+			createdAt: new Date('2026-06-24T00:00:00.000Z'),
+			updatedAt: new Date('2026-06-25T12:00:00.000Z')
 		}
 	])
 	.onConflictDoNothing();
