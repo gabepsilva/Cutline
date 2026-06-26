@@ -6,9 +6,10 @@
 	interface Props {
 		project?: Project;
 		onclick?: (project: Project, event: MouseEvent) => void;
+		showMenu?: boolean;
 	}
 
-	let { project = fixtureProject, onclick }: Props = $props();
+	let { project = fixtureProject, onclick, showMenu = false }: Props = $props();
 </script>
 
-<ContinueEditingHero {project} {onclick} />
+<ContinueEditingHero {project} {onclick} {showMenu} />

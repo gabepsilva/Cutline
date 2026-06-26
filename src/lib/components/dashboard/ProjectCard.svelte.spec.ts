@@ -20,9 +20,9 @@ describe('ProjectCard.svelte', () => {
 
 	it('fires onclick with project payload', async () => {
 		const onclick = vi.fn();
-		render(ProjectCardHarness, { onclick });
+		render(ProjectCardHarness, { onclick, showMenu: false });
 
-		await userEvent.click(page.getByRole('button'));
+		await userEvent.click(page.getByRole('button', { name: /Q3 launch recap/i }));
 
 		expect(onclick).toHaveBeenCalledOnce();
 		expect(onclick.mock.calls[0]?.[0]).toMatchObject({ id: 'proj-q3-recap' });

@@ -25,9 +25,9 @@ describe('ContinueEditingHero.svelte', () => {
 
 	it('fires onclick with project payload', async () => {
 		const onclick = vi.fn();
-		render(ContinueEditingHeroHarness, { onclick });
+		render(ContinueEditingHeroHarness, { onclick, showMenu: false });
 
-		await userEvent.click(page.getByRole('button'));
+		await userEvent.click(page.getByRole('button', { name: /How I edit videos 3x faster/i }));
 
 		expect(onclick).toHaveBeenCalledOnce();
 		expect(onclick.mock.calls[0]?.[0]).toMatchObject({ id: 'proj-hero' });
