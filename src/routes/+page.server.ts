@@ -1,9 +1,19 @@
-import { redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { loadDashboardProjects } from '$lib/server/dashboard-load';
+import {
+	createOwnedProject,
+	deleteOwnedProject,
+	renameOwnedProject
+} from '$lib/server/project-mutations';
 import { resolveSidebarUser } from '$lib/server/sidebar-user';
 import { resolveStorageUsage } from '$lib/server/storage-usage';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
+
+function requireUser(locals: App.Locals) {
+	if (!locals.user) throw redirect(302, '/login');
+	return locals.user;
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) throw redirect(302, '/login');
@@ -19,4 +29,47 @@ export const load: PageServerLoad = async ({ locals }) => {
 		projects,
 		latestProject
 	};
+};
+
+export const actions: Actions = {
+	create: async ({ locals }) => {
+		const user = requireUser(locals);
+		const { projectId } = await createOwnedProject(db, user.id);
+		throw redirect(303, `/projects/${projectId}`);
+	},
+
+	rename: async ({ locals, request }) => {
+		const user = requireUser(locals);
+		const formData = await request.formData();
+		const projectId = formData.get('projectId')?.toString() ?? '';
+		const title = formData.get('title')?.toString() ?? '';
+
+		if (!projectId) {
+			return fail(400, { message: 'Project is required' });
+		}
+
+		const result = await renameOwnedProject(db, user.id, projectId, title);
+		if (!result.ok) {
+			return fail(result.status, { message: result.message });
+		}
+
+		return { success: true };
+	},
+
+	delete: async ({ locals, request }) => {
+		const user = requireUser(locals);
+		const formData = await request.formData();
+		const projectId = formData.get('projectId')?.toString() ?? '';
+
+		if (!projectId) {
+			return fail(400, { message: 'Project is required' });
+		}
+
+		const result = await deleteOwnedProject(db, user.id, projectId);
+		if (!result.ok) {
+			return fail(result.status, { message: result.message });
+		}
+
+		return { success: true };
+	}
 };

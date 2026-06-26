@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import Button from '$lib/components/ui/Button.svelte';
 	import DashboardLayout from '$lib/components/layout/DashboardLayout.svelte';
 	import DashboardHeader from '$lib/components/dashboard/DashboardHeader.svelte';
@@ -20,10 +21,12 @@
 <DashboardLayout user={data.user} usage={data.usage}>
 	<DashboardHeader title="Home" {greeting}>
 		{#snippet actions()}
-			<Button variant="primary" size="lg" class="home-page__cta">
-				<span class="home-page__cta-icon" aria-hidden="true"></span>
-				New project
-			</Button>
+			<form method="POST" action="?/create" use:enhance>
+				<Button type="submit" variant="primary" size="lg" class="home-page__cta">
+					<span class="home-page__cta-icon" aria-hidden="true"></span>
+					New project
+				</Button>
+			</form>
 		{/snippet}
 	</DashboardHeader>
 

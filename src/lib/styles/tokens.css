@@ -81,6 +81,7 @@
 	/* Z-index */
 	--z-playhead: 5;
 	--z-media-shelf: 42;
+	--z-dashboard: 45;
 	--z-export: 50;
 	--z-record: 55;
 

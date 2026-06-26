@@ -1,39 +1,47 @@
 <script lang="ts">
+	import ProjectOverflowMenu from './ProjectOverflowMenu.svelte';
 	import type { Project } from '$lib/types/project';
 
 	interface Props {
 		project: Project;
 		class?: string;
 		onclick?: (project: Project, event: MouseEvent) => void;
+		showMenu?: boolean;
 	}
 
-	let { project, class: className = '', onclick }: Props = $props();
+	let { project, class: className = '', onclick, showMenu = true }: Props = $props();
 </script>
 
-<button
-	type="button"
-	class={['continue-editing-hero', className]}
-	onclick={(event) => onclick?.(project, event)}
->
-	<div class="continue-editing-hero__thumb" style:background={project.thumb}>
-		<div class="continue-editing-hero__thumb-glow" aria-hidden="true"></div>
-		<div class="continue-editing-hero__play" aria-hidden="true">
-			<span class="continue-editing-hero__play-icon"></span>
+<article class={['continue-editing-hero', className]}>
+	<button
+		type="button"
+		class="continue-editing-hero__main"
+		onclick={(event) => onclick?.(project, event)}
+	>
+		<div class="continue-editing-hero__thumb" style:background={project.thumb}>
+			<div class="continue-editing-hero__thumb-glow" aria-hidden="true"></div>
+			<div class="continue-editing-hero__play" aria-hidden="true">
+				<span class="continue-editing-hero__play-icon"></span>
+			</div>
+			<span class="continue-editing-hero__duration">{project.durationLabel}</span>
 		</div>
-		<span class="continue-editing-hero__duration">{project.durationLabel}</span>
-	</div>
-	<div class="continue-editing-hero__content">
-		<p class="continue-editing-hero__eyebrow">Continue editing</p>
-		<h2 class="continue-editing-hero__title">{project.title}</h2>
-		{#if project.description}
-			<p class="continue-editing-hero__description">{project.description}</p>
-		{/if}
-		<p class="continue-editing-hero__meta">{project.meta}</p>
-	</div>
-</button>
+		<div class="continue-editing-hero__content">
+			<p class="continue-editing-hero__eyebrow">Continue editing</p>
+			<h2 class="continue-editing-hero__title">{project.title}</h2>
+			{#if project.description}
+				<p class="continue-editing-hero__description">{project.description}</p>
+			{/if}
+			<p class="continue-editing-hero__meta">{project.meta}</p>
+		</div>
+	</button>
+	{#if showMenu}
+		<ProjectOverflowMenu {project} variant="hero" />
+	{/if}
+</article>
 
 <style>
 	.continue-editing-hero {
+		position: relative;
 		display: flex;
 		gap: 22px;
 		width: 100%;
@@ -42,15 +50,24 @@
 		border: 1px solid var(--border-6);
 		border-radius: 16px;
 		background: linear-gradient(100deg, var(--surface-5), var(--surface-3));
-		cursor: pointer;
-		text-align: left;
-		font-family: inherit;
-		color: inherit;
 		transition: border-color 0.15s;
 	}
 
 	.continue-editing-hero:hover {
 		border-color: var(--border-8);
+	}
+
+	.continue-editing-hero__main {
+		display: flex;
+		gap: 22px;
+		width: 100%;
+		padding: 0;
+		border: none;
+		background: transparent;
+		cursor: pointer;
+		text-align: left;
+		font-family: inherit;
+		color: inherit;
 	}
 
 	.continue-editing-hero__thumb {
