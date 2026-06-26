@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildMockTranscript, mockEditorResources } from '$lib/mocks/editor.mock';
-import { media, project, transcript } from '$lib/server/db/domain.schema';
+import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
+import { fixtureTimelineOverlay } from '$lib/test/fixtures/timeline-overlay';
 import { user } from '$lib/server/db/auth.schema';
 import { loadEditorProject } from '$lib/server/editor-project-load';
 import { createTestDb } from '$lib/test/test-db';
@@ -27,6 +28,7 @@ async function seedEditorProject(
 		ownerId: string;
 		withTranscript?: boolean;
 		withMedia?: boolean;
+		withOverlay?: boolean;
 	}
 ) {
 	await db.insert(user).values({
@@ -73,6 +75,27 @@ async function seedEditorProject(
 			}))
 		);
 	}
+
+	if (options.withOverlay) {
+		await db.insert(media).values({
+			id: fixtureTimelineOverlay.resId,
+			projectId: options.projectId,
+			name: fixtureTimelineOverlay.name,
+			durationSeconds: Math.round(fixtureTimelineOverlay.dur),
+			kind: 'B-roll',
+			thumb: fixtureTimelineOverlay.thumb,
+			sizeBytes: 0
+		});
+		await db.insert(overlay).values({
+			id: fixtureTimelineOverlay.id,
+			projectId: options.projectId,
+			mediaId: fixtureTimelineOverlay.resId,
+			name: fixtureTimelineOverlay.name,
+			startSeconds: fixtureTimelineOverlay.start,
+			durationSeconds: fixtureTimelineOverlay.dur,
+			thumb: fixtureTimelineOverlay.thumb
+		});
+	}
 }
 
 describe('loadEditorProject', () => {
@@ -100,6 +123,7 @@ describe('loadEditorProject', () => {
 			expect(data!.sentences.length).toBeGreaterThan(0);
 			expect(data!.speaker).toEqual({ name: 'Alex Chen', initials: 'AC' });
 			expect(data!.resources).toHaveLength(3);
+			expect(data!.overlays).toEqual([]);
 			expect(data!.videoUrl).toBeNull();
 		} finally {
 			client.close();
@@ -119,7 +143,8 @@ describe('loadEditorProject', () => {
 				words: [],
 				sentences: [],
 				meta: 'Draft · no transcript',
-				resources: []
+				resources: [],
+				overlays: []
 			});
 		} finally {
 			client.close();
@@ -142,6 +167,22 @@ describe('loadEditorProject', () => {
 				dur: 6,
 				kind: 'B-roll'
 			});
+		} finally {
+			client.close();
+		}
+	});
+
+	it('maps overlay rows to timeline overlays', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedEditorProject(db, {
+				projectId: 'proj-hero',
+				ownerId: authUser.id,
+				withOverlay: true
+			});
+
+			const data = await loadEditorProject(db, authUser, 'proj-hero');
+			expect(data?.overlays).toEqual([fixtureTimelineOverlay]);
 		} finally {
 			client.close();
 		}

@@ -2,11 +2,12 @@ import { and, eq } from 'drizzle-orm';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import type { User } from 'better-auth';
 import { deriveSentences } from '$lib/editor/derive-sentences';
-import { media, project, transcript } from '$lib/server/db/domain.schema';
+import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
 import type * as schema from '$lib/server/db/schema';
 import { mapProjectRow } from '$lib/server/map-project-row';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
 import type { MediaResource } from '$lib/types/media';
+import type { Overlay } from '$lib/types/timeline';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import { deriveUserInitials } from '$lib/utils/user-initials';
 
@@ -28,6 +29,17 @@ function mapMediaRow(row: typeof media.$inferSelect): MediaResource {
 		name: row.name,
 		dur: row.durationSeconds,
 		kind: row.kind,
+		thumb: row.thumb
+	};
+}
+
+function mapOverlayRow(row: typeof overlay.$inferSelect): Overlay {
+	return {
+		id: row.id,
+		resId: row.mediaId,
+		name: row.name,
+		start: row.startSeconds,
+		dur: row.durationSeconds,
 		thumb: row.thumb
 	};
 }
@@ -57,6 +69,7 @@ export async function loadEditorProject(
 		.limit(1);
 
 	const mediaRows = await database.select().from(media).where(eq(media.projectId, projectId));
+	const overlayRows = await database.select().from(overlay).where(eq(overlay.projectId, projectId));
 
 	const words = parseWords(transcriptRow?.words);
 	const captionStyle = (transcriptRow?.captionStyle as CaptionStyle | undefined) ?? 'karaoke';
@@ -72,6 +85,7 @@ export async function loadEditorProject(
 			initials: deriveUserInitials(user.name)
 		},
 		videoUrl: null,
-		resources: mediaRows.map(mapMediaRow)
+		resources: mediaRows.map(mapMediaRow),
+		overlays: overlayRows.map(mapOverlayRow)
 	};
 }

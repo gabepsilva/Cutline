@@ -21,10 +21,21 @@
 
 	type Props = EditorProjectLoad;
 
-	let { project, meta, words, captionStyle, sentences, speaker, videoUrl, resources }: Props =
-		$props();
+	let {
+		project,
+		meta,
+		words,
+		captionStyle,
+		sentences,
+		speaker,
+		videoUrl,
+		resources,
+		overlays
+	}: Props = $props();
 
-	const editor = $derived.by(() => new EditorState({ words, sentences, resources, captionStyle }));
+	const editor = $derived.by(
+		() => new EditorState({ words, sentences, resources, captionStyle, overlays })
+	);
 
 	let saveStatus = $state<EditorSaveStatus>('idle');
 
@@ -39,7 +50,8 @@
 	$effect(() => {
 		const payload = {
 			words: editor.words,
-			captionStyle: editor.captionStyle
+			captionStyle: editor.captionStyle,
+			overlays: editor.overlays
 		};
 
 		// Skip the first run for each freshly loaded editor: the loaded transcript is

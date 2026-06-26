@@ -34,13 +34,15 @@ describe('createEditorAutosave', () => {
 
 		autosave.schedule('proj-1', {
 			words: fixtureTranscriptWords,
-			captionStyle: 'karaoke'
+			captionStyle: 'karaoke',
+			overlays: []
 		});
 		autosave.schedule('proj-1', {
 			words: fixtureTranscriptWords.map((word) =>
 				word.id === 'w2' ? { ...word, deleted: true } : word
 			),
-			captionStyle: 'clean'
+			captionStyle: 'clean',
+			overlays: []
 		});
 
 		await vi.advanceTimersByTimeAsync(999);
@@ -57,7 +59,8 @@ describe('createEditorAutosave', () => {
 				words: fixtureTranscriptWords.map((word) =>
 					word.id === 'w2' ? { ...word, deleted: true } : word
 				),
-				captionStyle: 'clean'
+				captionStyle: 'clean',
+				overlays: []
 			}),
 			signal: expect.any(AbortSignal)
 		});
@@ -79,7 +82,8 @@ describe('createEditorAutosave', () => {
 
 		autosave.flush('proj-1', {
 			words: fixtureTranscriptWords,
-			captionStyle: 'karaoke'
+			captionStyle: 'karaoke',
+			overlays: []
 		});
 
 		await Promise.resolve();

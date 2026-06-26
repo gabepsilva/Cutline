@@ -1,8 +1,9 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
-import { project, transcript } from '$lib/server/db/domain.schema';
+import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
 import type * as schema from '$lib/server/db/schema';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
+import type { Overlay } from '$lib/types/timeline';
 
 type Database = LibSQLDatabase<typeof schema>;
 
@@ -18,6 +19,23 @@ const CAPTION_STYLES = new Set<CaptionStyle>(['karaoke', 'clean']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null;
+}
+
+function isOverlay(value: unknown): value is Overlay {
+	if (!isRecord(value)) return false;
+
+	return (
+		typeof value.id === 'string' &&
+		typeof value.resId === 'string' &&
+		typeof value.name === 'string' &&
+		typeof value.start === 'number' &&
+		typeof value.dur === 'number' &&
+		typeof value.thumb === 'string'
+	);
+}
+
+function inferMediaKind(resId: string): string {
+	return resId.startsWith('rec-') ? 'Recording' : 'B-roll';
 }
 
 function isWord(value: unknown): value is Word {
@@ -40,6 +58,7 @@ function isWord(value: unknown): value is Word {
 export type PersistEditorTranscriptPayload = {
 	words: Word[];
 	captionStyle: CaptionStyle;
+	overlays: Overlay[];
 };
 
 export function isPersistEditorTranscriptError(
@@ -64,7 +83,18 @@ export function parsePersistEditorTranscriptBody(
 		return { ok: false, status: 400, message: 'Invalid caption style' };
 	}
 
-	return { words: body.words, captionStyle: captionStyle as CaptionStyle };
+	const overlays = body.overlays;
+	if (overlays !== undefined) {
+		if (!Array.isArray(overlays) || !overlays.every(isOverlay)) {
+			return { ok: false, status: 400, message: 'Invalid overlays payload' };
+		}
+	}
+
+	return {
+		words: body.words,
+		captionStyle: captionStyle as CaptionStyle,
+		overlays: (overlays as Overlay[] | undefined) ?? []
+	};
 }
 
 /** Owner-gated whole-document transcript replace — upserts by project id. */
@@ -104,5 +134,91 @@ export async function persistEditorTranscript(
 		});
 	}
 
+	return { ok: true };
+}
+
+async function ensureOverlayMedia(
+	database: Database,
+	projectId: string,
+	overlays: Overlay[]
+): Promise<PersistEditorTranscriptError | null> {
+	const resIds = [...new Set(overlays.map((item) => item.resId))];
+	if (resIds.length === 0) return null;
+
+	const rows = await database
+		.select({ id: media.id, projectId: media.projectId })
+		.from(media)
+		.where(inArray(media.id, resIds));
+
+	const byId = new Map(rows.map((row) => [row.id, row.projectId]));
+	const toInsert = new Map<string, Overlay>();
+
+	for (const item of overlays) {
+		const ownerProjectId = byId.get(item.resId);
+		if (ownerProjectId !== undefined) {
+			if (ownerProjectId !== projectId) {
+				return { ok: false, status: 400, message: 'Invalid overlay media reference' };
+			}
+			continue;
+		}
+
+		if (!toInsert.has(item.resId)) {
+			toInsert.set(item.resId, item);
+		}
+	}
+
+	if (toInsert.size === 0) return null;
+
+	await database.insert(media).values(
+		[...toInsert.values()].map((item) => ({
+			id: item.resId,
+			projectId,
+			name: item.name,
+			durationSeconds: Math.max(1, Math.round(item.dur)),
+			kind: inferMediaKind(item.resId),
+			thumb: item.thumb,
+			sizeBytes: 0
+		}))
+	);
+
+	return null;
+}
+
+async function persistEditorOverlays(
+	database: Database,
+	projectId: string,
+	overlays: Overlay[]
+): Promise<void> {
+	await database.delete(overlay).where(eq(overlay.projectId, projectId));
+
+	if (overlays.length === 0) return;
+
+	await database.insert(overlay).values(
+		overlays.map((item) => ({
+			id: item.id,
+			projectId,
+			mediaId: item.resId,
+			name: item.name,
+			startSeconds: item.start,
+			durationSeconds: item.dur,
+			thumb: item.thumb
+		}))
+	);
+}
+
+/** Owner-gated whole-document editor replace — transcript + overlays. */
+export async function persistEditorProject(
+	database: Database,
+	userId: string,
+	projectId: string,
+	payload: PersistEditorTranscriptPayload
+): Promise<PersistEditorTranscriptOk | PersistEditorTranscriptError> {
+	const transcriptResult = await persistEditorTranscript(database, userId, projectId, payload);
+	if (!transcriptResult.ok) return transcriptResult;
+
+	const mediaError = await ensureOverlayMedia(database, projectId, payload.overlays);
+	if (mediaError) return mediaError;
+
+	await persistEditorOverlays(database, projectId, payload.overlays);
 	return { ok: true };
 }

@@ -3,7 +3,7 @@ import { db } from '$lib/server/db';
 import {
 	isPersistEditorTranscriptError,
 	parsePersistEditorTranscriptBody,
-	persistEditorTranscript
+	persistEditorProject
 } from '$lib/server/editor-transcript-persist';
 import type { RequestHandler } from './$types';
 
@@ -24,7 +24,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		error(parsed.status, parsed.message);
 	}
 
-	const result = await persistEditorTranscript(db, locals.user.id, params.id, parsed);
+	const result = await persistEditorProject(db, locals.user.id, params.id, parsed);
 	if (!result.ok) {
 		error(result.status, result.message);
 	}
