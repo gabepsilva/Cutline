@@ -1,11 +1,8 @@
 import { desc, eq } from 'drizzle-orm';
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { project } from '$lib/server/db/domain.schema';
-import type * as schema from '$lib/server/db/schema';
+import type { Database } from '$lib/server/db/types';
 import { mapProjectRow } from '$lib/server/map-project-row';
 import type { Project } from '$lib/types/project';
-
-type Database = LibSQLDatabase<typeof schema>;
 
 export interface DashboardProjectsLoad {
 	latestProject: Project | null;

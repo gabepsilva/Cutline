@@ -1,20 +1,11 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
-import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
-import type * as schema from '$lib/server/db/schema';
+import { media, overlay, transcript } from '$lib/server/db/domain.schema';
+import type { Database } from '$lib/server/db/types';
+import { assertProjectOwned } from '$lib/server/project-access';
+import type { ServerError, ServerOk } from '$lib/server/result';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import type { Overlay } from '$lib/types/timeline';
-
-type Database = LibSQLDatabase<typeof schema>;
-
-export type PersistEditorError = {
-	ok: false;
-	status: 400 | 404;
-	message: string;
-};
-
-export type PersistEditorOk = { ok: true };
 
 const CAPTION_STYLES = new Set<CaptionStyle>(['karaoke', 'clean']);
 
@@ -66,13 +57,7 @@ export type PersistEditorPayload = {
 	overlays: Overlay[];
 };
 
-export function isPersistEditorError(
-	value: PersistEditorPayload | PersistEditorError
-): value is PersistEditorError {
-	return 'ok' in value && value.ok === false;
-}
-
-export function parsePersistEditorBody(body: unknown): PersistEditorPayload | PersistEditorError {
+export function parsePersistEditorBody(body: unknown): PersistEditorPayload | ServerError {
 	if (!isRecord(body)) {
 		return { ok: false, status: 400, message: 'Invalid request body' };
 	}
@@ -140,31 +125,13 @@ async function upsertTranscript(
 	await buildTranscriptWrite(database, projectId, payload, exists);
 }
 
-async function assertProjectOwned(
-	database: Database,
-	userId: string,
-	projectId: string
-): Promise<PersistEditorError | null> {
-	const owned = await database
-		.select({ id: project.id })
-		.from(project)
-		.where(and(eq(project.id, projectId), eq(project.userId, userId)))
-		.limit(1);
-
-	if (owned.length === 0) {
-		return { ok: false, status: 404, message: 'Project not found' };
-	}
-
-	return null;
-}
-
 /** Owner-gated whole-document transcript replace — upserts by project id. */
 export async function persistEditorTranscript(
 	database: Database,
 	userId: string,
 	projectId: string,
 	payload: PersistEditorPayload
-): Promise<PersistEditorOk | PersistEditorError> {
+): Promise<ServerOk | ServerError> {
 	const ownershipError = await assertProjectOwned(database, userId, projectId);
 	if (ownershipError) return ownershipError;
 
@@ -176,7 +143,7 @@ async function planOverlayMedia(
 	database: Database,
 	projectId: string,
 	overlays: Overlay[]
-): Promise<{ error: PersistEditorError | null; toInsert: Overlay[] }> {
+): Promise<{ error: ServerError | null; toInsert: Overlay[] }> {
 	const resIds = [...new Set(overlays.map((item) => item.resId))];
 	if (resIds.length === 0) return { error: null, toInsert: [] };
 
@@ -226,7 +193,7 @@ export async function persistEditorProject(
 	userId: string,
 	projectId: string,
 	payload: PersistEditorPayload
-): Promise<PersistEditorOk | PersistEditorError> {
+): Promise<ServerOk | ServerError> {
 	const ownershipError = await assertProjectOwned(database, userId, projectId);
 	if (ownershipError) return ownershipError;
 

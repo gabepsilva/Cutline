@@ -1,10 +1,10 @@
 import { error, json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import {
-	isPersistEditorError,
 	parsePersistEditorBody,
 	persistEditorProject
 } from '$lib/server/editor-transcript-persist';
+import { isServerError } from '$lib/server/result';
 import type { RequestHandler } from './$types';
 
 export const PUT: RequestHandler = async ({ params, request, locals }) => {
@@ -20,7 +20,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	}
 
 	const parsed = parsePersistEditorBody(body);
-	if (isPersistEditorError(parsed)) {
+	if (isServerError(parsed)) {
 		error(parsed.status, parsed.message);
 	}
 

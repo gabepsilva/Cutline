@@ -1,11 +1,8 @@
 import { eq, sum } from 'drizzle-orm';
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { media, project } from '$lib/server/db/domain.schema';
-import type * as schema from '$lib/server/db/schema';
+import type { Database } from '$lib/server/db/types';
 import type { StorageUsage } from '$lib/types/storage';
 import { formatBytes } from '$lib/utils/format-bytes';
-
-type Database = LibSQLDatabase<typeof schema>;
 
 /** Documented quota until per-user billing/plans exist. */
 export const STORAGE_QUOTA_BYTES = 60 * 1024 ** 3;
