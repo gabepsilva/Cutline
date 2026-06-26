@@ -2,10 +2,10 @@
 // TODO(backend): Replace with drizzle query in `projects/[id]/+page.server.ts` (M5-12).
 import type { TranscriptSpeakerData } from '$lib/components/editor/transcript/TranscriptSpeaker.types';
 import type { MediaResource } from '$lib/types/media';
-import type { Project } from '$lib/types/project';
 import type { Sentence, Word } from '$lib/types/transcript';
-import { mockLatestProject, mockProjects } from './dashboard.mock';
 import { mockUser } from './user.mock';
+
+export type { EditorProjectLoad } from '$lib/types/editor-load';
 
 const MOCK_SCRIPT = [
 	'Okay so, um, this is the part where most people completely overthink it.',
@@ -102,58 +102,5 @@ export const mockEditorResources: MediaResource[] = [
 	}
 ];
 
-export interface EditorProjectLoad {
-	project: Project;
-	meta: string;
-	words: Word[];
-	sentences: Sentence[];
-	speaker: TranscriptSpeakerData;
-	videoUrl: string | null;
-	resources: MediaResource[];
-}
-
 /** Project id with no transcript — drives empty-state UI in the editor route. */
 export const MOCK_EMPTY_TRANSCRIPT_PROJECT_ID = 'proj-no-transcript';
-
-const mockProjectCatalog: Project[] = [
-	mockLatestProject,
-	...mockProjects,
-	{
-		id: MOCK_EMPTY_TRANSCRIPT_PROJECT_ID,
-		title: 'Untitled draft',
-		durationLabel: '0:00',
-		kind: 'DEMO',
-		meta: 'Created today',
-		thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)'
-	}
-];
-
-/** Lookup editor load data by project id (mock catalog). */
-export function loadMockEditorProject(id: string): EditorProjectLoad | null {
-	const project = mockProjectCatalog.find((entry) => entry.id === id);
-	if (!project) return null;
-
-	if (id === MOCK_EMPTY_TRANSCRIPT_PROJECT_ID) {
-		return {
-			project,
-			meta: 'Draft · no transcript',
-			words: [],
-			sentences: [],
-			speaker: mockEditorSpeaker,
-			videoUrl: null,
-			resources: []
-		};
-	}
-
-	const { words, sentences } = buildMockTranscript();
-
-	return {
-		project,
-		meta: 'Auto-saved · MP4 1080p',
-		words,
-		sentences,
-		speaker: mockEditorSpeaker,
-		videoUrl: null,
-		resources: mockEditorResources
-	};
-}
