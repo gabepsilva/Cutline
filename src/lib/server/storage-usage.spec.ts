@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { media, project } from '$lib/server/db/domain.schema';
-import { user } from '$lib/server/db/auth.schema';
 import { resolveStorageUsage, STORAGE_QUOTA_BYTES } from './storage-usage';
+import { seedUser } from '$lib/test/seed-user';
 import { createTestDb } from '$lib/test/test-db';
 
 const authUser = {
@@ -13,20 +13,6 @@ const otherUser = {
 	id: 'user-b',
 	email: 'other@cutline.test'
 };
-
-async function seedUser(
-	db: Awaited<ReturnType<typeof createTestDb>>['db'],
-	seed: { id: string; email: string }
-) {
-	await db.insert(user).values({
-		id: seed.id,
-		name: 'Test User',
-		email: seed.email,
-		emailVerified: true,
-		createdAt: new Date('2026-06-01T00:00:00.000Z'),
-		updatedAt: new Date('2026-06-01T00:00:00.000Z')
-	});
-}
 
 describe('resolveStorageUsage', () => {
 	it('sums media bytes for the current user across projects', async () => {

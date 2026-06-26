@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
-import { user } from '$lib/server/db/auth.schema';
 import {
 	parsePersistEditorBody,
 	persistEditorProject,
@@ -9,24 +8,11 @@ import {
 } from '$lib/server/editor-transcript-persist';
 import { fixtureTimelineOverlay } from '$lib/test/fixtures/timeline-overlay';
 import { fixtureTranscriptWords } from '$lib/test/fixtures/transcript';
+import { seedUser } from '$lib/test/seed-user';
 import { createTestDb } from '$lib/test/test-db';
 
 const authUser = { id: 'user-a', email: 'alex@cutline.test' };
 const otherUser = { id: 'user-b', email: 'other@cutline.test' };
-
-async function seedUser(
-	db: Awaited<ReturnType<typeof createTestDb>>['db'],
-	seed: { id: string; email: string }
-) {
-	await db.insert(user).values({
-		id: seed.id,
-		name: 'Test User',
-		email: seed.email,
-		emailVerified: true,
-		createdAt: new Date('2026-06-01T00:00:00.000Z'),
-		updatedAt: new Date('2026-06-01T00:00:00.000Z')
-	});
-}
 
 async function seedProject(
 	db: Awaited<ReturnType<typeof createTestDb>>['db'],

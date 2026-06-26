@@ -2,6 +2,7 @@ import { eq, inArray } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { media, overlay, transcript } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
+import { mediaInsertFromOverlay, overlayInsertFromDomain } from '$lib/server/map-editor-rows';
 import { assertProjectOwned } from '$lib/server/project-access';
 import type { ServerError, ServerOk } from '$lib/server/result';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
@@ -28,10 +29,6 @@ function isOverlay(value: unknown): value is Overlay {
 		value.dur > 0 &&
 		typeof value.thumb === 'string'
 	);
-}
-
-function inferMediaKind(resId: string): string {
-	return resId.startsWith('rec-') ? 'Recording' : 'B-roll';
 }
 
 function isWord(value: unknown): value is Word {
@@ -175,18 +172,6 @@ async function planOverlayMedia(
 	return { error: null, toInsert: [...toInsert.values()] };
 }
 
-function mediaRowsFromOverlays(projectId: string, overlays: Overlay[]) {
-	return overlays.map((item) => ({
-		id: item.resId,
-		projectId,
-		name: item.name,
-		durationSeconds: Math.max(1, Math.round(item.dur)),
-		kind: inferMediaKind(item.resId),
-		thumb: item.thumb,
-		sizeBytes: 0
-	}));
-}
-
 /** Owner-gated whole-document editor replace — transcript + overlays (atomic batch). */
 export async function persistEditorProject(
 	database: Database,
@@ -215,22 +200,18 @@ export async function persistEditorProject(
 	const batch = [
 		transcriptWrite,
 		...(toInsert.length > 0
-			? [database.insert(media).values(mediaRowsFromOverlays(projectId, toInsert))]
+			? [
+					database
+						.insert(media)
+						.values(toInsert.map((item) => mediaInsertFromOverlay(projectId, item)))
+				]
 			: []),
 		database.delete(overlay).where(eq(overlay.projectId, projectId)),
 		...(payload.overlays.length > 0
 			? [
-					database.insert(overlay).values(
-						payload.overlays.map((item) => ({
-							id: item.id,
-							projectId,
-							mediaId: item.resId,
-							name: item.name,
-							startSeconds: item.start,
-							durationSeconds: item.dur,
-							thumb: item.thumb
-						}))
-					)
+					database
+						.insert(overlay)
+						.values(payload.overlays.map((item) => overlayInsertFromDomain(projectId, item)))
 				]
 			: [])
 	] as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]];

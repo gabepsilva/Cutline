@@ -3,11 +3,10 @@ import type { User } from 'better-auth';
 import { deriveSentences } from '$lib/editor/derive-sentences';
 import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
+import { mapMediaRow, mapOverlayRow } from '$lib/server/map-editor-rows';
 import { mapProjectRow } from '$lib/server/map-project-row';
 import { ownedProjectFilter } from '$lib/server/project-access';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
-import type { MediaResource } from '$lib/types/media';
-import type { Overlay } from '$lib/types/timeline';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import { deriveUserInitials } from '$lib/utils/user-initials';
 
@@ -19,27 +18,6 @@ function parseWords(raw: string | null | undefined): Word[] {
 	} catch {
 		return [];
 	}
-}
-
-function mapMediaRow(row: typeof media.$inferSelect): MediaResource {
-	return {
-		id: row.id,
-		name: row.name,
-		dur: row.durationSeconds,
-		kind: row.kind,
-		thumb: row.thumb
-	};
-}
-
-function mapOverlayRow(row: typeof overlay.$inferSelect): Overlay {
-	return {
-		id: row.id,
-		resId: row.mediaId,
-		name: row.name,
-		start: row.startSeconds,
-		dur: row.durationSeconds,
-		thumb: row.thumb
-	};
 }
 
 function editorMeta(words: Word[]): string {
