@@ -55,7 +55,7 @@ const userId =
 
 const { words } = buildMockTranscript();
 
-	await db
+await db
 	.insert(project)
 	.values([
 		{
