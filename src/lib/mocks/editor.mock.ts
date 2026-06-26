@@ -47,6 +47,7 @@ export function buildMockTranscript(): { words: Word[]; sentences: Sentence[] } 
 				id: `w${wordId++}`,
 				text: token,
 				clean,
+				start: time,
 				dur: duration,
 				bars,
 				filler,

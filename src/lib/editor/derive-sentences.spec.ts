@@ -7,6 +7,7 @@ function word(id: string, sid: string, dur = 0.3): Word {
 		id,
 		text: id,
 		clean: id,
+		start: 0,
 		dur,
 		bars: [0.5],
 		filler: false,

@@ -146,6 +146,7 @@ describe('editor-derive', () => {
 				id: 'n0',
 				text: 'hi',
 				clean: 'hi',
+				start: 0,
 				dur: 0.05,
 				bars: [0.5],
 				filler: false,
