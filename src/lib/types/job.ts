@@ -13,6 +13,10 @@ export interface ExportJobPayload {
 	burnCaptions: boolean;
 }
 
+export interface IngestJobPayload {
+	mediaId: string;
+}
+
 export interface JobStatusResponse {
 	status: JobStatus;
 	progress: number;

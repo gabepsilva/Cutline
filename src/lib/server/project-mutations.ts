@@ -3,6 +3,8 @@ import { media, overlay, project, transcript } from '$lib/server/db/domain.schem
 import type { Database } from '$lib/server/db/types';
 import { assertProjectOwned, ownedProjectFilter } from '$lib/server/project-access';
 import type { ServerError, ServerOk } from '$lib/server/result';
+import { buildProjectMediaPrefix } from '$lib/server/storage/object-key';
+import { deletePrefix } from '$lib/server/storage/r2';
 import { projectThumb } from '$lib/types/project';
 
 export const PROJECT_TITLE_MAX_LENGTH = 120;
@@ -69,6 +71,12 @@ export async function deleteOwnedProject(
 ): Promise<ServerOk | ServerError> {
 	const ownershipError = await assertProjectOwned(database, userId, projectId);
 	if (ownershipError) return ownershipError;
+
+	try {
+		await deletePrefix(buildProjectMediaPrefix(userId, projectId));
+	} catch {
+		// Best-effort R2 cleanup — DB rows are still removed below.
+	}
 
 	await database.batch([
 		database.delete(overlay).where(eq(overlay.projectId, projectId)),

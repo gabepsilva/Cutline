@@ -34,6 +34,8 @@
 		"*.{js,ts,svelte,json,jsonc,css,html,md,yml,yaml}": "prettier --write"
 	},
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.1075.0",
+		"@aws-sdk/s3-request-presigner": "^3.1075.0",
 		"@libsql/client": "^0.17.4",
 		"better-auth": "~1.6.20",
 		"drizzle-orm": "^0.45.2"

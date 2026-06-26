@@ -52,7 +52,13 @@ export const media = sqliteTable(
 		durationSeconds: integer('duration_seconds').notNull(),
 		kind: text('kind').notNull(),
 		thumb: text('thumb').notNull(),
-		sizeBytes: integer('size_bytes').notNull().default(0)
+		sizeBytes: integer('size_bytes').notNull().default(0),
+		objectKey: text('object_key'),
+		contentType: text('content_type'),
+		status: text('status').notNull().default('ready'),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull()
 	},
 	(table) => [index('media_projectId_idx').on(table.projectId)]
 );

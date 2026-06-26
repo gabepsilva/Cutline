@@ -22,6 +22,13 @@
 			"when": 1782501845000,
 			"tag": "0002_job_table",
 			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "6",
+			"when": 1782588245000,
+			"tag": "0003_media_upload_columns",
+			"breakpoints": true
 		}
 	]
 }

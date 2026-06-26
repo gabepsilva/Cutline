@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { EditorState } from '$lib/editor/editor-state.svelte';
+	import { uploadMediaForEditor } from '$lib/editor/media-upload';
 	import { DEFAULT_RECORD_THUMB, formatMediaDuration } from '$lib/types/media';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import {
@@ -21,6 +22,8 @@
 	let { editor, projectId, projectTitle }: Props = $props();
 
 	let videoEl = $state<HTMLVideoElement | null>(null);
+	let uploadProgress = $state<number | null>(null);
+	let uploading = $state(false);
 
 	const recordOpen = $derived(editor.recordPhase !== 'none');
 	const recordStep = $derived<RecordModalStep>(
@@ -60,13 +63,33 @@
 		if (editor.recordPhase !== 'recording') return;
 		return startRecordingElapsed(editor);
 	});
+
+	async function handleUpload(file: File) {
+		if (uploading) return;
+		uploading = true;
+		uploadProgress = 0;
+
+		try {
+			await uploadMediaForEditor(editor, projectId, file, (ratio) => {
+				uploadProgress = ratio;
+			});
+		} catch {
+			// Upload errors surface via failed network response; shelf stays usable.
+		} finally {
+			uploading = false;
+			uploadProgress = null;
+		}
+	}
 </script>
 
 <MediaShelf
 	open={editor.showMedia}
 	resources={editor.resources}
+	{uploading}
+	{uploadProgress}
 	onclose={() => (editor.showMedia = false)}
 	onrecord={() => editor.openRecord()}
+	onupload={handleUpload}
 	onresourceclick={(resource) => editor.addOverlay(resource)}
 />
 

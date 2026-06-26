@@ -1,5 +1,6 @@
 import type { media, overlay } from '$lib/server/db/domain.schema';
 import type { MediaResource } from '$lib/types/media';
+import type { MediaStatus } from '$lib/types/media-upload';
 import type { Overlay } from '$lib/types/timeline';
 
 type MediaRow = typeof media.$inferSelect;
@@ -17,7 +18,8 @@ export function mapMediaRow(row: MediaRow): MediaResource {
 		name: row.name,
 		dur: row.durationSeconds,
 		kind: row.kind,
-		thumb: row.thumb
+		thumb: row.thumb,
+		status: row.status as MediaStatus
 	};
 }
 
