@@ -4,6 +4,7 @@ import type { Database } from '$lib/server/db/types';
 import { assertProjectOwned } from '$lib/server/project-access';
 import type { ServerError, ServerResult } from '$lib/server/result';
 import type {
+	EnqueueBodyInput,
 	EnqueueJobInput,
 	JobStatus,
 	JobStatusResponse,
@@ -209,8 +210,14 @@ export async function failJob(
 	}
 
 	const now = nowMs();
+	const runningGuard = and(
+		eq(job.id, jobId),
+		eq(job.lockedBy, workerId),
+		eq(job.status, 'running')
+	);
+
 	if (row.attempts >= row.maxAttempts) {
-		await database
+		const result = await database
 			.update(job)
 			.set({
 				status: 'failed',
@@ -220,12 +227,12 @@ export async function failJob(
 				lockedBy: null,
 				leaseUntil: null
 			})
-			.where(eq(job.id, jobId));
-		return 'failed';
+			.where(runningGuard);
+		return result.rowsAffected > 0 ? 'failed' : 'missing';
 	}
 
 	const backoffMs = Math.min(BACKOFF_BASE_MS * 2 ** (row.attempts - 1), BACKOFF_MAX_MS);
-	await database
+	const result = await database
 		.update(job)
 		.set({
 			status: 'queued',
@@ -235,9 +242,9 @@ export async function failJob(
 			lockedBy: null,
 			leaseUntil: null
 		})
-		.where(eq(job.id, jobId));
+		.where(runningGuard);
 
-	return 'retry';
+	return result.rowsAffected > 0 ? 'retry' : 'missing';
 }
 
 export async function cancelJob(
@@ -282,7 +289,7 @@ export async function requestJobCancel(
 	const now = nowMs();
 
 	if (row.status === 'queued') {
-		await database
+		const result = await database
 			.update(job)
 			.set({
 				status: 'canceled',
@@ -290,8 +297,11 @@ export async function requestJobCancel(
 				finishedAt: new Date(now),
 				updatedAt: new Date(now)
 			})
-			.where(eq(job.id, jobId));
-		return null;
+			.where(and(eq(job.id, jobId), eq(job.status, 'queued')));
+
+		if (result.rowsAffected > 0) {
+			return null;
+		}
 	}
 
 	await database
@@ -355,7 +365,7 @@ export async function reapExpiredJobs(database: Database): Promise<number> {
 	return expired.length;
 }
 
-export function parseEnqueueBody(body: unknown): ServerResult & { data?: EnqueueJobInput } {
+export function parseEnqueueBody(body: unknown): ServerResult & { data?: EnqueueBodyInput } {
 	if (typeof body !== 'object' || body === null) {
 		return { ok: false, status: 400, message: 'Invalid JSON body' };
 	}
@@ -373,7 +383,6 @@ export function parseEnqueueBody(body: unknown): ServerResult & { data?: Enqueue
 		ok: true,
 		data: {
 			type: record.type,
-			projectId: '',
 			payload: record.payload
 		}
 	};

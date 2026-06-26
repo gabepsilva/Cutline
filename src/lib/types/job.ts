@@ -27,3 +27,6 @@ export interface EnqueueJobInput {
 	priority?: number;
 	maxAttempts?: number;
 }
+
+/** Parsed POST body — projectId comes from the route param, not the body. */
+export type EnqueueBodyInput = Omit<EnqueueJobInput, 'projectId'>;

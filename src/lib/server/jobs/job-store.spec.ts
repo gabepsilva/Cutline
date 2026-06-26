@@ -1,9 +1,11 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { job, project, transcript } from '$lib/server/db/domain.schema';
 import {
 	claimJob,
 	enqueueJob,
+	failJob,
+	getJobById,
 	getOwnedJobStatus,
 	reapExpiredJobs,
 	requestJobCancel
@@ -228,6 +230,65 @@ describe('job-store', () => {
 
 			const rows = await db.select().from(job);
 			expect(rows.every((row) => row.status === 'succeeded')).toBe(true);
+		} finally {
+			client.close();
+		}
+	});
+
+	it('failJob does not clobber a job reaped while the worker was failing', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedUser(db, authUser);
+			await seedProject(db, 'proj-1');
+			const { id } = await enqueueJob(db, { type: 'ingest', projectId: 'proj-1', payload: {} });
+			await claimJob(db, 'worker-a');
+
+			await db
+				.update(job)
+				.set({ status: 'queued', lockedBy: null, leaseUntil: null })
+				.where(eq(job.id, id));
+
+			expect(await failJob(db, id, 'worker-a', 'boom')).toBe('missing');
+
+			const [row] = await db.select().from(job).where(eq(job.id, id));
+			expect(row?.status).toBe('queued');
+			expect(row?.lockedBy).toBeNull();
+		} finally {
+			client.close();
+		}
+	});
+
+	it('requestJobCancel falls through to cooperative cancel when a queued job was claimed', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedUser(db, authUser);
+			await seedProject(db, 'proj-1');
+			const { id } = await enqueueJob(db, { type: 'ingest', projectId: 'proj-1', payload: {} });
+			const claimed = await claimJob(db, 'worker-a');
+			expect(claimed?.status).toBe('running');
+
+			const staleRow = await getJobById(db, id);
+			expect(staleRow).not.toBeNull();
+			if (!staleRow) return;
+
+			const now = Date.now();
+			const raced = await db
+				.update(job)
+				.set({
+					status: 'canceled',
+					cancelRequested: true,
+					finishedAt: new Date(now),
+					updatedAt: new Date(now)
+				})
+				.where(and(eq(job.id, id), eq(job.status, 'queued')));
+			expect(raced.rowsAffected).toBe(0);
+
+			expect(await requestJobCancel(db, authUser.id, id)).toBeNull();
+
+			const [row] = await db.select().from(job).where(eq(job.id, id));
+			expect(row?.status).toBe('running');
+			expect(row?.cancelRequested).toBe(true);
+			expect(row?.lockedBy).toBe('worker-a');
 		} finally {
 			client.close();
 		}

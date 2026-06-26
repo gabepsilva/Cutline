@@ -34,7 +34,7 @@ describe('api/projects/[projectId]/jobs POST', () => {
 	it('enqueues a job for the signed-in owner', async () => {
 		mockedParse.mockReturnValueOnce({
 			ok: true,
-			data: { type: 'export', projectId: '', payload: { format: 'mp4' } }
+			data: { type: 'export', payload: { format: 'mp4' } }
 		});
 		mockedEnqueue.mockResolvedValueOnce({ ok: true, jobId: 'job-1' });
 
@@ -103,7 +103,7 @@ describe('api/projects/[projectId]/jobs POST', () => {
 	it('returns 404 when enqueue rejects ownership', async () => {
 		mockedParse.mockReturnValueOnce({
 			ok: true,
-			data: { type: 'export', projectId: '', payload: {} }
+			data: { type: 'export', payload: {} }
 		});
 		mockedEnqueue.mockResolvedValueOnce({
 			ok: false,

@@ -228,6 +228,9 @@ export class EditorState {
 
 	setExportProgress = (progress: number) => {
 		this.exportProgress = progress;
-		if (progress >= 1) this.exportPhase = 'done';
+	};
+
+	markExportDone = () => {
+		this.exportPhase = 'done';
 	};
 }

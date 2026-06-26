@@ -51,6 +51,7 @@ export function startExportJob(
 				editor.setExportProgress(status.progress);
 
 				if (status.status === 'succeeded') {
+					editor.markExportDone();
 					stop();
 					return;
 				}
@@ -65,7 +66,10 @@ export function startExportJob(
 			if (stopped) return;
 
 			pollTimer = setInterval(() => {
-				void poll();
+				void poll().catch(() => {
+					editor.closeExport();
+					stop();
+				});
 			}, POLL_INTERVAL_MS);
 		} catch {
 			editor.closeExport();
