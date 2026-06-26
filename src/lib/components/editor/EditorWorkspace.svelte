@@ -148,7 +148,7 @@
 					/>
 				</div>
 				<Timeline {editor} />
-				<EditorModals {editor} projectTitle={project.title} />
+				<EditorModals {editor} projectId={project.id} projectTitle={project.title} />
 			</div>
 		{:else}
 			<EmptyState

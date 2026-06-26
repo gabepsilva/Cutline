@@ -80,6 +80,46 @@ export const overlay = sqliteTable(
 	]
 );
 
+export const job = sqliteTable(
+	'job',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		type: text('type').notNull(),
+		projectId: text('project_id')
+			.notNull()
+			.references(() => project.id, { onDelete: 'cascade' }),
+		status: text('status').notNull().default('queued'),
+		progress: real('progress').notNull().default(0),
+		payload: text('payload').notNull(),
+		result: text('result'),
+		error: text('error'),
+		attempts: integer('attempts').notNull().default(0),
+		maxAttempts: integer('max_attempts').notNull().default(3),
+		priority: integer('priority').notNull().default(0),
+		cancelRequested: integer('cancel_requested', { mode: 'boolean' }).notNull().default(false),
+		lockedBy: text('locked_by'),
+		leaseUntil: integer('lease_until', { mode: 'timestamp_ms' }),
+		runAfter: integer('run_after', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+		startedAt: integer('started_at', { mode: 'timestamp_ms' }),
+		finishedAt: integer('finished_at', { mode: 'timestamp_ms' }),
+		updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.$onUpdate(() => /* @__PURE__ */ new Date())
+			.notNull()
+	},
+	(table) => [
+		index('job_claim_idx').on(table.status, table.runAfter, table.priority),
+		index('job_projectId_idx').on(table.projectId)
+	]
+);
+
 export const projectRelations = relations(project, ({ one, many }) => ({
 	user: one(user, {
 		fields: [project.userId],
@@ -90,7 +130,15 @@ export const projectRelations = relations(project, ({ one, many }) => ({
 		references: [transcript.projectId]
 	}),
 	media: many(media),
-	overlays: many(overlay)
+	overlays: many(overlay),
+	jobs: many(job)
+}));
+
+export const jobRelations = relations(job, ({ one }) => ({
+	project: one(project, {
+		fields: [job.projectId],
+		references: [project.id]
+	})
 }));
 
 export const transcriptRelations = relations(transcript, ({ one }) => ({

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Modal from '$lib/components/ui/Modal/Modal.svelte';
 	import type { EditorState } from '$lib/editor/editor-state.svelte';
-	import { exportFilename, startMockExportJob } from '$lib/editor/export-job';
+	import { exportFilename, startExportJob } from '$lib/editor/export-job';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import ExportComplete from './ExportComplete.svelte';
 	import ExportModal from './ExportModal/ExportModal.svelte';
@@ -10,11 +10,12 @@
 
 	interface Props {
 		editor: EditorState;
+		projectId: string;
 		projectTitle: string;
 		class?: string;
 	}
 
-	let { editor, projectTitle, class: className = '' }: Props = $props();
+	let { editor, projectId, projectTitle, class: className = '' }: Props = $props();
 
 	let format = $state<ExportFormat>('mp4');
 	let resolution = $state<ExportResolution>('1080p');
@@ -36,7 +37,7 @@
 
 	$effect(() => {
 		if (!exportingOpen) return;
-		return startMockExportJob(editor);
+		return startExportJob(editor, projectId, { format, resolution, burnCaptions });
 	});
 
 	function handleClose() {

@@ -137,6 +137,8 @@ describe('EditorState', () => {
 		editor.runExport();
 		expect(editor.exportPhase).toBe('exporting');
 		editor.setExportProgress(1);
+		expect(editor.exportPhase).toBe('exporting');
+		editor.markExportDone();
 		expect(editor.exportPhase).toBe('done');
 		editor.closeExport();
 		expect(editor.exportPhase).toBe('none');

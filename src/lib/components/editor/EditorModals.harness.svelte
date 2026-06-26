@@ -21,7 +21,7 @@
 </script>
 
 <div class="editor-modals-harness">
-	<EditorModals {editor} {projectTitle} />
+	<EditorModals {editor} projectId="proj-test" {projectTitle} />
 </div>
 
 <style>
