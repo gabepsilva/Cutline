@@ -14,10 +14,11 @@
 
 	interface Props {
 		editor: EditorState;
+		projectId: string;
 		projectTitle: string;
 	}
 
-	let { editor, projectTitle }: Props = $props();
+	let { editor, projectId, projectTitle }: Props = $props();
 
 	let videoEl = $state<HTMLVideoElement | null>(null);
 
@@ -88,4 +89,4 @@
 	onaddtotimeline={() => editor.addLastToTimeline()}
 />
 
-<ExportFlow {editor} {projectTitle} />
+<ExportFlow {editor} {projectId} {projectTitle} />

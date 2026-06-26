@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, afterEach } from 'vitest';
 import { EditorState } from './editor-state.svelte';
-import { exportFilename, startMockExportJob } from './export-job';
+import { exportFilename, startExportJob } from './export-job';
 import { fixtureTranscriptWords } from '$lib/test/fixtures';
 
 function createEditor() {
@@ -11,27 +11,39 @@ function createEditor() {
 }
 
 describe('export-job', () => {
-	beforeEach(() => {
-		vi.useFakeTimers();
-	});
-
 	afterEach(() => {
-		vi.useRealTimers();
+		vi.restoreAllMocks();
 	});
 
-	it('startMockExportJob advances export progress until done', () => {
+	it('startExportJob polls until the export job succeeds', async () => {
 		const editor = createEditor();
 		editor.runExport();
 
-		const stop = startMockExportJob(editor);
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ id: 'job-1' })
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ status: 'succeeded', progress: 1 })
+			});
 
-		for (let step = 0; step < 200 && editor.exportPhase !== 'done'; step++) {
-			vi.advanceTimersByTime(40);
-		}
+		vi.stubGlobal('fetch', fetchMock);
 
-		expect(editor.exportPhase).toBe('done');
+		const stop = startExportJob(editor, 'proj-1', {
+			format: 'mp4',
+			resolution: '1080p',
+			burnCaptions: true
+		});
+
+		await vi.waitFor(() => {
+			expect(editor.exportPhase).toBe('done');
+		});
+
 		expect(editor.exportProgress).toBe(1);
-
+		expect(fetchMock).toHaveBeenCalledWith('/api/projects/proj-1/jobs', expect.any(Object));
 		stop();
 	});
 
