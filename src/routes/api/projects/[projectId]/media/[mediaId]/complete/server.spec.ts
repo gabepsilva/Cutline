@@ -31,6 +31,51 @@ const authUser = {
 };
 
 describe('api/projects/[projectId]/media/[mediaId]/complete POST', () => {
+	it('returns 401 when unauthenticated', async () => {
+		await expect(
+			POST({
+				params: { projectId: 'proj-1', mediaId: 'media-1' },
+				request: new Request('http://localhost/api/projects/proj-1/media/media-1/complete', {
+					method: 'POST',
+					body: JSON.stringify({})
+				}),
+				locals: {}
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 401 });
+	});
+
+	it('returns 400 for invalid JSON', async () => {
+		await expect(
+			POST({
+				params: { projectId: 'proj-1', mediaId: 'media-1' },
+				request: new Request('http://localhost/api/projects/proj-1/media/media-1/complete', {
+					method: 'POST',
+					body: 'not-json'
+				}),
+				locals: { user: authUser }
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 400 });
+	});
+
+	it('returns 400 when multipart payload is invalid', async () => {
+		mockedParse.mockReturnValueOnce({
+			ok: false,
+			status: 400,
+			message: 'multipart.parts is required'
+		});
+
+		await expect(
+			POST({
+				params: { projectId: 'proj-1', mediaId: 'media-1' },
+				request: new Request('http://localhost/api/projects/proj-1/media/media-1/complete', {
+					method: 'POST',
+					body: JSON.stringify({ multipart: { uploadId: 'x', parts: [] } })
+				}),
+				locals: { user: authUser }
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 400 });
+	});
+
 	it('completes upload and kicks the worker', async () => {
 		mockedParse.mockReturnValueOnce({});
 		mockedComplete.mockResolvedValueOnce({ ok: true, jobId: 'job-1' });

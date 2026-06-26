@@ -65,6 +65,82 @@ describe('api/projects/[projectId]/media/upload-url POST', () => {
 		).rejects.toMatchObject({ status: 401 });
 	});
 
+	it('returns 400 for invalid JSON', async () => {
+		await expect(
+			POST({
+				params: { projectId: 'proj-1' },
+				request: new Request('http://localhost/api/projects/proj-1/media/upload-url', {
+					method: 'POST',
+					body: 'not-json'
+				}),
+				locals: { user: authUser }
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 400 });
+	});
+
+	it('returns 404 when project is not owned', async () => {
+		mockedParse.mockReturnValueOnce({
+			filename: 'clip.mp4',
+			contentType: 'video/mp4',
+			size: 1024
+		});
+		mockedCreate.mockResolvedValueOnce({
+			ok: false,
+			status: 404,
+			message: 'Project not found'
+		});
+
+		await expect(
+			POST({
+				params: { projectId: 'proj-1' },
+				request: new Request('http://localhost/api/projects/proj-1/media/upload-url', {
+					method: 'POST',
+					body: JSON.stringify({ filename: 'clip.mp4', contentType: 'video/mp4', size: 1024 })
+				}),
+				locals: { user: authUser }
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 404 });
+	});
+
+	it('returns 413 for oversize uploads', async () => {
+		mockedParse.mockReturnValueOnce({
+			ok: false,
+			status: 413,
+			message: 'File exceeds the 5 GB upload limit'
+		});
+
+		await expect(
+			POST({
+				params: { projectId: 'proj-1' },
+				request: new Request('http://localhost/api/projects/proj-1/media/upload-url', {
+					method: 'POST',
+					body: JSON.stringify({ filename: 'big.mp4', contentType: 'video/mp4', size: 999 })
+				}),
+				locals: { user: authUser }
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 413 });
+	});
+
+	it('returns 500 when presign fails', async () => {
+		mockedParse.mockReturnValueOnce({
+			filename: 'clip.mp4',
+			contentType: 'video/mp4',
+			size: 1024
+		});
+		mockedCreate.mockRejectedValueOnce(new Error('R2 credentials are not configured'));
+
+		await expect(
+			POST({
+				params: { projectId: 'proj-1' },
+				request: new Request('http://localhost/api/projects/proj-1/media/upload-url', {
+					method: 'POST',
+					body: JSON.stringify({ filename: 'clip.mp4', contentType: 'video/mp4', size: 1024 })
+				}),
+				locals: { user: authUser }
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 500 });
+	});
+
 	it('returns 415 for unsupported content types', async () => {
 		mockedParse.mockReturnValueOnce({
 			ok: false,
