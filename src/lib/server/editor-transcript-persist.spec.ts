@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
 import { user } from '$lib/server/db/auth.schema';
 import {
-	parsePersistEditorTranscriptBody,
+	parsePersistEditorBody,
 	persistEditorProject,
 	persistEditorTranscript
 } from '$lib/server/editor-transcript-persist';
@@ -50,9 +50,9 @@ async function seedProject(
 	}
 }
 
-describe('parsePersistEditorTranscriptBody', () => {
+describe('parsePersistEditorBody', () => {
 	it('accepts a valid words and caption style payload', () => {
-		const parsed = parsePersistEditorTranscriptBody({
+		const parsed = parsePersistEditorBody({
 			words: fixtureTranscriptWords,
 			captionStyle: 'clean'
 		});
@@ -65,7 +65,7 @@ describe('parsePersistEditorTranscriptBody', () => {
 	});
 
 	it('rejects malformed words arrays', () => {
-		const parsed = parsePersistEditorTranscriptBody({
+		const parsed = parsePersistEditorBody({
 			words: [{ id: 'w0' }],
 			captionStyle: 'karaoke'
 		});
@@ -74,6 +74,20 @@ describe('parsePersistEditorTranscriptBody', () => {
 			ok: false,
 			status: 400,
 			message: 'Invalid words payload'
+		});
+	});
+
+	it('rejects overlays with non-positive duration', () => {
+		const parsed = parsePersistEditorBody({
+			words: fixtureTranscriptWords,
+			captionStyle: 'karaoke',
+			overlays: [{ ...fixtureTimelineOverlay, dur: 0 }]
+		});
+
+		expect(parsed).toEqual({
+			ok: false,
+			status: 400,
+			message: 'Invalid overlays payload'
 		});
 	});
 });
@@ -301,6 +315,56 @@ describe('persistEditorProject', () => {
 				status: 400,
 				message: 'Invalid overlay media reference'
 			});
+		} finally {
+			client.close();
+		}
+	});
+
+	it('does not remove overlays from sibling projects', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedUser(db, authUser);
+			await seedUser(db, otherUser);
+			await seedProject(db, { id: 'proj-1', userId: authUser.id });
+			await seedProject(db, { id: 'proj-2', userId: otherUser.id });
+
+			for (const [projectId, mediaId, overlayId] of [
+				['proj-1', 'media-1', 'overlay-1'],
+				['proj-2', 'media-2', 'overlay-2']
+			] as const) {
+				await db.insert(media).values({
+					id: mediaId,
+					projectId,
+					name: 'Clip',
+					durationSeconds: 10,
+					kind: 'B-roll',
+					thumb: 'thumb',
+					sizeBytes: 0
+				});
+				await db.insert(overlay).values({
+					id: overlayId,
+					projectId,
+					mediaId,
+					name: 'Clip',
+					startSeconds: 0,
+					durationSeconds: 5,
+					thumb: 'thumb'
+				});
+			}
+
+			const result = await persistEditorProject(db, authUser.id, 'proj-1', {
+				words: fixtureTranscriptWords,
+				captionStyle: 'karaoke',
+				overlays: []
+			});
+
+			expect(result).toEqual({ ok: true });
+			expect(await db.select().from(overlay).where(eq(overlay.projectId, 'proj-1'))).toHaveLength(
+				0
+			);
+			expect(await db.select().from(overlay).where(eq(overlay.projectId, 'proj-2'))).toHaveLength(
+				1
+			);
 		} finally {
 			client.close();
 		}

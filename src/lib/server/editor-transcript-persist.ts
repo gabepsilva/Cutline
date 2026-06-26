@@ -1,4 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
 import type { LibSQLDatabase } from 'drizzle-orm/libsql';
 import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
 import type * as schema from '$lib/server/db/schema';
@@ -7,13 +8,13 @@ import type { Overlay } from '$lib/types/timeline';
 
 type Database = LibSQLDatabase<typeof schema>;
 
-export type PersistEditorTranscriptError = {
+export type PersistEditorError = {
 	ok: false;
 	status: 400 | 404;
 	message: string;
 };
 
-export type PersistEditorTranscriptOk = { ok: true };
+export type PersistEditorOk = { ok: true };
 
 const CAPTION_STYLES = new Set<CaptionStyle>(['karaoke', 'clean']);
 
@@ -29,7 +30,11 @@ function isOverlay(value: unknown): value is Overlay {
 		typeof value.resId === 'string' &&
 		typeof value.name === 'string' &&
 		typeof value.start === 'number' &&
+		Number.isFinite(value.start) &&
+		value.start >= 0 &&
 		typeof value.dur === 'number' &&
+		Number.isFinite(value.dur) &&
+		value.dur > 0 &&
 		typeof value.thumb === 'string'
 	);
 }
@@ -55,21 +60,19 @@ function isWord(value: unknown): value is Word {
 	);
 }
 
-export type PersistEditorTranscriptPayload = {
+export type PersistEditorPayload = {
 	words: Word[];
 	captionStyle: CaptionStyle;
 	overlays: Overlay[];
 };
 
-export function isPersistEditorTranscriptError(
-	value: PersistEditorTranscriptPayload | PersistEditorTranscriptError
-): value is PersistEditorTranscriptError {
+export function isPersistEditorError(
+	value: PersistEditorPayload | PersistEditorError
+): value is PersistEditorError {
 	return 'ok' in value && value.ok === false;
 }
 
-export function parsePersistEditorTranscriptBody(
-	body: unknown
-): PersistEditorTranscriptPayload | PersistEditorTranscriptError {
+export function parsePersistEditorBody(body: unknown): PersistEditorPayload | PersistEditorError {
 	if (!isRecord(body)) {
 		return { ok: false, status: 400, message: 'Invalid request body' };
 	}
@@ -97,23 +100,11 @@ export function parsePersistEditorTranscriptBody(
 	};
 }
 
-/** Owner-gated whole-document transcript replace — upserts by project id. */
-export async function persistEditorTranscript(
+async function upsertTranscript(
 	database: Database,
-	userId: string,
 	projectId: string,
-	payload: PersistEditorTranscriptPayload
-): Promise<PersistEditorTranscriptOk | PersistEditorTranscriptError> {
-	const owned = await database
-		.select({ id: project.id })
-		.from(project)
-		.where(and(eq(project.id, projectId), eq(project.userId, userId)))
-		.limit(1);
-
-	if (owned.length === 0) {
-		return { ok: false, status: 404, message: 'Project not found' };
-	}
-
+	payload: PersistEditorPayload
+): Promise<void> {
 	const wordsJson = JSON.stringify(payload.words);
 	const [existing] = await database
 		.select({ id: transcript.id })
@@ -133,17 +124,47 @@ export async function persistEditorTranscript(
 			captionStyle: payload.captionStyle
 		});
 	}
+}
 
+async function assertProjectOwned(
+	database: Database,
+	userId: string,
+	projectId: string
+): Promise<PersistEditorError | null> {
+	const owned = await database
+		.select({ id: project.id })
+		.from(project)
+		.where(and(eq(project.id, projectId), eq(project.userId, userId)))
+		.limit(1);
+
+	if (owned.length === 0) {
+		return { ok: false, status: 404, message: 'Project not found' };
+	}
+
+	return null;
+}
+
+/** Owner-gated whole-document transcript replace — upserts by project id. */
+export async function persistEditorTranscript(
+	database: Database,
+	userId: string,
+	projectId: string,
+	payload: PersistEditorPayload
+): Promise<PersistEditorOk | PersistEditorError> {
+	const ownershipError = await assertProjectOwned(database, userId, projectId);
+	if (ownershipError) return ownershipError;
+
+	await upsertTranscript(database, projectId, payload);
 	return { ok: true };
 }
 
-async function ensureOverlayMedia(
+async function planOverlayMedia(
 	database: Database,
 	projectId: string,
 	overlays: Overlay[]
-): Promise<PersistEditorTranscriptError | null> {
+): Promise<{ error: PersistEditorError | null; toInsert: Overlay[] }> {
 	const resIds = [...new Set(overlays.map((item) => item.resId))];
-	if (resIds.length === 0) return null;
+	if (resIds.length === 0) return { error: null, toInsert: [] };
 
 	const rows = await database
 		.select({ id: media.id, projectId: media.projectId })
@@ -157,7 +178,10 @@ async function ensureOverlayMedia(
 		const ownerProjectId = byId.get(item.resId);
 		if (ownerProjectId !== undefined) {
 			if (ownerProjectId !== projectId) {
-				return { ok: false, status: 400, message: 'Invalid overlay media reference' };
+				return {
+					error: { ok: false, status: 400, message: 'Invalid overlay media reference' },
+					toInsert: []
+				};
 			}
 			continue;
 		}
@@ -167,58 +191,80 @@ async function ensureOverlayMedia(
 		}
 	}
 
-	if (toInsert.size === 0) return null;
-
-	await database.insert(media).values(
-		[...toInsert.values()].map((item) => ({
-			id: item.resId,
-			projectId,
-			name: item.name,
-			durationSeconds: Math.max(1, Math.round(item.dur)),
-			kind: inferMediaKind(item.resId),
-			thumb: item.thumb,
-			sizeBytes: 0
-		}))
-	);
-
-	return null;
+	return { error: null, toInsert: [...toInsert.values()] };
 }
 
-async function persistEditorOverlays(
-	database: Database,
-	projectId: string,
-	overlays: Overlay[]
-): Promise<void> {
-	await database.delete(overlay).where(eq(overlay.projectId, projectId));
-
-	if (overlays.length === 0) return;
-
-	await database.insert(overlay).values(
-		overlays.map((item) => ({
-			id: item.id,
-			projectId,
-			mediaId: item.resId,
-			name: item.name,
-			startSeconds: item.start,
-			durationSeconds: item.dur,
-			thumb: item.thumb
-		}))
-	);
+function mediaRowsFromOverlays(projectId: string, overlays: Overlay[]) {
+	return overlays.map((item) => ({
+		id: item.resId,
+		projectId,
+		name: item.name,
+		durationSeconds: Math.max(1, Math.round(item.dur)),
+		kind: inferMediaKind(item.resId),
+		thumb: item.thumb,
+		sizeBytes: 0
+	}));
 }
 
-/** Owner-gated whole-document editor replace — transcript + overlays. */
+/** Owner-gated whole-document editor replace — transcript + overlays (atomic batch). */
 export async function persistEditorProject(
 	database: Database,
 	userId: string,
 	projectId: string,
-	payload: PersistEditorTranscriptPayload
-): Promise<PersistEditorTranscriptOk | PersistEditorTranscriptError> {
-	const transcriptResult = await persistEditorTranscript(database, userId, projectId, payload);
-	if (!transcriptResult.ok) return transcriptResult;
+	payload: PersistEditorPayload
+): Promise<PersistEditorOk | PersistEditorError> {
+	const ownershipError = await assertProjectOwned(database, userId, projectId);
+	if (ownershipError) return ownershipError;
 
-	const mediaError = await ensureOverlayMedia(database, projectId, payload.overlays);
+	const wordsJson = JSON.stringify(payload.words);
+	const [existing] = await database
+		.select({ id: transcript.id })
+		.from(transcript)
+		.where(eq(transcript.projectId, projectId))
+		.limit(1);
+
+	const { error: mediaError, toInsert } = await planOverlayMedia(
+		database,
+		projectId,
+		payload.overlays
+	);
 	if (mediaError) return mediaError;
 
-	await persistEditorOverlays(database, projectId, payload.overlays);
+	const transcriptWrite = existing
+		? database
+				.update(transcript)
+				.set({ words: wordsJson, captionStyle: payload.captionStyle })
+				.where(eq(transcript.projectId, projectId))
+		: database.insert(transcript).values({
+				projectId,
+				words: wordsJson,
+				captionStyle: payload.captionStyle
+			});
+
+	const batch = [
+		transcriptWrite,
+		...(toInsert.length > 0
+			? [database.insert(media).values(mediaRowsFromOverlays(projectId, toInsert))]
+			: []),
+		database.delete(overlay).where(eq(overlay.projectId, projectId)),
+		...(payload.overlays.length > 0
+			? [
+					database.insert(overlay).values(
+						payload.overlays.map((item) => ({
+							id: item.id,
+							projectId,
+							mediaId: item.resId,
+							name: item.name,
+							startSeconds: item.start,
+							durationSeconds: item.dur,
+							thumb: item.thumb
+						}))
+					)
+				]
+			: [])
+	] as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]];
+
+	await database.batch(batch);
+
 	return { ok: true };
 }

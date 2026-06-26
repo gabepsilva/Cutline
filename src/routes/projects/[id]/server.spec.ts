@@ -9,18 +9,18 @@ vi.mock('$lib/server/editor-transcript-persist', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/server/editor-transcript-persist')>();
 	return {
 		...actual,
-		parsePersistEditorTranscriptBody: vi.fn(),
+		parsePersistEditorBody: vi.fn(),
 		persistEditorProject: vi.fn()
 	};
 });
 
 import {
-	parsePersistEditorTranscriptBody,
+	parsePersistEditorBody,
 	persistEditorProject
 } from '$lib/server/editor-transcript-persist';
 import { PUT } from './+server';
 
-const mockedParse = vi.mocked(parsePersistEditorTranscriptBody);
+const mockedParse = vi.mocked(parsePersistEditorBody);
 const mockedPersist = vi.mocked(persistEditorProject);
 
 const authUser = {

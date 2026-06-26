@@ -62,14 +62,12 @@ export async function loadEditorProject(
 
 	if (!row) return null;
 
-	const [transcriptRow] = await database
-		.select()
-		.from(transcript)
-		.where(eq(transcript.projectId, projectId))
-		.limit(1);
-
-	const mediaRows = await database.select().from(media).where(eq(media.projectId, projectId));
-	const overlayRows = await database.select().from(overlay).where(eq(overlay.projectId, projectId));
+	const [transcriptRows, mediaRows, overlayRows] = await Promise.all([
+		database.select().from(transcript).where(eq(transcript.projectId, projectId)),
+		database.select().from(media).where(eq(media.projectId, projectId)),
+		database.select().from(overlay).where(eq(overlay.projectId, projectId))
+	]);
+	const transcriptRow = transcriptRows[0];
 
 	const words = parseWords(transcriptRow?.words);
 	const captionStyle = (transcriptRow?.captionStyle as CaptionStyle | undefined) ?? 'karaoke';
