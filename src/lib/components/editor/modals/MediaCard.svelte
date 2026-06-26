@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatTimecode } from '$lib/utils/format-timecode';
+	import VideoThumb from '$lib/components/ui/VideoThumb.svelte';
 	import type { MediaResource } from '$lib/types/media';
 
 	interface Props {
@@ -14,11 +15,7 @@
 </script>
 
 <button type="button" class={['media-card', className]} {onclick}>
-	<div class="media-card__thumb" style:background={resource.thumb}>
-		<div class="media-card__thumb-glow" aria-hidden="true"></div>
-		<span class="media-card__duration">{durationLabel}</span>
-		<span class="media-card__kind">{resource.kind}</span>
-	</div>
+	<VideoThumb variant="media" thumb={resource.thumb} {durationLabel} kind={resource.kind} />
 	<div class="media-card__footer">
 		<span class="media-card__name">{resource.name}</span>
 		<span class="media-card__add" aria-hidden="true">+</span>
@@ -38,42 +35,6 @@
 		font-family: inherit;
 		text-align: left;
 		color: inherit;
-	}
-
-	.media-card__thumb {
-		position: relative;
-		aspect-ratio: 16 / 9;
-	}
-
-	.media-card__thumb-glow {
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(70% 90% at 40% 35%, rgb(255 255 255 / 6%), transparent 70%);
-	}
-
-	.media-card__duration {
-		position: absolute;
-		bottom: 6px;
-		right: 6px;
-		font-family: var(--font-mono);
-		font-size: 9.5px;
-		color: var(--text-2);
-		background: rgb(0 0 0 / 55%);
-		padding: 2px 6px;
-		border-radius: var(--radius-xs);
-	}
-
-	.media-card__kind {
-		position: absolute;
-		top: 6px;
-		left: 6px;
-		font-size: 8.5px;
-		letter-spacing: 0.05em;
-		color: var(--text-3);
-		background: rgb(0 0 0 / 50%);
-		padding: 2px 6px;
-		border-radius: var(--radius-xs);
-		text-transform: uppercase;
 	}
 
 	.media-card__footer {

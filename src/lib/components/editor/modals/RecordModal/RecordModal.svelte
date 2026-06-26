@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Modal from '$lib/components/ui/Modal/Modal.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { DEFAULT_RECORD_THUMB } from '$lib/types/media';
 	import type { RecordModalStep, RecordSource } from '../RecordModal.types';
 	import RecordPreview from './RecordPreview.svelte';
 	import RecordReview from './RecordReview.svelte';
@@ -38,7 +39,7 @@
 		elapsedLabel = '0:00',
 		reviewName = 'New recording',
 		reviewDurationLabel = '0:12',
-		reviewThumb = 'repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px)',
+		reviewThumb = DEFAULT_RECORD_THUMB,
 		camDenied = true,
 		onvideomount,
 		onclose,

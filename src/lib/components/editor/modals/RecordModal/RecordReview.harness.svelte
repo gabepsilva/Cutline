@@ -1,5 +1,6 @@
 <script lang="ts">
 	import RecordReview from './RecordReview.svelte';
+	import { DEFAULT_RECORD_THUMB } from '$lib/types/media';
 
 	interface Props {
 		name?: string;
@@ -13,7 +14,7 @@
 	let {
 		name = 'New recording',
 		durationLabel = '0:12',
-		thumb = 'repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px)',
+		thumb = DEFAULT_RECORD_THUMB,
 		onkeep,
 		onaddtotimeline,
 		class: className = ''

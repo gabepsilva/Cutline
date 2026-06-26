@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ProjectOverflowMenu from './ProjectOverflowMenu.svelte';
+	import VideoThumb from '$lib/components/ui/VideoThumb.svelte';
 	import type { Project } from '$lib/types/project';
 
 	interface Props {
@@ -14,11 +15,12 @@
 
 <article class={['project-card', className]}>
 	<button type="button" class="project-card__main" onclick={(event) => onclick?.(project, event)}>
-		<div class="project-card__thumb" style:background={project.thumb}>
-			<div class="project-card__thumb-shine" aria-hidden="true"></div>
-			<span class="project-card__duration">{project.durationLabel}</span>
-			<span class="project-card__kind">{project.kind}</span>
-		</div>
+		<VideoThumb
+			variant="project"
+			thumb={project.thumb}
+			durationLabel={project.durationLabel}
+			kind={project.kind}
+		/>
 		<div class="project-card__body">
 			<p class="project-card__title">{project.title}</p>
 			<p class="project-card__meta">{project.meta}</p>
@@ -55,45 +57,6 @@
 		text-align: left;
 		font-family: inherit;
 		color: inherit;
-	}
-
-	.project-card__thumb {
-		position: relative;
-		aspect-ratio: 16 / 9;
-		overflow: hidden;
-	}
-
-	.project-card__thumb-shine {
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(70% 90% at 40% 35%, rgba(255, 255, 255, 0.05), transparent 70%);
-		pointer-events: none;
-	}
-
-	.project-card__duration {
-		position: absolute;
-		bottom: 8px;
-		right: 8px;
-		font-family: var(--font-mono);
-		font-size: 10.5px;
-		background: rgba(0, 0, 0, 0.6);
-		padding: 2px 6px;
-		border-radius: 4px;
-		line-height: 1.2;
-	}
-
-	.project-card__kind {
-		position: absolute;
-		top: 8px;
-		left: 8px;
-		font-family: var(--font-mono);
-		font-size: 9.5px;
-		color: var(--text-6);
-		background: rgba(0, 0, 0, 0.45);
-		padding: 2px 6px;
-		border-radius: 4px;
-		line-height: 1.2;
-		text-transform: uppercase;
 	}
 
 	.project-card__body {

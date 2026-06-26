@@ -71,9 +71,7 @@ describe('PreviewPlayer.svelte', () => {
 		});
 
 		const player = await page.getByRole('button', { name: 'Play preview' }).element();
-		const simulated = player
-			.closest('.preview-player')
-			?.querySelector('.preview-player__simulated');
+		const simulated = player.closest('.preview-player')?.querySelector('.simulated-frame');
 
 		expect(simulated).toBeNull();
 	});
@@ -82,9 +80,7 @@ describe('PreviewPlayer.svelte', () => {
 		render(PreviewPlayerHarness, { videoUrl: null, showSimulated: true });
 
 		const player = await page.getByRole('button', { name: 'Play preview' }).element();
-		const simulated = player
-			.closest('.preview-player')
-			?.querySelector('.preview-player__simulated');
+		const simulated = player.closest('.preview-player')?.querySelector('.simulated-frame');
 
 		expect(simulated).not.toBeNull();
 	});
