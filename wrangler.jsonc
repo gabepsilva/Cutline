@@ -1,0 +1,5 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	// R2-only dev tooling — no Workers/Pages deploy. account_id can also be set via CLOUDFLARE_ACCOUNT_ID.
+	"account_id": "83cb45a0b6add1ac05003e09ba101220"
+}
