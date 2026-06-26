@@ -34,11 +34,23 @@
 		}
 	});
 
+	let savedEditor: EditorState | undefined;
+
 	$effect(() => {
-		autosave.schedule(project.id, {
+		const payload = {
 			words: editor.words,
 			captionStyle: editor.captionStyle
-		});
+		};
+
+		// Skip the first run for each freshly loaded editor: the loaded transcript is
+		// already persisted, so autosaving it would write identical data and flash the
+		// save status on every open. Only schedule once a real edit mutates this instance.
+		if (savedEditor !== editor) {
+			savedEditor = editor;
+			return;
+		}
+
+		autosave.schedule(project.id, payload);
 	});
 
 	onDestroy(() => autosave.dispose());
