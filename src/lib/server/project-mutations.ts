@@ -1,22 +1,13 @@
-import { and, eq } from 'drizzle-orm';
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
+import { eq } from 'drizzle-orm';
 import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
-import type * as schema from '$lib/server/db/schema';
+import type { Database } from '$lib/server/db/types';
+import { assertProjectOwned, ownedProjectFilter } from '$lib/server/project-access';
+import type { ServerError, ServerOk } from '$lib/server/result';
 import { projectThumb } from '$lib/types/project';
-
-type Database = LibSQLDatabase<typeof schema>;
 
 export const PROJECT_TITLE_MAX_LENGTH = 120;
 
-export type ProjectMutationError = {
-	ok: false;
-	status: 400 | 404;
-	message: string;
-};
-
 export type CreateProjectResult = { ok: true; projectId: string };
-
-export type ProjectMutationOk = { ok: true };
 
 export async function createOwnedProject(
 	database: Database,
@@ -48,7 +39,7 @@ export async function renameOwnedProject(
 	userId: string,
 	projectId: string,
 	rawTitle: string
-): Promise<ProjectMutationOk | ProjectMutationError> {
+): Promise<ServerOk | ServerError> {
 	const title = rawTitle.trim();
 	if (!title) {
 		return { ok: false, status: 400, message: 'Title is required' };
@@ -60,7 +51,7 @@ export async function renameOwnedProject(
 	const updated = await database
 		.update(project)
 		.set({ title })
-		.where(and(eq(project.id, projectId), eq(project.userId, userId)))
+		.where(ownedProjectFilter(userId, projectId))
 		.returning({ id: project.id });
 
 	if (updated.length === 0) {
@@ -75,22 +66,15 @@ export async function deleteOwnedProject(
 	database: Database,
 	userId: string,
 	projectId: string
-): Promise<ProjectMutationOk | ProjectMutationError> {
-	const owned = await database
-		.select({ id: project.id })
-		.from(project)
-		.where(and(eq(project.id, projectId), eq(project.userId, userId)))
-		.limit(1);
-
-	if (owned.length === 0) {
-		return { ok: false, status: 404, message: 'Project not found' };
-	}
+): Promise<ServerOk | ServerError> {
+	const ownershipError = await assertProjectOwned(database, userId, projectId);
+	if (ownershipError) return ownershipError;
 
 	await database.batch([
 		database.delete(overlay).where(eq(overlay.projectId, projectId)),
 		database.delete(media).where(eq(media.projectId, projectId)),
 		database.delete(transcript).where(eq(transcript.projectId, projectId)),
-		database.delete(project).where(and(eq(project.id, projectId), eq(project.userId, userId)))
+		database.delete(project).where(ownedProjectFilter(userId, projectId))
 	]);
 
 	return { ok: true };

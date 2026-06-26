@@ -1,17 +1,14 @@
-import { and, eq } from 'drizzle-orm';
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
+import { eq } from 'drizzle-orm';
 import type { User } from 'better-auth';
 import { deriveSentences } from '$lib/editor/derive-sentences';
 import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
-import type * as schema from '$lib/server/db/schema';
+import type { Database } from '$lib/server/db/types';
+import { mapMediaRow, mapOverlayRow } from '$lib/server/map-editor-rows';
 import { mapProjectRow } from '$lib/server/map-project-row';
+import { ownedProjectFilter } from '$lib/server/project-access';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
-import type { MediaResource } from '$lib/types/media';
-import type { Overlay } from '$lib/types/timeline';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import { deriveUserInitials } from '$lib/utils/user-initials';
-
-type Database = LibSQLDatabase<typeof schema>;
 
 function parseWords(raw: string | null | undefined): Word[] {
 	if (!raw) return [];
@@ -21,27 +18,6 @@ function parseWords(raw: string | null | undefined): Word[] {
 	} catch {
 		return [];
 	}
-}
-
-function mapMediaRow(row: typeof media.$inferSelect): MediaResource {
-	return {
-		id: row.id,
-		name: row.name,
-		dur: row.durationSeconds,
-		kind: row.kind,
-		thumb: row.thumb
-	};
-}
-
-function mapOverlayRow(row: typeof overlay.$inferSelect): Overlay {
-	return {
-		id: row.id,
-		resId: row.mediaId,
-		name: row.name,
-		start: row.startSeconds,
-		dur: row.durationSeconds,
-		thumb: row.thumb
-	};
 }
 
 function editorMeta(words: Word[]): string {
@@ -57,7 +33,7 @@ export async function loadEditorProject(
 	const [row] = await database
 		.select()
 		.from(project)
-		.where(and(eq(project.id, projectId), eq(project.userId, user.id)))
+		.where(ownedProjectFilter(user.id, projectId))
 		.limit(1);
 
 	if (!row) return null;

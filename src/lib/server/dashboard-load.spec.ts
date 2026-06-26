@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { project } from '$lib/server/db/domain.schema';
-import { user } from '$lib/server/db/auth.schema';
 import { loadDashboardProjects } from '$lib/server/dashboard-load';
+import { seedUser } from '$lib/test/seed-user';
 import { createTestDb } from '$lib/test/test-db';
 
 const authUser = {
@@ -18,20 +18,6 @@ const otherUser = {
 	id: 'user-b',
 	email: 'other@cutline.test'
 };
-
-async function seedUser(
-	db: Awaited<ReturnType<typeof createTestDb>>['db'],
-	seed: { id: string; email: string }
-) {
-	await db.insert(user).values({
-		id: seed.id,
-		name: 'Test User',
-		email: seed.email,
-		emailVerified: true,
-		createdAt: new Date('2026-06-01T00:00:00.000Z'),
-		updatedAt: new Date('2026-06-01T00:00:00.000Z')
-	});
-}
 
 describe('loadDashboardProjects', () => {
 	it('returns the newest project as hero and the remainder in the grid', async () => {

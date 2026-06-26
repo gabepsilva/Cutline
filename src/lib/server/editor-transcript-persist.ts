@@ -1,20 +1,12 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
-import type { LibSQLDatabase } from 'drizzle-orm/libsql';
-import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
-import type * as schema from '$lib/server/db/schema';
+import { media, overlay, transcript } from '$lib/server/db/domain.schema';
+import type { Database } from '$lib/server/db/types';
+import { mediaInsertFromOverlay, overlayInsertFromDomain } from '$lib/server/map-editor-rows';
+import { assertProjectOwned } from '$lib/server/project-access';
+import type { ServerError, ServerOk } from '$lib/server/result';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import type { Overlay } from '$lib/types/timeline';
-
-type Database = LibSQLDatabase<typeof schema>;
-
-export type PersistEditorError = {
-	ok: false;
-	status: 400 | 404;
-	message: string;
-};
-
-export type PersistEditorOk = { ok: true };
 
 const CAPTION_STYLES = new Set<CaptionStyle>(['karaoke', 'clean']);
 
@@ -37,10 +29,6 @@ function isOverlay(value: unknown): value is Overlay {
 		value.dur > 0 &&
 		typeof value.thumb === 'string'
 	);
-}
-
-function inferMediaKind(resId: string): string {
-	return resId.startsWith('rec-') ? 'Recording' : 'B-roll';
 }
 
 function isWord(value: unknown): value is Word {
@@ -66,13 +54,7 @@ export type PersistEditorPayload = {
 	overlays: Overlay[];
 };
 
-export function isPersistEditorError(
-	value: PersistEditorPayload | PersistEditorError
-): value is PersistEditorError {
-	return 'ok' in value && value.ok === false;
-}
-
-export function parsePersistEditorBody(body: unknown): PersistEditorPayload | PersistEditorError {
+export function parsePersistEditorBody(body: unknown): PersistEditorPayload | ServerError {
 	if (!isRecord(body)) {
 		return { ok: false, status: 400, message: 'Invalid request body' };
 	}
@@ -140,31 +122,13 @@ async function upsertTranscript(
 	await buildTranscriptWrite(database, projectId, payload, exists);
 }
 
-async function assertProjectOwned(
-	database: Database,
-	userId: string,
-	projectId: string
-): Promise<PersistEditorError | null> {
-	const owned = await database
-		.select({ id: project.id })
-		.from(project)
-		.where(and(eq(project.id, projectId), eq(project.userId, userId)))
-		.limit(1);
-
-	if (owned.length === 0) {
-		return { ok: false, status: 404, message: 'Project not found' };
-	}
-
-	return null;
-}
-
 /** Owner-gated whole-document transcript replace — upserts by project id. */
 export async function persistEditorTranscript(
 	database: Database,
 	userId: string,
 	projectId: string,
 	payload: PersistEditorPayload
-): Promise<PersistEditorOk | PersistEditorError> {
+): Promise<ServerOk | ServerError> {
 	const ownershipError = await assertProjectOwned(database, userId, projectId);
 	if (ownershipError) return ownershipError;
 
@@ -176,7 +140,7 @@ async function planOverlayMedia(
 	database: Database,
 	projectId: string,
 	overlays: Overlay[]
-): Promise<{ error: PersistEditorError | null; toInsert: Overlay[] }> {
+): Promise<{ error: ServerError | null; toInsert: Overlay[] }> {
 	const resIds = [...new Set(overlays.map((item) => item.resId))];
 	if (resIds.length === 0) return { error: null, toInsert: [] };
 
@@ -208,25 +172,13 @@ async function planOverlayMedia(
 	return { error: null, toInsert: [...toInsert.values()] };
 }
 
-function mediaRowsFromOverlays(projectId: string, overlays: Overlay[]) {
-	return overlays.map((item) => ({
-		id: item.resId,
-		projectId,
-		name: item.name,
-		durationSeconds: Math.max(1, Math.round(item.dur)),
-		kind: inferMediaKind(item.resId),
-		thumb: item.thumb,
-		sizeBytes: 0
-	}));
-}
-
 /** Owner-gated whole-document editor replace — transcript + overlays (atomic batch). */
 export async function persistEditorProject(
 	database: Database,
 	userId: string,
 	projectId: string,
 	payload: PersistEditorPayload
-): Promise<PersistEditorOk | PersistEditorError> {
+): Promise<ServerOk | ServerError> {
 	const ownershipError = await assertProjectOwned(database, userId, projectId);
 	if (ownershipError) return ownershipError;
 
@@ -248,22 +200,18 @@ export async function persistEditorProject(
 	const batch = [
 		transcriptWrite,
 		...(toInsert.length > 0
-			? [database.insert(media).values(mediaRowsFromOverlays(projectId, toInsert))]
+			? [
+					database
+						.insert(media)
+						.values(toInsert.map((item) => mediaInsertFromOverlay(projectId, item)))
+				]
 			: []),
 		database.delete(overlay).where(eq(overlay.projectId, projectId)),
 		...(payload.overlays.length > 0
 			? [
-					database.insert(overlay).values(
-						payload.overlays.map((item) => ({
-							id: item.id,
-							projectId,
-							mediaId: item.resId,
-							name: item.name,
-							startSeconds: item.start,
-							durationSeconds: item.dur,
-							thumb: item.thumb
-						}))
-					)
+					database
+						.insert(overlay)
+						.values(payload.overlays.map((item) => overlayInsertFromDomain(projectId, item)))
 				]
 			: [])
 	] as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]];
