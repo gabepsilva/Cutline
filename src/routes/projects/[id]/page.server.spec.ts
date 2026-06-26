@@ -38,7 +38,8 @@ const editorLoadFixture: EditorProjectLoad = {
 	sentences: [],
 	speaker: { name: 'Alex Chen', initials: 'AC' },
 	videoUrl: null,
-	resources: []
+	resources: [],
+	overlays: []
 };
 
 describe('projects/[id]/+page.server load', () => {

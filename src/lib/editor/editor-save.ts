@@ -1,4 +1,5 @@
 import type { CaptionStyle, Word } from '$lib/types/transcript';
+import type { Overlay } from '$lib/types/timeline';
 
 export type EditorSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -7,6 +8,7 @@ export const EDITOR_AUTOSAVE_DELAY_MS = 1_000;
 export interface EditorAutosavePayload {
 	words: Word[];
 	captionStyle: CaptionStyle;
+	overlays: Overlay[];
 }
 
 export function editorSaveMeta(status: EditorSaveStatus, baselineMeta: string): string {

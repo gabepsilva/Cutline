@@ -9,19 +9,19 @@ vi.mock('$lib/server/editor-transcript-persist', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/server/editor-transcript-persist')>();
 	return {
 		...actual,
-		parsePersistEditorTranscriptBody: vi.fn(),
-		persistEditorTranscript: vi.fn()
+		parsePersistEditorBody: vi.fn(),
+		persistEditorProject: vi.fn()
 	};
 });
 
 import {
-	parsePersistEditorTranscriptBody,
-	persistEditorTranscript
+	parsePersistEditorBody,
+	persistEditorProject
 } from '$lib/server/editor-transcript-persist';
 import { PUT } from './+server';
 
-const mockedParse = vi.mocked(parsePersistEditorTranscriptBody);
-const mockedPersist = vi.mocked(persistEditorTranscript);
+const mockedParse = vi.mocked(parsePersistEditorBody);
+const mockedPersist = vi.mocked(persistEditorProject);
 
 const authUser = {
 	id: 'user-a',
@@ -34,7 +34,8 @@ const authUser = {
 
 const payload = {
 	words: fixtureTranscriptWords,
-	captionStyle: 'karaoke' as const
+	captionStyle: 'karaoke' as const,
+	overlays: []
 };
 
 describe('projects/[id]/+server PUT', () => {

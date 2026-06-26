@@ -1,9 +1,9 @@
 import { error, json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import {
-	isPersistEditorTranscriptError,
-	parsePersistEditorTranscriptBody,
-	persistEditorTranscript
+	isPersistEditorError,
+	parsePersistEditorBody,
+	persistEditorProject
 } from '$lib/server/editor-transcript-persist';
 import type { RequestHandler } from './$types';
 
@@ -19,12 +19,12 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		error(400, 'Invalid JSON body');
 	}
 
-	const parsed = parsePersistEditorTranscriptBody(body);
-	if (isPersistEditorTranscriptError(parsed)) {
+	const parsed = parsePersistEditorBody(body);
+	if (isPersistEditorError(parsed)) {
 		error(parsed.status, parsed.message);
 	}
 
-	const result = await persistEditorTranscript(db, locals.user.id, params.id, parsed);
+	const result = await persistEditorProject(db, locals.user.id, params.id, parsed);
 	if (!result.ok) {
 		error(result.status, result.message);
 	}

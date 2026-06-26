@@ -17,6 +17,7 @@ export interface EditorStateInit {
 	sentences: Sentence[];
 	captionStyle?: CaptionStyle;
 	resources?: MediaResource[];
+	overlays?: Overlay[];
 }
 
 export class EditorState {
@@ -45,6 +46,7 @@ export class EditorState {
 		this.sentences = init.sentences;
 		if (init.captionStyle) this.captionStyle = init.captionStyle;
 		if (init.resources) this.resources = init.resources;
+		if (init.overlays) this.overlays = init.overlays;
 	}
 
 	active = $derived.by(() => activeWords(this.words));
