@@ -130,10 +130,8 @@ async function runClaimedJob(
 	}
 }
 
-/** Claim and run one job. Returns true when a job was processed. */
-export async function runWorkerOnce(database: Database, workerId: string): Promise<boolean> {
-	await reapExpiredJobs(database);
-
+/** Claim and run one job without reaping — use via batch/once wrappers. */
+async function claimAndRunJob(database: Database, workerId: string): Promise<boolean> {
 	const claimed = await claimJob(database, workerId);
 	if (!claimed) {
 		return false;
@@ -143,16 +141,24 @@ export async function runWorkerOnce(database: Database, workerId: string): Promi
 	return true;
 }
 
+/** Claim and run one job. Returns true when a job was processed. */
+export async function runWorkerOnce(database: Database, workerId: string): Promise<boolean> {
+	await reapExpiredJobs(database);
+	return claimAndRunJob(database, workerId);
+}
+
 /** Process queued jobs until the queue is empty or `maxJobs` is reached. */
 export async function runWorkerBatch(
 	database: Database,
 	workerId: string,
 	maxJobs = Number.POSITIVE_INFINITY
 ): Promise<number> {
+	await reapExpiredJobs(database);
+
 	let processed = 0;
 
 	while (processed < maxJobs) {
-		const ran = await runWorkerOnce(database, workerId);
+		const ran = await claimAndRunJob(database, workerId);
 		if (!ran) break;
 		processed += 1;
 	}

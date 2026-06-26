@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { job, project, transcript } from '$lib/server/db/domain.schema';
+import * as jobStore from '$lib/server/jobs/job-store';
 import {
 	claimJob,
 	enqueueJob,
@@ -231,6 +232,25 @@ describe('job-store', () => {
 			const rows = await db.select().from(job);
 			expect(rows.every((row) => row.status === 'succeeded')).toBe(true);
 		} finally {
+			client.close();
+		}
+	});
+
+	it('runWorkerBatch reaps expired leases once per batch', async () => {
+		const { db, client } = await createTestDb();
+		const reapSpy = vi.spyOn(jobStore, 'reapExpiredJobs').mockResolvedValue(0);
+		try {
+			registerEchoHandler('ingest');
+			await seedUser(db, authUser);
+			await seedProject(db, 'proj-1');
+			await enqueueJob(db, { type: 'ingest', projectId: 'proj-1', payload: { n: 1 } });
+			await enqueueJob(db, { type: 'ingest', projectId: 'proj-1', payload: { n: 2 } });
+
+			await runWorkerBatch(db, 'worker-a', 2);
+
+			expect(reapSpy).toHaveBeenCalledTimes(1);
+		} finally {
+			reapSpy.mockRestore();
 			client.close();
 		}
 	});
