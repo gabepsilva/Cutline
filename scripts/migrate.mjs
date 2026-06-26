@@ -31,6 +31,8 @@ const client = createClient({
 	url,
 	...(authToken ? { authToken } : {})
 });
+// SQLite/libSQL default foreign_keys=OFF per connection — enable before migrate.
+await client.execute('PRAGMA foreign_keys = ON');
 const db = drizzle(client);
 
 await migrate(db, { migrationsFolder: 'drizzle' });
