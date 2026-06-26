@@ -3,6 +3,8 @@ export interface Word {
 	id: string;
 	text: string;
 	clean: string;
+	/** Inclusive start in source A-roll media (seconds from t=0). */
+	start: number;
 	dur: number;
 	bars: number[];
 	filler: boolean;

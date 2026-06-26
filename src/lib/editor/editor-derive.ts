@@ -1,9 +1,9 @@
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import type { Clip, Tick, WaveBar } from '$lib/types/timeline';
 import { formatTimecode } from '$lib/utils/format-timecode';
+import { buildEdl, editedWordAt, WORD_GAP } from './edl';
 
-/** Gap between active words on the edited timeline (design `0.02`). */
-export const WORD_GAP = 0.02;
+export { WORD_GAP };
 
 export function activeWords(words: Word[]): Word[] {
 	return words.filter((w) => !w.deleted);
@@ -11,20 +11,15 @@ export function activeWords(words: Word[]): Word[] {
 
 /** Total edited duration in seconds — ignores soft-deleted words. */
 export function totalDuration(words: Word[]): number {
-	let acc = 0;
-	for (const w of words) {
-		if (!w.deleted) acc += w.dur + WORD_GAP;
-	}
-	return Math.max(0.001, acc);
+	return buildEdl(words).editedDuration;
 }
 
 /** Map each active word id to its start time on the edited timeline. */
 export function buildStartMap(active: Word[]): Record<string, number> {
+	const edl = buildEdl(active);
 	const startMap: Record<string, number> = {};
-	let acc = 0;
-	for (const w of active) {
-		startMap[w.id] = acc;
-		acc += w.dur + WORD_GAP;
+	for (const segment of edl.segments) {
+		startMap[segment.wordId] = segment.editedStart;
 	}
 	return startMap;
 }
@@ -50,12 +45,8 @@ export function currentWordId(
 	startMap: Record<string, number>,
 	currentTime: number
 ): string | null {
-	for (const w of active) {
-		const start = startMap[w.id];
-		if (currentTime >= start && currentTime < start + w.dur + WORD_GAP) return w.id;
-	}
-	if (active.length === 0) return null;
-	return currentTime <= 0 ? active[0].id : active[active.length - 1].id;
+	void startMap;
+	return editedWordAt(buildEdl(active), active, currentTime);
 }
 
 /** A1 waveform bars positioned along the edited timeline. */
