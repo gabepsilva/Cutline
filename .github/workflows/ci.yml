@@ -42,8 +42,12 @@ jobs:
       - name: E2E tests
         env:
           DATABASE_URL: file:./ci-e2e.db
+          ORIGIN: http://localhost:4173
         run: |
-          BETTER_AUTH_SECRET="$(openssl rand -hex 16)" bunx playwright test
+          rm -f ci-e2e.db
+          export BETTER_AUTH_SECRET="$(openssl rand -hex 16)"
+          bun scripts/e2e-setup.ts
+          bunx playwright test
 
   coverage:
     name: Coverage

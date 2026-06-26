@@ -6,7 +6,8 @@ export default defineConfig({
 		port: 4173,
 		env: {
 			DATABASE_URL: process.env.DATABASE_URL,
-			BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET
+			BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+			ORIGIN: process.env.ORIGIN ?? 'http://localhost:4173'
 		}
 	},
 	testMatch: '**/*.e2e.{ts,js}'

@@ -9,7 +9,7 @@
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { captionWordsForCurrentSentence, trimmedLabel } from '$lib/editor/editor-derive';
 	import { EditorState } from '$lib/editor/editor-state.svelte';
-	import type { EditorProjectLoad } from '$lib/mocks/editor.mock';
+	import type { EditorProjectLoad } from '$lib/types/editor-load';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import { resolveEditorKeyAction, shouldPreventDefault } from '$lib/utils/editor-keyboard';
 

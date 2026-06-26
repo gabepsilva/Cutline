@@ -1,9 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { totalDuration } from '$lib/editor/editor-derive';
-import { loadMockEditorProject, MOCK_EMPTY_TRANSCRIPT_PROJECT_ID } from '$lib/mocks/editor.mock';
+import { buildMockTranscript, MOCK_EMPTY_TRANSCRIPT_PROJECT_ID } from '$lib/mocks/editor.mock';
+import { loginAsE2eUser } from '$lib/test/e2e-auth';
 import { formatTimecode } from '$lib/utils/format-timecode';
 
 test.describe('editor route', () => {
+	test.beforeEach(async ({ page }) => {
+		await loginAsE2eUser(page);
+	});
+
 	test('renders editor workspace with transcript and preview for a seeded project', async ({
 		page
 	}) => {
@@ -11,7 +16,7 @@ test.describe('editor route', () => {
 
 		await expect(page.getByTestId('editor-workspace')).toBeVisible();
 		await expect(page.getByText('How I edit videos 3x faster')).toBeVisible();
-		await expect(page.getByText('Auto-saved · MP4 1080p')).toBeVisible();
+		await expect(page.getByText('Auto-saved')).toBeVisible();
 		await expect(page.getByRole('region', { name: 'Transcript' })).toBeVisible();
 		await expect(page.getByRole('region', { name: 'Preview' })).toBeVisible();
 		await expect(page.getByRole('region', { name: 'Timeline' })).toBeVisible();
@@ -39,10 +44,9 @@ test.describe('editor route', () => {
 	test('timeline lane click seeks playback', async ({ page }) => {
 		await page.goto('/projects/proj-hero');
 
-		const project = loadMockEditorProject('proj-hero');
-		expect(project).not.toBeNull();
+		const { words } = buildMockTranscript();
 		const seekRatio = 0.75;
-		const expectedTime = formatTimecode(totalDuration(project!.words) * seekRatio);
+		const expectedTime = formatTimecode(totalDuration(words) * seekRatio);
 
 		const transport = page.getByRole('group', { name: 'Transport controls' });
 		const currentTime = transport.locator('.timecode-display__current');

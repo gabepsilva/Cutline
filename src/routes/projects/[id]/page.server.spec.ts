@@ -1,49 +1,78 @@
-import { describe, expect, it } from 'vitest';
-import { loadMockEditorProject, MOCK_EMPTY_TRANSCRIPT_PROJECT_ID } from '$lib/mocks/editor.mock';
+import { describe, expect, it, vi } from 'vitest';
+import type { EditorProjectLoad } from '$lib/types/editor-load';
+
+vi.mock('$lib/server/db', () => ({
+	db: {}
+}));
+
+vi.mock('$lib/server/editor-project-load', () => ({
+	loadEditorProject: vi.fn()
+}));
+
+import { loadEditorProject } from '$lib/server/editor-project-load';
 import { load } from './+page.server';
 
+const mockedLoadEditorProject = vi.mocked(loadEditorProject);
+
+const authUser = {
+	id: 'user-a',
+	name: 'Alex Chen',
+	email: 'alex@cutline.test',
+	emailVerified: true,
+	createdAt: new Date('2026-06-01T00:00:00.000Z'),
+	updatedAt: new Date('2026-06-01T00:00:00.000Z')
+};
+
+const editorLoadFixture: EditorProjectLoad = {
+	project: {
+		id: 'proj-hero',
+		title: 'How I edit videos 3x faster',
+		durationLabel: '4:32',
+		kind: 'TALKING HEAD',
+		meta: 'Edited 2h ago',
+		thumb: 'repeating-linear-gradient(135deg,#1c1c20 0 12px,#191920 12px 24px)'
+	},
+	meta: 'Auto-saved',
+	words: [],
+	sentences: [],
+	speaker: { name: 'Alex Chen', initials: 'AC' },
+	videoUrl: null,
+	resources: []
+};
+
 describe('projects/[id]/+page.server load', () => {
-	it('returns seeded editor data for a known project id', async () => {
+	it('returns editor load data from the server loader', async () => {
+		mockedLoadEditorProject.mockResolvedValueOnce(editorLoadFixture);
+
 		const data = await load({
-			params: { id: 'proj-hero' }
+			params: { id: 'proj-hero' },
+			locals: { user: authUser }
 		} as Parameters<typeof load>[0]);
 
-		expect(data).toBeDefined();
-		if (!data) throw new Error('expected load data');
-
-		expect(data.project).toMatchObject({
-			id: 'proj-hero',
-			title: 'How I edit videos 3x faster'
-		});
-		expect(data.meta).toBe('Auto-saved · MP4 1080p');
-		expect(data.words.length).toBeGreaterThan(0);
-		expect(data.sentences.length).toBeGreaterThan(0);
-		expect(data.speaker.name).toBe('Alex Chen');
-		expect(data.resources.length).toBeGreaterThan(0);
+		expect(data).toEqual(editorLoadFixture);
+		expect(mockedLoadEditorProject).toHaveBeenCalledWith({}, authUser, 'proj-hero');
 	});
 
-	it('returns empty transcript arrays for the no-transcript mock project', async () => {
-		const data = await load({
-			params: { id: MOCK_EMPTY_TRANSCRIPT_PROJECT_ID }
-		} as Parameters<typeof load>[0]);
-
-		expect(data).toBeDefined();
-		if (!data) throw new Error('expected load data');
-
-		expect(data.words).toEqual([]);
-		expect(data.sentences).toEqual([]);
-		expect(data.resources).toEqual([]);
+	it('redirects unauthenticated visitors to login', async () => {
+		try {
+			await load({
+				params: { id: 'proj-hero' },
+				locals: {}
+			} as Parameters<typeof load>[0]);
+			expect.unreachable('expected redirect');
+		} catch (error) {
+			expect(error).toMatchObject({ status: 302, location: '/login' });
+		}
 	});
 
-	it('throws 404 when the project id is unknown', async () => {
+	it('throws 404 when the project is missing or not owned', async () => {
+		mockedLoadEditorProject.mockResolvedValueOnce(null);
+
 		await expect(
 			load({
-				params: { id: 'missing-project' }
+				params: { id: 'missing-project' },
+				locals: { user: authUser }
 			} as Parameters<typeof load>[0])
 		).rejects.toMatchObject({ status: 404 });
-	});
-
-	it('loadMockEditorProject returns null for unknown ids (empty catalog lookup)', () => {
-		expect(loadMockEditorProject('does-not-exist')).toBeNull();
 	});
 });
