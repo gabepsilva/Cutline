@@ -100,30 +100,44 @@ export function parsePersistEditorBody(body: unknown): PersistEditorPayload | Pe
 	};
 }
 
-async function upsertTranscript(
-	database: Database,
-	projectId: string,
-	payload: PersistEditorPayload
-): Promise<void> {
-	const wordsJson = JSON.stringify(payload.words);
+async function transcriptExists(database: Database, projectId: string): Promise<boolean> {
 	const [existing] = await database
 		.select({ id: transcript.id })
 		.from(transcript)
 		.where(eq(transcript.projectId, projectId))
 		.limit(1);
 
-	if (existing) {
-		await database
-			.update(transcript)
-			.set({ words: wordsJson, captionStyle: payload.captionStyle })
-			.where(eq(transcript.projectId, projectId));
-	} else {
-		await database.insert(transcript).values({
-			projectId,
-			words: wordsJson,
-			captionStyle: payload.captionStyle
-		});
-	}
+	return existing !== undefined;
+}
+
+/** Builds the transcript upsert as a query builder so it can be awaited directly or batched. */
+function buildTranscriptWrite(
+	database: Database,
+	projectId: string,
+	payload: PersistEditorPayload,
+	exists: boolean
+) {
+	const wordsJson = JSON.stringify(payload.words);
+
+	return exists
+		? database
+				.update(transcript)
+				.set({ words: wordsJson, captionStyle: payload.captionStyle })
+				.where(eq(transcript.projectId, projectId))
+		: database.insert(transcript).values({
+				projectId,
+				words: wordsJson,
+				captionStyle: payload.captionStyle
+			});
+}
+
+async function upsertTranscript(
+	database: Database,
+	projectId: string,
+	payload: PersistEditorPayload
+): Promise<void> {
+	const exists = await transcriptExists(database, projectId);
+	await buildTranscriptWrite(database, projectId, payload, exists);
 }
 
 async function assertProjectOwned(
@@ -216,12 +230,11 @@ export async function persistEditorProject(
 	const ownershipError = await assertProjectOwned(database, userId, projectId);
 	if (ownershipError) return ownershipError;
 
-	const wordsJson = JSON.stringify(payload.words);
-	const [existing] = await database
-		.select({ id: transcript.id })
-		.from(transcript)
-		.where(eq(transcript.projectId, projectId))
-		.limit(1);
+	// These reads (existence probe + media planning) run before the batch, so they are not part
+	// of the atomic write. That is safe here because this is a single-user, debounced autosave
+	// doing an idempotent whole-document replace: a stale read at worst causes a retriable failure,
+	// and re-running converges to the same state.
+	const exists = await transcriptExists(database, projectId);
 
 	const { error: mediaError, toInsert } = await planOverlayMedia(
 		database,
@@ -230,16 +243,7 @@ export async function persistEditorProject(
 	);
 	if (mediaError) return mediaError;
 
-	const transcriptWrite = existing
-		? database
-				.update(transcript)
-				.set({ words: wordsJson, captionStyle: payload.captionStyle })
-				.where(eq(transcript.projectId, projectId))
-		: database.insert(transcript).values({
-				projectId,
-				words: wordsJson,
-				captionStyle: payload.captionStyle
-			});
+	const transcriptWrite = buildTranscriptWrite(database, projectId, payload, exists);
 
 	const batch = [
 		transcriptWrite,
