@@ -169,9 +169,7 @@
 			>
 				Cancel
 			</Button>
-			<Button type="submit" variant="primary" class="project-overflow-menu__delete-btn">
-				Delete project
-			</Button>
+			<Button type="submit" variant="danger">Delete project</Button>
 		</div>
 	</form>
 </Modal>
@@ -234,7 +232,7 @@
 	}
 
 	.project-overflow-menu__item--danger {
-		color: #ff8f7a;
+		color: var(--danger-text);
 	}
 
 	.project-overflow-menu__form {
@@ -270,10 +268,5 @@
 		display: flex;
 		justify-content: flex-end;
 		gap: 10px;
-	}
-
-	:global(.project-overflow-menu__delete-btn) {
-		background: #c94f3d;
-		color: #fff;
 	}
 </style>
