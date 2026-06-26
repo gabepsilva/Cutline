@@ -8,6 +8,13 @@
 			"when": 1782320431344,
 			"tag": "0000_bored_gauntlet",
 			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1782433817145,
+			"tag": "0001_domain_schema",
+			"breakpoints": true
 		}
 	]
 }
