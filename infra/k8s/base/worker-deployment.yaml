@@ -34,7 +34,7 @@ spec:
         - name: worker
           image: ghcr.io/gabepsilva/cutline:bootstrap
           imagePullPolicy: IfNotPresent
-          command: ['bun', 'run', 'jobs:worker']
+          command: ['bun', '/app/dist/jobs-worker.js']
           env:
             - name: INLINE_JOB_WORKER
               value: 'false'

@@ -32,6 +32,8 @@ COPY . .
 RUN DATABASE_URL="file:/tmp/build.db" \
     BETTER_AUTH_SECRET="build-time-placeholder-not-used-at-runtime-000" \
     bun run build
+# Bundle the jobs worker in the build stage where svelte-kit sync defines $lib paths.
+RUN bun build scripts/jobs-worker.ts --outfile dist/jobs-worker.js --target=bun
 
 # --- production-only deps (alpine/musl, to match the runtime base) ---
 FROM oven/bun:1.3.13-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664e9ae5726f94d7bb5349 AS prod-deps
@@ -55,10 +57,8 @@ ENV NODE_ENV=production \
     HOME=/tmp
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
+COPY --from=build /app/dist/jobs-worker.js ./dist/jobs-worker.js
 COPY drizzle ./drizzle
-COPY scripts ./scripts
-COPY src ./src
-COPY bunfig.toml ./bunfig.toml
 COPY scripts/migrate.mjs ./scripts/migrate.mjs
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 COPY package.json ./package.json
