@@ -25,4 +25,15 @@ test.describe('home dashboard', () => {
 		await expect(page.getByTestId('new-project-page')).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Start your video' })).toBeVisible();
 	});
+
+	test('shows draft project cards and opens the import gateway on click', async ({ page }) => {
+		await expect(page.getByText('Untitled draft')).toBeVisible();
+		await expect(page.getByText('Waiting for footage')).toBeVisible();
+
+		await page.getByRole('button', { name: /Untitled draft/i }).click();
+
+		await expect(page).toHaveURL(/\/projects\/proj-no-transcript$/);
+		await expect(page.getByTestId('project-import-shell')).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Start your video' })).toBeVisible();
+	});
 });

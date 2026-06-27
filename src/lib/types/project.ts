@@ -12,7 +12,12 @@ export interface Project {
 	description?: string;
 	meta: string;
 	thumb: string;
+	/** True when the project has no completed media yet (import gateway state). */
+	isDraft?: boolean;
 }
+
+/** Dashboard meta for projects still waiting on footage. */
+export const PROJECT_DRAFT_META = 'Waiting for footage' as const;
 
 export const PROJECT_KINDS = [
 	'DEMO',

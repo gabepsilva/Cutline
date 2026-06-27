@@ -148,6 +148,17 @@ await db
 			objectKey: 'e2e/uploads/clip.mp4',
 			status: 'ingesting',
 			createdAt: new Date()
+		},
+		{
+			id: 'e2e-q3-media',
+			projectId: 'proj-q3-recap',
+			name: 'recap.mp4',
+			durationSeconds: 438,
+			kind: 'A-roll',
+			thumb: 'repeating-linear-gradient(135deg,#1f1a2c 0 12px,#191622 12px 24px)',
+			sizeBytes: 1024,
+			status: 'ready',
+			createdAt: new Date()
 		}
 	])
 	.onConflictDoNothing();

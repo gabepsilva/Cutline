@@ -21,3 +21,14 @@ export const fixtureProjectCard: Project = {
 	meta: 'Edited 1d ago',
 	thumb: 'repeating-linear-gradient(135deg,#1f1a2c 0 12px,#191622 12px 24px)'
 };
+
+/** Fixture: draft project card waiting on footage. */
+export const fixtureDraftProjectCard: Project = {
+	id: 'proj-draft',
+	title: 'Untitled draft',
+	durationLabel: '0:00',
+	kind: 'DEMO',
+	meta: 'Waiting for footage',
+	isDraft: true,
+	thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)'
+};

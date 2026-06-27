@@ -1,6 +1,7 @@
 import { page, userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import { render } from '$lib/test/render';
+import { fixtureDraftProjectCard } from '$lib/test/fixtures/project';
 import ProjectCardHarness from './ProjectCard.harness.svelte';
 
 describe('ProjectCard.svelte', () => {
@@ -26,5 +27,15 @@ describe('ProjectCard.svelte', () => {
 
 		expect(onclick).toHaveBeenCalledOnce();
 		expect(onclick.mock.calls[0]?.[0]).toMatchObject({ id: 'proj-q3-recap' });
+	});
+
+	it('renders draft state with waiting-for-footage meta and draft badge', async () => {
+		render(ProjectCardHarness, {
+			project: fixtureDraftProjectCard,
+			showMenu: false
+		});
+
+		await expect.element(page.getByText('Waiting for footage')).toBeInTheDocument();
+		await expect.element(page.getByText('Draft', { exact: true })).toBeInTheDocument();
 	});
 });

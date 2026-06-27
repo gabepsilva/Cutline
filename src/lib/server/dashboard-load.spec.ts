@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { project } from '$lib/server/db/domain.schema';
+import { media, project } from '$lib/server/db/domain.schema';
 import { loadDashboardProjects } from '$lib/server/dashboard-load';
 import { seedUser } from '$lib/test/seed-user';
 import { createTestDb } from '$lib/test/test-db';
@@ -56,6 +56,42 @@ describe('loadDashboardProjects', () => {
 				}
 			]);
 
+			await db.insert(media).values([
+				{
+					id: 'media-old',
+					projectId: 'proj-old',
+					name: 'old.mp4',
+					durationSeconds: 120,
+					kind: 'A-roll',
+					thumb: 'thumb-old',
+					sizeBytes: 1024,
+					status: 'ready',
+					createdAt: new Date()
+				},
+				{
+					id: 'media-new',
+					projectId: 'proj-new',
+					name: 'new.mp4',
+					durationSeconds: 300,
+					kind: 'A-roll',
+					thumb: 'thumb-new',
+					sizeBytes: 1024,
+					status: 'ready',
+					createdAt: new Date()
+				},
+				{
+					id: 'media-mid',
+					projectId: 'proj-mid',
+					name: 'mid.mp4',
+					durationSeconds: 180,
+					kind: 'A-roll',
+					thumb: 'thumb-mid',
+					sizeBytes: 1024,
+					status: 'ready',
+					createdAt: new Date()
+				}
+			]);
+
 			const result = await loadDashboardProjects(db, authUser.id);
 
 			expect(result.latestProject).toMatchObject({
@@ -97,6 +133,18 @@ describe('loadDashboardProjects', () => {
 				}
 			]);
 
+			await db.insert(media).values({
+				id: 'media-a',
+				projectId: 'proj-a',
+				name: 'a.mp4',
+				durationSeconds: 60,
+				kind: 'A-roll',
+				thumb: 'thumb-a',
+				sizeBytes: 1024,
+				status: 'ready',
+				createdAt: new Date()
+			});
+
 			const result = await loadDashboardProjects(db, authUser.id);
 
 			expect(result.latestProject?.id).toBe('proj-a');
@@ -115,6 +163,86 @@ describe('loadDashboardProjects', () => {
 
 			expect(result.latestProject).toBeNull();
 			expect(result.projects).toEqual([]);
+		} finally {
+			client.close();
+		}
+	});
+
+	it('marks draft projects and keeps them in the grid instead of the hero', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedUser(db, authUser);
+
+			await db.insert(project).values([
+				{
+					id: 'proj-draft',
+					userId: authUser.id,
+					title: 'Untitled draft',
+					kind: 'DEMO',
+					durationSeconds: 0,
+					thumb: 'thumb-draft',
+					updatedAt: new Date('2026-06-27T00:00:00.000Z')
+				},
+				{
+					id: 'proj-ready',
+					userId: authUser.id,
+					title: 'Ready project',
+					kind: 'VLOG',
+					durationSeconds: 90,
+					thumb: 'thumb-ready',
+					updatedAt: new Date('2026-06-26T00:00:00.000Z')
+				}
+			]);
+
+			await db.insert(media).values({
+				id: 'media-ready',
+				projectId: 'proj-ready',
+				name: 'clip.mp4',
+				durationSeconds: 90,
+				kind: 'A-roll',
+				thumb: 'thumb-ready',
+				sizeBytes: 1024,
+				status: 'ready',
+				createdAt: new Date()
+			});
+
+			const result = await loadDashboardProjects(db, authUser.id);
+
+			expect(result.latestProject).toMatchObject({
+				id: 'proj-ready',
+				isDraft: false
+			});
+			expect(result.projects).toHaveLength(1);
+			expect(result.projects[0]).toMatchObject({
+				id: 'proj-draft',
+				isDraft: true,
+				meta: 'Waiting for footage'
+			});
+		} finally {
+			client.close();
+		}
+	});
+
+	it('omits the hero when the user only has draft projects', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedUser(db, authUser);
+
+			await db.insert(project).values({
+				id: 'proj-draft-only',
+				userId: authUser.id,
+				title: 'Draft only',
+				kind: 'DEMO',
+				durationSeconds: 0,
+				thumb: 'thumb-draft',
+				updatedAt: new Date('2026-06-27T00:00:00.000Z')
+			});
+
+			const result = await loadDashboardProjects(db, authUser.id);
+
+			expect(result.latestProject).toBeNull();
+			expect(result.projects).toHaveLength(1);
+			expect(result.projects[0]?.isDraft).toBe(true);
 		} finally {
 			client.close();
 		}
