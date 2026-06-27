@@ -76,8 +76,11 @@ jobs:
         run: bunx playwright install chromium
 
       - name: Coverage
-        # Normally ~45s. Same hard-timeout guard as the unit step.
-        timeout-minutes: 3
+        # Coverage instruments +server.ts routes (SSR/db imports); allow more wall time than unit-only.
+        timeout-minutes: 4
+        env:
+          DATABASE_URL: file:./ci-coverage.db
+          VITEST_CI_TIMEOUT_SECS: 180
         run: bash scripts/ci/test-unit.sh --run --coverage
 
       - name: Upload coverage report
