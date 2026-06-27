@@ -202,6 +202,10 @@ export class EditorState {
 		this.showMedia = false;
 	};
 
+	addUploadedResource = (resource: MediaResource) => {
+		this.resources = [resource, ...this.resources];
+	};
+
 	addLastToTimeline = () => {
 		const resource = this.resources.find((r) => r.id === this.lastResId);
 		if (resource) this.addOverlay(resource);

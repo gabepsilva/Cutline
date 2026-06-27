@@ -15,6 +15,7 @@
 		type EditorSaveStatus
 	} from '$lib/editor/editor-save';
 	import { EditorState } from '$lib/editor/editor-state.svelte';
+	import { uploadMediaForEditor } from '$lib/editor/media-upload';
 	import type { EditorProjectLoad } from '$lib/types/editor-load';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import { resolveEditorKeyAction, shouldPreventDefault } from '$lib/utils/editor-keyboard';
@@ -38,6 +39,8 @@
 	);
 
 	let saveStatus = $state<EditorSaveStatus>('idle');
+	let emptyUploadInput = $state<HTMLInputElement | null>(null);
+	let emptyUploading = $state(false);
 
 	const autosave = createEditorAutosave({
 		onStatus: (status) => {
@@ -107,14 +110,35 @@
 			editor.deleteSelected();
 		}
 	}
+
+	function openEmptyUploadPicker() {
+		emptyUploadInput?.click();
+	}
+
+	async function handleEmptyUpload(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file || emptyUploading) return;
+
+		emptyUploading = true;
+		try {
+			await uploadMediaForEditor(editor, project.id, file);
+			editor.showMedia = true;
+		} catch {
+			// Network/API errors leave the empty state visible for retry.
+		} finally {
+			emptyUploading = false;
+		}
+	}
 </script>
 
 <svelte:window onkeydown={handleWindowKeydown} />
 
 <EditorLayout title={project.title} meta={topBarMeta} {editor} onback={() => goto(resolve('/'))}>
 	<div class="editor-workspace" data-testid="editor-workspace">
-		{#if hasTranscript}
-			<div class="editor-workspace__stage">
+		<div class="editor-workspace__stage">
+			{#if hasTranscript}
 				<div class="editor-workspace__panels">
 					<TranscriptPanel
 						sentences={editor.sentences}
@@ -148,16 +172,45 @@
 					/>
 				</div>
 				<Timeline {editor} />
-				<EditorModals {editor} projectId={project.id} projectTitle={project.title} />
-			</div>
-		{:else}
-			<EmptyState
-				title="No transcript yet"
-				description="Upload or record footage to generate a transcript for this project."
-				align="center"
-				class="editor-workspace__empty"
-			/>
-		{/if}
+			{:else}
+				<EmptyState
+					title="No transcript yet"
+					description="Upload or record footage to generate a transcript for this project."
+					align="center"
+					class="editor-workspace__empty"
+				>
+					{#snippet action()}
+						<div class="editor-workspace__empty-actions">
+							<button
+								type="button"
+								class="editor-workspace__empty-button"
+								disabled={emptyUploading}
+								onclick={openEmptyUploadPicker}
+							>
+								{emptyUploading ? 'Uploading…' : 'Upload file'}
+							</button>
+							<button
+								type="button"
+								class="editor-workspace__empty-button editor-workspace__empty-button--secondary"
+								onclick={() => editor.openRecord()}
+							>
+								Record
+							</button>
+						</div>
+					{/snippet}
+				</EmptyState>
+				<input
+					bind:this={emptyUploadInput}
+					class="editor-workspace__file-input"
+					type="file"
+					accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+					aria-hidden="true"
+					tabindex={-1}
+					onchange={handleEmptyUpload}
+				/>
+			{/if}
+			<EditorModals {editor} projectId={project.id} projectTitle={project.title} />
+		</div>
 	</div>
 </EditorLayout>
 
@@ -184,6 +237,45 @@
 		flex: 1;
 		min-height: 0;
 		min-width: 0;
+	}
+
+	.editor-workspace__empty-actions {
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.editor-workspace__empty-button {
+		padding: 8px 14px;
+		border: 1px solid var(--border-6);
+		border-radius: 8px;
+		background: var(--surface-3);
+		color: var(--text-3);
+		font-family: inherit;
+		font-size: 12px;
+		cursor: pointer;
+	}
+
+	.editor-workspace__empty-button--secondary {
+		background: transparent;
+	}
+
+	.editor-workspace__empty-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.editor-workspace__file-input {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	.editor-workspace :global(.editor-workspace__empty) {

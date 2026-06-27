@@ -1,5 +1,7 @@
 import { formatTimecode } from '$lib/utils/format-timecode';
 
+import type { MediaStatus } from '$lib/types/media-upload';
+
 /** Media shelf resource shape (M6-00). */
 export type MediaKind = 'B-roll' | 'Graphic' | 'Recording';
 
@@ -9,6 +11,7 @@ export interface MediaResource {
 	dur: number;
 	kind: MediaKind | (string & {});
 	thumb: string;
+	status?: MediaStatus;
 }
 
 export const MEDIA_KINDS = [

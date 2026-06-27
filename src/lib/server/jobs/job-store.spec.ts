@@ -255,6 +255,25 @@ describe('job-store', () => {
 		}
 	});
 
+	it('runWorkerBatch sweeps abandoned uploads once per batch', async () => {
+		const { db, client } = await createTestDb();
+		const orphanSweep = await import('$lib/server/storage/orphan-sweep');
+		const sweepSpy = vi.spyOn(orphanSweep, 'sweepAbandonedUploads').mockResolvedValue(0);
+		try {
+			registerEchoHandler('ingest');
+			await seedUser(db, authUser);
+			await seedProject(db, 'proj-1');
+			await enqueueJob(db, { type: 'ingest', projectId: 'proj-1', payload: { n: 1 } });
+
+			await runWorkerBatch(db, 'worker-a', 1);
+
+			expect(sweepSpy).toHaveBeenCalledTimes(1);
+		} finally {
+			sweepSpy.mockRestore();
+			client.close();
+		}
+	});
+
 	it('failJob does not clobber a job reaped while the worker was failing', async () => {
 		const { db, client } = await createTestDb();
 		try {

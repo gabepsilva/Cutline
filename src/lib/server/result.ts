@@ -1,7 +1,7 @@
 /** Shared owner-gated mutation result shapes for server actions and endpoints. */
 export type ServerError = {
 	ok: false;
-	status: 400 | 404;
+	status: 400 | 404 | 413 | 415;
 	message: string;
 };
 

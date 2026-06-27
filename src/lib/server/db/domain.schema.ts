@@ -52,7 +52,15 @@ export const media = sqliteTable(
 		durationSeconds: integer('duration_seconds').notNull(),
 		kind: text('kind').notNull(),
 		thumb: text('thumb').notNull(),
-		sizeBytes: integer('size_bytes').notNull().default(0)
+		sizeBytes: integer('size_bytes').notNull().default(0),
+		objectKey: text('object_key'),
+		contentType: text('content_type'),
+		// Default 'ready' (not 'pending'): legacy/backfilled rows are usable shelf items; uploads insert 'uploading'.
+		status: text('status').notNull().default('ready'),
+		// Nullable at DB level (0003 ALTER cannot add NOT NULL with expression default); inserts must set explicitly.
+		createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(
+			sql`(cast(unixepoch('subsecond') * 1000 as integer))`
+		)
 	},
 	(table) => [index('media_projectId_idx').on(table.projectId)]
 );
