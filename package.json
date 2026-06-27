@@ -28,7 +28,8 @@
 	"overrides": {
 		"drizzle-orm": "0.45.2",
 		"lodash": "4.18.1",
-		"@better-auth/core": "1.6.20"
+		"@better-auth/core": "1.6.20",
+		"@better-auth/utils": "0.4.2"
 	},
 	"lint-staged": {
 		"*.{js,ts,svelte,json,jsonc,css,html,md,yml,yaml}": "prettier --write"
