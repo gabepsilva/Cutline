@@ -18,6 +18,7 @@ test.describe('home dashboard', () => {
 	});
 
 	test('new project navigates to import gateway without creating a project', async ({ page }) => {
+		await expect(page.getByRole('button', { name: 'New project' })).toBeVisible();
 		await page.getByRole('button', { name: 'New project' }).click();
 
 		await expect(page).toHaveURL('/projects/new');

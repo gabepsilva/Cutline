@@ -31,6 +31,13 @@ test.describe('editor route', () => {
 		await expect(page.getByTestId('editor-workspace')).not.toBeVisible();
 	});
 
+	test('opens full editor when the project has a completed upload', async ({ page }) => {
+		await page.goto('/projects/e2e-upload-ready');
+
+		await expect(page.getByTestId('editor-workspace')).toBeVisible();
+		await expect(page.getByTestId('project-import-shell')).not.toBeVisible();
+	});
+
 	test('transport play button toggles playback', async ({ page }) => {
 		await page.goto('/projects/proj-hero');
 

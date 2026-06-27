@@ -1,15 +1,20 @@
 import { expect, test } from '@playwright/test';
 import { loginAsE2eUser } from '$lib/test/e2e-auth';
 
-async function mockR2Upload(page: import('@playwright/test').Page) {
-	await page.route('**/*', async (route) => {
-		const request = route.request();
-		if (request.method() === 'PUT' && !request.url().includes('localhost:4173')) {
-			await route.fulfill({ status: 200 });
-			return;
+async function mockExternalPutUpload(page: import('@playwright/test').Page) {
+	await page.route(
+		(url) => {
+			const parsed = new URL(url);
+			return parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1';
+		},
+		async (route) => {
+			if (route.request().method() === 'PUT') {
+				await route.fulfill({ status: 200 });
+				return;
+			}
+			await route.continue();
 		}
-		await route.continue();
-	});
+	);
 }
 
 test.describe('new project route', () => {
@@ -37,7 +42,12 @@ test.describe('new project route', () => {
 	});
 
 	test('uploading footage navigates to the full editor', async ({ page }) => {
-		await mockR2Upload(page);
+		test.skip(
+			!process.env.R2_ACCESS_KEY_ID,
+			'Requires R2 credentials in the preview server environment'
+		);
+
+		await mockExternalPutUpload(page);
 		await page.goto('/projects/new');
 
 		const fileInput = page.locator('.import-gateway__file-input');

@@ -91,24 +91,43 @@ await db
 			thumb: 'repeating-linear-gradient(135deg,#1f1a2c 0 12px,#191622 12px 24px)',
 			createdAt: new Date('2026-06-24T00:00:00.000Z'),
 			updatedAt: new Date('2026-06-25T12:00:00.000Z')
+		},
+		{
+			id: 'e2e-upload-ready',
+			userId,
+			title: 'Uploaded draft',
+			kind: 'DEMO',
+			description: null,
+			durationSeconds: 0,
+			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
+			createdAt: new Date('2026-06-26T09:00:00.000Z'),
+			updatedAt: new Date('2026-06-26T09:00:00.000Z')
 		}
 	])
 	.onConflictDoNothing();
 
 await db
 	.insert(transcript)
-	.values({
-		id: 'e2e-transcript-hero',
-		projectId: 'proj-hero',
-		words: JSON.stringify(words),
-		captionStyle: 'karaoke'
-	})
+	.values([
+		{
+			id: 'e2e-transcript-hero',
+			projectId: 'proj-hero',
+			words: JSON.stringify(words),
+			captionStyle: 'karaoke'
+		},
+		{
+			id: 'e2e-transcript-upload-ready',
+			projectId: 'e2e-upload-ready',
+			words: JSON.stringify([]),
+			captionStyle: 'karaoke'
+		}
+	])
 	.onConflictDoNothing();
 
 await db
 	.insert(media)
-	.values(
-		mockEditorResources.map((resource) => ({
+	.values([
+		...mockEditorResources.map((resource) => ({
 			id: resource.id,
 			projectId: 'proj-hero',
 			name: resource.name,
@@ -117,8 +136,20 @@ await db
 			thumb: resource.thumb,
 			sizeBytes: 0,
 			createdAt: new Date()
-		}))
-	)
+		})),
+		{
+			id: 'e2e-upload-ready-media',
+			projectId: 'e2e-upload-ready',
+			name: 'clip.mp4',
+			durationSeconds: 0,
+			kind: 'A-roll',
+			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
+			sizeBytes: 1024,
+			objectKey: 'e2e/uploads/clip.mp4',
+			status: 'ingesting',
+			createdAt: new Date()
+		}
+	])
 	.onConflictDoNothing();
 
 client.close();
