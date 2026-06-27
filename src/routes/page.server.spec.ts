@@ -15,23 +15,17 @@ vi.mock('$lib/server/storage-usage', () => ({
 }));
 
 vi.mock('$lib/server/project-mutations', () => ({
-	createOwnedProject: vi.fn(),
 	renameOwnedProject: vi.fn(),
 	deleteOwnedProject: vi.fn()
 }));
 
 import { loadDashboardProjects } from '$lib/server/dashboard-load';
 import { resolveStorageUsage } from '$lib/server/storage-usage';
-import {
-	createOwnedProject,
-	deleteOwnedProject,
-	renameOwnedProject
-} from '$lib/server/project-mutations';
+import { deleteOwnedProject, renameOwnedProject } from '$lib/server/project-mutations';
 import { load, actions } from './+page.server';
 
 const mockedLoadDashboardProjects = vi.mocked(loadDashboardProjects);
 const mockedResolveStorageUsage = vi.mocked(resolveStorageUsage);
-const mockedCreateOwnedProject = vi.mocked(createOwnedProject);
 const mockedRenameOwnedProject = vi.mocked(renameOwnedProject);
 const mockedDeleteOwnedProject = vi.mocked(deleteOwnedProject);
 
@@ -115,7 +109,7 @@ describe('+page.server load', () => {
 });
 
 function createActionEvent(
-	action: 'create' | 'rename' | 'delete',
+	action: 'rename' | 'delete',
 	fields: Record<string, string> = {},
 	locals: App.Locals = { user: authUser }
 ) {
@@ -127,25 +121,12 @@ function createActionEvent(
 	return {
 		request: new Request(`http://localhost/?/${action}`, { method: 'POST', body: formData }),
 		locals
-	} as Parameters<NonNullable<typeof actions.create>>[0];
+	} as Parameters<NonNullable<typeof actions.rename>>[0];
 }
 
 describe('+page.server actions', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-	});
-
-	it('create redirects to the new editor route', async () => {
-		mockedCreateOwnedProject.mockResolvedValueOnce({ ok: true, projectId: 'proj-new' });
-
-		try {
-			await actions.create?.(createActionEvent('create'));
-			expect.unreachable('expected redirect');
-		} catch (error) {
-			expect(error).toMatchObject({ status: 303, location: '/projects/proj-new' });
-		}
-
-		expect(mockedCreateOwnedProject).toHaveBeenCalledWith({}, authUser.id);
 	});
 
 	it('rename returns validation failures from the mutation layer', async () => {
@@ -192,7 +173,7 @@ describe('+page.server actions', () => {
 
 	it('rejects unauthenticated mutations with redirect to login', async () => {
 		try {
-			await actions.create?.(createActionEvent('create', {}, {}));
+			await actions.rename?.(createActionEvent('rename', { projectId: 'proj-1', title: 'x' }, {}));
 			expect.unreachable('expected redirect');
 		} catch (error) {
 			expect(error).toMatchObject({ status: 302, location: '/login' });

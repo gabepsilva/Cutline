@@ -1,11 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { loadDashboardProjects } from '$lib/server/dashboard-load';
-import {
-	createOwnedProject,
-	deleteOwnedProject,
-	renameOwnedProject
-} from '$lib/server/project-mutations';
+import { deleteOwnedProject, renameOwnedProject } from '$lib/server/project-mutations';
 import { resolveSidebarUser } from '$lib/server/sidebar-user';
 import { resolveStorageUsage } from '$lib/server/storage-usage';
 import type { Actions, PageServerLoad } from './$types';
@@ -32,12 +28,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	create: async ({ locals }) => {
-		const user = requireUser(locals);
-		const { projectId } = await createOwnedProject(db, user.id);
-		throw redirect(303, `/projects/${projectId}`);
-	},
-
 	rename: async ({ locals, request }) => {
 		const user = requireUser(locals);
 		const formData = await request.formData();

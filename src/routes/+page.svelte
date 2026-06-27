@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { enhance } from '$app/forms';
 	import Button from '$lib/components/ui/Button.svelte';
 	import DashboardLayout from '$lib/components/layout/DashboardLayout.svelte';
 	import DashboardHeader from '$lib/components/dashboard/DashboardHeader.svelte';
@@ -18,6 +17,10 @@
 	function openProject(project: Project) {
 		goto(resolve(`/projects/${project.id}`));
 	}
+
+	function startNewProject() {
+		goto(resolve('/projects/new'));
+	}
 </script>
 
 <svelte:head>
@@ -28,12 +31,10 @@
 <DashboardLayout user={data.user} usage={data.usage}>
 	<DashboardHeader title="Home" {greeting}>
 		{#snippet actions()}
-			<form method="POST" action="?/create" use:enhance>
-				<Button type="submit" variant="primary" size="lg" class="home-page__cta">
-					<span class="home-page__cta-icon" aria-hidden="true"></span>
-					New project
-				</Button>
-			</form>
+			<Button variant="primary" size="lg" class="home-page__cta" onclick={startNewProject}>
+				<span class="home-page__cta-icon" aria-hidden="true"></span>
+				New project
+			</Button>
 		{/snippet}
 	</DashboardHeader>
 
