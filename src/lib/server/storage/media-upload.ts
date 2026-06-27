@@ -166,12 +166,8 @@ async function presignUploadTarget(
 	};
 }
 
-async function insertMediaUploadRow(
-	database: Database,
-	projectId: string,
-	input: UploadUrlRequest,
-	userId: string
-): Promise<{ mediaId: string; objectKey: string; displayName: string }> {
+/** Builds the first-upload `media` row (status `uploading`) shared by both create paths. */
+function buildMediaUploadRow(projectId: string, input: UploadUrlRequest, userId: string) {
 	const mediaId = crypto.randomUUID();
 	const objectKey = buildMediaObjectKey(
 		userId,
@@ -181,9 +177,7 @@ async function insertMediaUploadRow(
 		input.filename
 	);
 	const displayName = sanitizeUploadFilename(input.filename);
-	const now = new Date();
-
-	await database.insert(media).values({
+	const values: typeof media.$inferInsert = {
 		id: mediaId,
 		projectId,
 		name: displayName,
@@ -194,9 +188,20 @@ async function insertMediaUploadRow(
 		objectKey,
 		contentType: input.contentType,
 		status: 'uploading',
-		createdAt: now
-	});
+		createdAt: new Date()
+	};
 
+	return { mediaId, objectKey, displayName, values };
+}
+
+async function insertMediaUploadRow(
+	database: Database,
+	projectId: string,
+	input: UploadUrlRequest,
+	userId: string
+): Promise<{ mediaId: string; objectKey: string; displayName: string }> {
+	const { mediaId, objectKey, displayName, values } = buildMediaUploadRow(projectId, input, userId);
+	await database.insert(media).values(values);
 	return { mediaId, objectKey, displayName };
 }
 
@@ -216,16 +221,7 @@ export async function initProjectMediaUpload(
 	const title = input.title.trim();
 	const kind = 'TALKING HEAD';
 	const projectId = crypto.randomUUID();
-	const mediaId = crypto.randomUUID();
-	const objectKey = buildMediaObjectKey(
-		userId,
-		projectId,
-		mediaId,
-		input.contentType as UploadContentType,
-		input.filename
-	);
-	const displayName = sanitizeUploadFilename(input.filename);
-	const now = new Date();
+	const mediaRow = buildMediaUploadRow(projectId, input, userId);
 
 	await database.batch([
 		database.insert(project).values({
@@ -241,26 +237,14 @@ export async function initProjectMediaUpload(
 			projectId,
 			words: '[]'
 		}),
-		database.insert(media).values({
-			id: mediaId,
-			projectId,
-			name: displayName,
-			durationSeconds: 0,
-			kind: 'B-roll',
-			thumb: DEFAULT_RECORD_THUMB,
-			sizeBytes: input.size,
-			objectKey,
-			contentType: input.contentType,
-			status: 'uploading',
-			createdAt: now
-		})
+		database.insert(media).values(mediaRow.values)
 	]);
 
-	const upload = await presignUploadTarget(objectKey, input.contentType, input.size);
+	const upload = await presignUploadTarget(mediaRow.objectKey, input.contentType, input.size);
 
 	return {
 		projectId,
-		mediaId,
+		mediaId: mediaRow.mediaId,
 		contentType: input.contentType,
 		upload
 	};

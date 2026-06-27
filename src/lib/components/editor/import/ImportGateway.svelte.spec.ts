@@ -90,6 +90,33 @@ describe('ImportGateway.svelte', () => {
 		});
 	});
 
+	it('retries project creation after the first upload fails', async () => {
+		const onprojectcreated = vi.fn();
+		mockedUpload.mockRejectedValueOnce(new Error('network boom'));
+		render(ImportGatewayHarness, { onprojectcreated });
+
+		const fileInput = document.querySelector<HTMLInputElement>('.import-gateway__file-input');
+
+		const failing = new File(['video'], 'first.mp4', { type: 'video/mp4' });
+		const firstDrop = new DataTransfer();
+		firstDrop.items.add(failing);
+		fileInput!.files = firstDrop.files;
+		fileInput!.dispatchEvent(new Event('change', { bubbles: true }));
+
+		await expect.element(page.getByText('Failed')).toBeInTheDocument();
+		expect(onprojectcreated).not.toHaveBeenCalled();
+
+		const retry = new File(['video'], 'second.mp4', { type: 'video/mp4' });
+		const secondDrop = new DataTransfer();
+		secondDrop.items.add(retry);
+		fileInput!.files = secondDrop.files;
+		fileInput!.dispatchEvent(new Event('change', { bubbles: true }));
+
+		await vi.waitFor(() => {
+			expect(onprojectcreated).toHaveBeenCalledWith('proj-new');
+		});
+	});
+
 	it('cancel all returns to idle gateway', async () => {
 		render(ImportGatewayHarness);
 

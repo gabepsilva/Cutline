@@ -87,7 +87,7 @@
 
 			if (!pid) {
 				if (!projectReady) {
-					projectReady = (async () => {
+					const creation = (async () => {
 						const result = await uploadImportMedia({
 							projectId: null,
 							projectTitle,
@@ -100,8 +100,16 @@
 						});
 						return result.projectId;
 					})();
+					projectReady = creation;
 
-					await projectReady;
+					try {
+						await creation;
+					} catch (error) {
+						// Reset so a later file can retry project creation instead of
+						// inheriting this rejected promise and failing immediately.
+						projectReady = null;
+						throw error;
+					}
 					if (controller.signal.aborted) return;
 					markFileDone(fileEntry.id);
 					return;
