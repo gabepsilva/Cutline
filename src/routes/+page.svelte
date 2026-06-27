@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import Button from '$lib/components/ui/Button.svelte';
 	import DashboardLayout from '$lib/components/layout/DashboardLayout.svelte';
@@ -6,11 +8,16 @@
 	import ContinueEditingHero from '$lib/components/dashboard/ContinueEditingHero.svelte';
 	import ProjectGrid from '$lib/components/dashboard/ProjectGrid.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import type { Project } from '$lib/types/project';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
 	const greeting = $derived(`Welcome back, ${data.user.name.split(' ')[0]}`);
+
+	function openProject(project: Project) {
+		goto(resolve(`/projects/${project.id}`));
+	}
 </script>
 
 <svelte:head>
@@ -31,11 +38,11 @@
 	</DashboardHeader>
 
 	{#if data.latestProject}
-		<ContinueEditingHero project={data.latestProject} />
+		<ContinueEditingHero project={data.latestProject} onclick={openProject} />
 	{/if}
 
 	{#if data.projects.length}
-		<ProjectGrid projects={data.projects} />
+		<ProjectGrid projects={data.projects} onprojectclick={openProject} />
 	{:else}
 		<EmptyState title="No projects yet" />
 	{/if}
