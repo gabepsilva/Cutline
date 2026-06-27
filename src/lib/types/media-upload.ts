@@ -55,6 +55,15 @@ export interface UploadUrlResponse {
 	upload: UploadTargetResponse;
 }
 
+/** First upload on /projects/new — creates the project row atomically with the media row. */
+export interface InitUploadUrlRequest extends UploadUrlRequest {
+	title: string;
+}
+
+export interface InitUploadUrlResponse extends UploadUrlResponse {
+	projectId: string;
+}
+
 export interface MultipartCompletePart {
 	partNumber: number;
 	etag: string;

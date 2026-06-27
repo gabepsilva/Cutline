@@ -11,21 +11,43 @@ export const PROJECT_TITLE_MAX_LENGTH = 120;
 
 export type CreateProjectResult = { ok: true; projectId: string };
 
+export type CreateProjectOptions = {
+	title?: string;
+	kind?: string;
+};
+
+export function normalizeProjectTitle(rawTitle: string): ServerOk | ServerError {
+	const title = rawTitle.trim();
+	if (!title) {
+		return { ok: false, status: 400, message: 'Title is required' };
+	}
+	if (title.length > PROJECT_TITLE_MAX_LENGTH) {
+		return { ok: false, status: 400, message: 'Title must be 120 characters or fewer' };
+	}
+	return { ok: true };
+}
+
 export async function createOwnedProject(
 	database: Database,
-	userId: string
-): Promise<CreateProjectResult> {
+	userId: string,
+	options: CreateProjectOptions = {}
+): Promise<CreateProjectResult | ServerError> {
+	const title = (options.title ?? 'Untitled project').trim();
+	const titleCheck = normalizeProjectTitle(title);
+	if (!titleCheck.ok) return titleCheck;
+
+	const kind = options.kind?.trim() || 'TALKING HEAD';
 	const projectId = crypto.randomUUID();
 
 	await database.batch([
 		database.insert(project).values({
 			id: projectId,
 			userId,
-			title: 'Untitled project',
-			kind: 'TALKING HEAD',
+			title,
+			kind,
 			description: null,
 			durationSeconds: 0,
-			thumb: projectThumb('TALKING HEAD')
+			thumb: projectThumb(kind)
 		}),
 		database.insert(transcript).values({
 			projectId,
