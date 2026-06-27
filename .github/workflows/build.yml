@@ -16,7 +16,7 @@ permissions:
 jobs:
   build:
     name: Build verify
-    timeout-minutes: 30
+    timeout-minutes: 7
     env:
       DATABASE_URL: file:./ci-build.db
     runs-on: ${{ (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted", "Linux", "X64"]') || 'ubuntu-latest' }}
