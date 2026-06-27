@@ -1,4 +1,4 @@
-import { and, eq, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { job } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
 import { assertProjectOwned } from '$lib/server/project-access';
@@ -386,6 +386,46 @@ export function parseEnqueueBody(body: unknown): ServerResult & { data?: Enqueue
 			payload: record.payload
 		}
 	};
+}
+
+const ACTIVE_JOB_STATUSES = ['queued', 'running'] as const;
+
+/** Latest non-terminal job of a type for a project — used for editor transcription polling. */
+export async function getActiveProjectJob(
+	database: Database,
+	projectId: string,
+	type: JobType
+): Promise<JobRow | null> {
+	const [row] = await database
+		.select()
+		.from(job)
+		.where(
+			and(
+				eq(job.projectId, projectId),
+				eq(job.type, type),
+				inArray(job.status, [...ACTIVE_JOB_STATUSES])
+			)
+		)
+		.orderBy(desc(job.createdAt))
+		.limit(1);
+
+	return row ?? null;
+}
+
+/** Most recent job of a type for a project, regardless of status — used to surface failed STT on reload. */
+export async function getLatestProjectJob(
+	database: Database,
+	projectId: string,
+	type: JobType
+): Promise<JobRow | null> {
+	const [row] = await database
+		.select()
+		.from(job)
+		.where(and(eq(job.projectId, projectId), eq(job.type, type)))
+		.orderBy(desc(job.createdAt))
+		.limit(1);
+
+	return row ?? null;
 }
 
 export async function enqueueOwnedJob(

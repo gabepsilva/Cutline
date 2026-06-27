@@ -27,4 +27,8 @@ export interface EditorProjectLoad {
 	aRoll: ARollMediaLoad | null;
 	resources: MediaResource[];
 	overlays: Overlay[];
+	/** Active transcription job id when STT is in flight (#137 / #141). */
+	transcriptionJobId: string | null;
+	/** True when the latest transcription job ended non-succeeded and none is active (show "unavailable" on reload). */
+	transcriptionFailed: boolean;
 }

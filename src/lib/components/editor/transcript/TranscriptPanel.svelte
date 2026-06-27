@@ -5,11 +5,16 @@
 	import TranscriptSelectionBar from './TranscriptSelectionBar.svelte';
 	import TranscriptSentence from './TranscriptSentence.svelte';
 	import TranscriptSpeaker from './TranscriptSpeaker.svelte';
+	import TranscriptTranscribingState from './TranscriptTranscribingState.svelte';
+	import TranscriptUnavailableState from './TranscriptUnavailableState.svelte';
 	import type { TranscriptPanelProps } from './TranscriptPanel.types';
 
 	let {
 		sentences,
 		speaker,
+		status = 'ready',
+		transcriptionProgress = 0,
+		transcriptionStage = 'Detecting speech…',
 		searchQuery = '',
 		fillerCount = 0,
 		hasSelection = false,
@@ -26,6 +31,9 @@
 		onwordclick,
 		class: className = ''
 	}: TranscriptPanelProps = $props();
+
+	const isReady = $derived(status === 'ready');
+	const isTranscribing = $derived(status === 'transcribing');
 
 	const startMap = $derived.by(() => {
 		const words = sentences.flatMap((sentence) => sentence.words);
@@ -49,35 +57,45 @@
 <section class={['transcript-panel', className]} aria-label="Transcript">
 	<header class="transcript-panel__header">
 		<h2 class="transcript-panel__title">Transcript</h2>
-		<TranscriptSearch value={searchQuery} oninput={onsearch} />
-		<Button
-			variant="accent-outline"
-			size="sm"
-			class="transcript-panel__filler-action"
-			onclick={onremovefillers}
-		>
-			<span class="transcript-panel__filler-dot" aria-hidden="true"></span>
-			{fillerLabel}
-		</Button>
+		{#if isReady}
+			<TranscriptSearch value={searchQuery} oninput={onsearch} />
+			<Button
+				variant="accent-outline"
+				size="sm"
+				class="transcript-panel__filler-action"
+				onclick={onremovefillers}
+			>
+				<span class="transcript-panel__filler-dot" aria-hidden="true"></span>
+				{fillerLabel}
+			</Button>
+		{/if}
 	</header>
 
-	<TranscriptSelectionBar visible={hasSelection} {selectedText} {deleteLabel} {ondelete} />
+	{#if isReady}
+		<TranscriptSelectionBar visible={hasSelection} {selectedText} {deleteLabel} {ondelete} />
+	{/if}
 
 	<div class="transcript-panel__body">
-		<TranscriptSpeaker {speaker} />
+		{#if isTranscribing}
+			<TranscriptTranscribingState stage={transcriptionStage} progress={transcriptionProgress} />
+		{:else if status === 'unavailable'}
+			<TranscriptUnavailableState />
+		{:else}
+			<TranscriptSpeaker {speaker} />
 
-		{#each sentences as sentence (sentence.id)}
-			<TranscriptSentence
-				{sentence}
-				startTime={sentenceStartTime(sentence.id, sentence.words)}
-				{currentWordId}
-				{selectedWordId}
-				{searchQuery}
-				{showFiller}
-				onTimeClick={(event) => onsentenceclick?.(sentence, event)}
-				onWordClick={onwordclick}
-			/>
-		{/each}
+			{#each sentences as sentence (sentence.id)}
+				<TranscriptSentence
+					{sentence}
+					startTime={sentenceStartTime(sentence.id, sentence.words)}
+					{currentWordId}
+					{selectedWordId}
+					{searchQuery}
+					{showFiller}
+					onTimeClick={(event) => onsentenceclick?.(sentence, event)}
+					onWordClick={onwordclick}
+				/>
+			{/each}
+		{/if}
 	</div>
 </section>
 

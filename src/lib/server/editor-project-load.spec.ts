@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMockTranscript, mockEditorResources } from '$lib/mocks/editor.mock';
-import { media, overlay, project, transcript } from '$lib/server/db/domain.schema';
+import { job, media, overlay, project, transcript } from '$lib/server/db/domain.schema';
 import { fixtureTimelineOverlay } from '$lib/test/fixtures/timeline-overlay';
 import { user } from '$lib/server/db/auth.schema';
 import { loadEditorProject } from '$lib/server/editor-project-load';
@@ -147,8 +147,45 @@ describe('loadEditorProject', () => {
 				sentences: [],
 				meta: 'Draft · no transcript',
 				resources: [],
-				overlays: []
+				overlays: [],
+				transcriptionJobId: null,
+				transcriptionFailed: false
 			});
+		} finally {
+			client.close();
+		}
+	});
+
+	it('flags transcriptionFailed (no active job) when the latest transcription job failed', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedEditorProject(db, {
+				projectId: 'proj-stt-failed',
+				ownerId: authUser.id
+			});
+			await db.insert(transcript).values({
+				id: 'transcript-stt-failed',
+				projectId: 'proj-stt-failed',
+				words: JSON.stringify([]),
+				captionStyle: 'karaoke'
+			});
+			await db.insert(job).values({
+				id: 'job-stt-failed',
+				type: 'transcription',
+				projectId: 'proj-stt-failed',
+				status: 'failed',
+				progress: 0,
+				payload: JSON.stringify({ projectId: 'proj-stt-failed' }),
+				priority: 0,
+				maxAttempts: 3,
+				runAfter: new Date(),
+				createdAt: new Date(),
+				updatedAt: new Date()
+			});
+
+			const data = await loadEditorProject(db, authUser, 'proj-stt-failed');
+			expect(data?.transcriptionJobId).toBeNull();
+			expect(data?.transcriptionFailed).toBe(true);
 		} finally {
 			client.close();
 		}

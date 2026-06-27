@@ -8,10 +8,16 @@ vi.mock('$lib/server/jobs/job-store', () => ({
 	getOwnedJobStatus: vi.fn()
 }));
 
+vi.mock('$lib/server/jobs/worker', () => ({
+	kickWorker: vi.fn()
+}));
+
 import { getOwnedJobStatus } from '$lib/server/jobs/job-store';
+import { kickWorker } from '$lib/server/jobs/worker';
 import { GET } from './+server';
 
 const mockedStatus = vi.mocked(getOwnedJobStatus);
+const mockedKick = vi.mocked(kickWorker);
 
 const authUser = {
 	id: 'user-a',
@@ -36,6 +42,22 @@ describe('api/jobs/[id] GET', () => {
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ status: 'running', progress: 0.5 });
+		expect(mockedKick).not.toHaveBeenCalled();
+	});
+
+	it('kicks the inline worker when the job is still queued', async () => {
+		mockedStatus.mockResolvedValueOnce({
+			ok: true,
+			data: { status: 'queued', progress: 0 }
+		});
+
+		const response = await GET({
+			params: { id: 'job-1' },
+			locals: { user: authUser }
+		} as Parameters<typeof GET>[0]);
+
+		expect(response.status).toBe(200);
+		expect(mockedKick).toHaveBeenCalledOnce();
 	});
 
 	it('returns 401 when unauthenticated', async () => {

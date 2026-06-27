@@ -39,4 +39,10 @@ describe('EditorTopBar.svelte', () => {
 		expect(styles.height).toBe('54px');
 		expect(styles.backgroundColor).toBe('rgb(14, 14, 16)');
 	});
+
+	it('shows transcribing pill when transcription is in progress', async () => {
+		render(EditorTopBarHarness, { transcribing: true, transcriptionProgress: 0.45 });
+
+		await expect.element(page.getByText('Transcribing · 45%')).toBeInTheDocument();
+	});
 });

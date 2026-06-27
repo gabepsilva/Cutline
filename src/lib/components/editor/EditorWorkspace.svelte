@@ -19,6 +19,7 @@
 		pollIngestAssets,
 		type IngestAssetsState
 	} from '$lib/editor/ingest-assets';
+	import { TranscriptionController } from '$lib/editor/transcription-controller.svelte';
 	import type { EditorProjectLoad } from '$lib/types/editor-load';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import { resolveEditorKeyAction, shouldPreventDefault } from '$lib/utils/editor-keyboard';
@@ -35,11 +36,18 @@
 		videoUrl,
 		aRoll,
 		resources,
-		overlays
+		overlays,
+		transcriptionJobId,
+		transcriptionFailed
 	}: Props = $props();
 
 	let trackedMediaId = $state<string | null>(null);
 	let ingestAssets = $state<IngestAssetsState | null>(null);
+	const transcription = new TranscriptionController(
+		() => words.length,
+		() => aRoll,
+		() => transcriptionFailed
+	);
 	const playbackUrl = $derived(ingestAssets?.transcodeUrl ?? videoUrl);
 
 	$effect(() => {
@@ -73,6 +81,13 @@
 			stopPoll?.();
 		};
 	});
+
+	$effect(() => {
+		void words.length;
+		return transcription.bind(transcriptionJobId);
+	});
+
+	const transcriptUi = $derived(transcription.ui);
 
 	const editor = $derived.by(
 		() => new EditorState({ words, sentences, resources, captionStyle, overlays })
@@ -115,7 +130,9 @@
 	);
 
 	const captionTokens = $derived(
-		captionWordsForCurrentSentence(editor.words, editor.currentWordId, editor.captionStyle)
+		transcriptUi.status === 'ready'
+			? captionWordsForCurrentSentence(editor.words, editor.currentWordId, editor.captionStyle)
+			: []
 	);
 
 	const totalLabel = $derived(formatTimecode(editor.duration));
@@ -150,13 +167,23 @@
 
 <svelte:window onkeydown={handleWindowKeydown} />
 
-<EditorLayout title={project.title} meta={topBarMeta} {editor} onback={() => goto(resolve('/'))}>
+<EditorLayout
+	title={project.title}
+	meta={topBarMeta}
+	{editor}
+	transcribing={transcriptUi.status === 'transcribing'}
+	transcriptionProgress={transcriptUi.progress}
+	onback={() => goto(resolve('/'))}
+>
 	<div class="editor-workspace" data-testid="editor-workspace">
 		<div class="editor-workspace__stage">
 			<div class="editor-workspace__panels">
 				<TranscriptPanel
 					sentences={editor.sentences}
 					{speaker}
+					status={transcriptUi.status}
+					transcriptionProgress={transcriptUi.progress}
+					transcriptionStage={transcriptUi.stage}
 					searchQuery={editor.query}
 					fillerCount={editor.fillerCount}
 					hasSelection={selectedWord !== null && selectedWord !== undefined}
@@ -185,7 +212,7 @@
 					oncaptionstylechange={(style) => (editor.captionStyle = style)}
 				/>
 			</div>
-			<Timeline {editor} {ingestAssets} />
+			<Timeline {editor} {ingestAssets} transcriptStatus={transcriptUi.status} />
 			<EditorModals {editor} projectId={project.id} projectTitle={project.title} />
 		</div>
 	</div>

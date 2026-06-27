@@ -28,6 +28,7 @@
 	let {
 		editor,
 		ingestAssets = null,
+		transcriptStatus = 'ready',
 		ticks,
 		bars,
 		clips,
@@ -62,6 +63,7 @@
 	const showIngestProcessing = $derived(
 		Boolean(editor && ingestAssets && ingestAssets.status === 'ingesting')
 	);
+	const showCaptionPlaceholder = $derived(transcriptStatus === 'transcribing');
 	const showFilmstrip = $derived(
 		Boolean(
 			editor &&
@@ -175,9 +177,15 @@
 			</TimelineTrack>
 
 			<TimelineTrack>
-				{#each resolvedClips as clip (clip.id)}
-					<TimelineClip id={clip.id} clip={placeholderToClip(clip)} variant="caption" />
-				{/each}
+				{#if showCaptionPlaceholder}
+					<div class="timeline__caption-placeholder">
+						Captions appear once transcription finishes
+					</div>
+				{:else}
+					{#each resolvedClips as clip (clip.id)}
+						<TimelineClip id={clip.id} clip={placeholderToClip(clip)} variant="caption" />
+					{/each}
+				{/if}
 			</TimelineTrack>
 
 			<TimelinePlayhead positionPercent={resolvedPlayheadPercent} />
@@ -256,5 +264,16 @@
 	.timeline__lanes:disabled,
 	.timeline__lanes--disabled {
 		cursor: text;
+	}
+
+	.timeline__caption-placeholder {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		padding-left: 10px;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--text-9);
 	}
 </style>

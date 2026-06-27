@@ -2,11 +2,14 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import type { EditorState } from '$lib/editor/editor-state.svelte';
 	import TransportControls from './TransportControls.svelte';
+	import TranscribingPill from './TranscribingPill.svelte';
 
 	interface Props {
 		title: string;
 		meta: string;
 		editor?: EditorState;
+		transcribing?: boolean;
+		transcriptionProgress?: number;
 		backLabel?: string;
 		playing?: boolean;
 		current?: number;
@@ -25,6 +28,8 @@
 		title,
 		meta,
 		editor,
+		transcribing = false,
+		transcriptionProgress = 0,
 		backLabel = 'Projects',
 		playing = false,
 		current = 0,
@@ -55,6 +60,10 @@
 		<div class="editor-top-bar__title">{title}</div>
 		<div class="editor-top-bar__meta">{meta}</div>
 	</div>
+
+	{#if transcribing}
+		<TranscribingPill progress={transcriptionProgress} />
+	{/if}
 
 	{#if editor}
 		<TransportControls {editor} />

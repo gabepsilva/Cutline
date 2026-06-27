@@ -8,6 +8,9 @@
 	interface Props extends Omit<TranscriptPanelProps, 'sentences' | 'speaker'> {
 		sentences?: Sentence[];
 		speaker?: TranscriptPanelProps['speaker'];
+		status?: TranscriptPanelProps['status'];
+		transcriptionProgress?: number;
+		transcriptionStage?: string;
 	}
 
 	let {
@@ -16,6 +19,9 @@
 			name: fixtureUser.name,
 			initials: fixtureUser.initials
 		},
+		status = 'ready',
+		transcriptionProgress = 0,
+		transcriptionStage = 'Detecting speech…',
 		searchQuery = '',
 		fillerCount = 1,
 		hasSelection = false,
@@ -37,6 +43,9 @@
 <TranscriptPanel
 	{sentences}
 	{speaker}
+	{status}
+	{transcriptionProgress}
+	{transcriptionStage}
 	{searchQuery}
 	{fillerCount}
 	{hasSelection}
