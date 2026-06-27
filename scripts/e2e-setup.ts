@@ -9,7 +9,7 @@ import {
 	mockEditorResources
 } from '../src/lib/mocks/editor.mock.ts';
 import { enableForeignKeys } from '../src/lib/server/db/enable-foreign-keys.ts';
-import { media, project, transcript } from '../src/lib/server/db/domain.schema.ts';
+import { media, project, transcript, job } from '../src/lib/server/db/domain.schema.ts';
 import * as schema from '../src/lib/server/db/schema.ts';
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -102,6 +102,28 @@ await db
 			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
 			createdAt: new Date('2026-06-26T09:00:00.000Z'),
 			updatedAt: new Date('2026-06-26T09:00:00.000Z')
+		},
+		{
+			id: 'e2e-transcribing',
+			userId,
+			title: 'Transcribing draft',
+			kind: 'DEMO',
+			description: null,
+			durationSeconds: 0,
+			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
+			createdAt: new Date('2026-06-26T08:00:00.000Z'),
+			updatedAt: new Date('2026-06-26T08:00:00.000Z')
+		},
+		{
+			id: 'e2e-transcribing-mock',
+			userId,
+			title: 'Mock transcription draft',
+			kind: 'DEMO',
+			description: null,
+			durationSeconds: 0,
+			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
+			createdAt: new Date('2026-06-26T07:00:00.000Z'),
+			updatedAt: new Date('2026-06-26T07:00:00.000Z')
 		}
 	])
 	.onConflictDoNothing();
@@ -118,6 +140,18 @@ await db
 		{
 			id: 'e2e-transcript-upload-ready',
 			projectId: 'e2e-upload-ready',
+			words: JSON.stringify([]),
+			captionStyle: 'karaoke'
+		},
+		{
+			id: 'e2e-transcript-transcribing',
+			projectId: 'e2e-transcribing',
+			words: JSON.stringify([]),
+			captionStyle: 'karaoke'
+		},
+		{
+			id: 'e2e-transcript-transcribing-mock',
+			projectId: 'e2e-transcribing-mock',
 			words: JSON.stringify([]),
 			captionStyle: 'karaoke'
 		}
@@ -150,6 +184,30 @@ await db
 			createdAt: new Date()
 		},
 		{
+			id: 'e2e-transcribing-media',
+			projectId: 'e2e-transcribing',
+			name: 'clip.mp4',
+			durationSeconds: 120,
+			kind: 'A-roll',
+			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
+			sizeBytes: 1024,
+			objectKey: 'e2e/uploads/transcribing.mp4',
+			status: 'ready',
+			createdAt: new Date()
+		},
+		{
+			id: 'e2e-transcribing-mock-media',
+			projectId: 'e2e-transcribing-mock',
+			name: 'clip.mp4',
+			durationSeconds: 120,
+			kind: 'A-roll',
+			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
+			sizeBytes: 1024,
+			objectKey: 'e2e/uploads/transcribing-mock.mp4',
+			status: 'ready',
+			createdAt: new Date()
+		},
+		{
 			id: 'e2e-q3-media',
 			projectId: 'proj-q3-recap',
 			name: 'recap.mp4',
@@ -159,6 +217,25 @@ await db
 			sizeBytes: 1024,
 			status: 'ready',
 			createdAt: new Date()
+		}
+	])
+	.onConflictDoNothing();
+
+await db
+	.insert(job)
+	.values([
+		{
+			id: 'e2e-transcription-job',
+			type: 'transcription',
+			projectId: 'e2e-transcribing',
+			status: 'running',
+			progress: 0.45,
+			payload: JSON.stringify({ projectId: 'e2e-transcribing' }),
+			priority: 0,
+			maxAttempts: 3,
+			runAfter: new Date(),
+			createdAt: new Date(),
+			updatedAt: new Date()
 		}
 	])
 	.onConflictDoNothing();

@@ -142,4 +142,27 @@ test.describe('editor route', () => {
 		await expect(page.getByRole('dialog', { name: 'Record' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Start recording' })).toBeVisible();
 	});
+
+	test('shows transcribing gated UI while a transcription job runs', async ({ page }) => {
+		await page.goto('/projects/e2e-transcribing');
+
+		await expect(page.getByTestId('editor-workspace')).toBeVisible();
+		await expect(page.getByText('Transcribing · 45%')).toBeVisible();
+		await expect(page.getByText('Generating transcript…')).toBeVisible();
+		await expect(page.getByRole('searchbox', { name: 'Search transcript' })).not.toBeVisible();
+		await expect(page.getByText('Captions appear once transcription finishes.')).toBeVisible();
+
+		const transport = page.getByRole('group', { name: 'Transport controls' });
+		await expect(transport.getByRole('button', { name: 'Play' })).toBeVisible();
+	});
+
+	test('mock transcription completes and unlocks transcript editing', async ({ page }) => {
+		await page.goto('/projects/e2e-transcribing-mock');
+
+		await expect(page.getByRole('button', { name: /^Remove fillers · [1-9]/ })).toBeVisible({
+			timeout: 15_000
+		});
+		await expect(page.getByText(/Transcribing ·/)).not.toBeVisible();
+		await expect(page.getByRole('searchbox', { name: 'Search transcript' })).toBeVisible();
+	});
 });

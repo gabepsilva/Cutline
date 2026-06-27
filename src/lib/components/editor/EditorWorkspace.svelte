@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import EditorLayout from '$lib/components/editor/EditorLayout.svelte';
 	import EditorModals from '$lib/components/editor/EditorModals.svelte';
@@ -19,7 +19,15 @@
 		pollIngestAssets,
 		type IngestAssetsState
 	} from '$lib/editor/ingest-assets';
+	import {
+		pollMockTranscription,
+		pollTranscriptionJob,
+		resolveTranscriptUiStatus,
+		shouldUseMockTranscription,
+		toTranscriptionUiState
+	} from '$lib/editor/transcription-status';
 	import type { EditorProjectLoad } from '$lib/types/editor-load';
+	import type { JobStatusResponse } from '$lib/types/job';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import { resolveEditorKeyAction, shouldPreventDefault } from '$lib/utils/editor-keyboard';
 
@@ -35,11 +43,15 @@
 		videoUrl,
 		aRoll,
 		resources,
-		overlays
+		overlays,
+		transcriptionJobId
 	}: Props = $props();
 
 	let trackedMediaId = $state<string | null>(null);
 	let ingestAssets = $state<IngestAssetsState | null>(null);
+	let jobStatus = $state<JobStatusResponse | null>(null);
+	let mockTranscriptionActive = $state(false);
+	let mockProgress = $state(0);
 	const playbackUrl = $derived(ingestAssets?.transcodeUrl ?? videoUrl);
 
 	$effect(() => {
@@ -72,6 +84,94 @@
 			canceled = true;
 			stopPoll?.();
 		};
+	});
+
+	$effect(() => {
+		const jobId = transcriptionJobId;
+		const wordCount = words.length;
+
+		if (wordCount > 0 || !jobId) {
+			jobStatus = null;
+			return;
+		}
+
+		let stopPoll: (() => void) | undefined;
+		let canceled = false;
+
+		stopPoll = pollTranscriptionJob(
+			jobId,
+			(status) => {
+				if (canceled) return;
+				jobStatus = status;
+			},
+			(status) => {
+				if (canceled) return;
+				jobStatus = status;
+				if (status.status === 'succeeded') {
+					void invalidateAll();
+				}
+			}
+		);
+
+		return () => {
+			canceled = true;
+			stopPoll?.();
+		};
+	});
+
+	$effect(() => {
+		const wordCount = words.length;
+		const useMock = shouldUseMockTranscription({
+			wordCount,
+			transcriptionJobId,
+			aRoll
+		});
+
+		if (!useMock) {
+			mockTranscriptionActive = false;
+			mockProgress = 0;
+			return;
+		}
+
+		mockTranscriptionActive = true;
+		let stopMock: (() => void) | undefined;
+		let canceled = false;
+
+		stopMock = pollMockTranscription(
+			project.id,
+			(progress) => {
+				if (canceled) return;
+				mockProgress = progress;
+			},
+			() => {
+				if (canceled) return;
+				mockTranscriptionActive = false;
+				void invalidateAll();
+			}
+		);
+
+		return () => {
+			canceled = true;
+			stopMock?.();
+		};
+	});
+
+	const transcriptUi = $derived.by(() => {
+		const progress =
+			transcriptionJobId && jobStatus
+				? jobStatus.progress
+				: mockTranscriptionActive
+					? mockProgress
+					: 0;
+
+		const status = resolveTranscriptUiStatus({
+			wordCount: words.length,
+			aRoll,
+			jobStatus,
+			mockActive: mockTranscriptionActive
+		});
+
+		return toTranscriptionUiState(status, progress);
 	});
 
 	const editor = $derived.by(
@@ -115,7 +215,9 @@
 	);
 
 	const captionTokens = $derived(
-		captionWordsForCurrentSentence(editor.words, editor.currentWordId, editor.captionStyle)
+		transcriptUi.status === 'ready'
+			? captionWordsForCurrentSentence(editor.words, editor.currentWordId, editor.captionStyle)
+			: []
 	);
 
 	const totalLabel = $derived(formatTimecode(editor.duration));
@@ -150,13 +252,23 @@
 
 <svelte:window onkeydown={handleWindowKeydown} />
 
-<EditorLayout title={project.title} meta={topBarMeta} {editor} onback={() => goto(resolve('/'))}>
+<EditorLayout
+	title={project.title}
+	meta={topBarMeta}
+	{editor}
+	transcribing={transcriptUi.status === 'transcribing'}
+	transcriptionProgress={transcriptUi.progress}
+	onback={() => goto(resolve('/'))}
+>
 	<div class="editor-workspace" data-testid="editor-workspace">
 		<div class="editor-workspace__stage">
 			<div class="editor-workspace__panels">
 				<TranscriptPanel
 					sentences={editor.sentences}
 					{speaker}
+					status={transcriptUi.status}
+					transcriptionProgress={transcriptUi.progress}
+					transcriptionStage={transcriptUi.stage}
 					searchQuery={editor.query}
 					fillerCount={editor.fillerCount}
 					hasSelection={selectedWord !== null && selectedWord !== undefined}
@@ -185,7 +297,7 @@
 					oncaptionstylechange={(style) => (editor.captionStyle = style)}
 				/>
 			</div>
-			<Timeline {editor} {ingestAssets} />
+			<Timeline {editor} {ingestAssets} transcriptStatus={transcriptUi.status} />
 			<EditorModals {editor} projectId={project.id} projectTitle={project.title} />
 		</div>
 	</div>

@@ -41,7 +41,8 @@ const editorLoadFixture: EditorProjectLoad = {
 	videoUrl: null,
 	aRoll: null,
 	resources: [],
-	overlays: []
+	overlays: [],
+	transcriptionJobId: null
 };
 
 describe('projects/[id]/+page.server load', () => {

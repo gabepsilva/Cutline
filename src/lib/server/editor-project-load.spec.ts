@@ -147,7 +147,8 @@ describe('loadEditorProject', () => {
 				sentences: [],
 				meta: 'Draft · no transcript',
 				resources: [],
-				overlays: []
+				overlays: [],
+				transcriptionJobId: null
 			});
 		} finally {
 			client.close();

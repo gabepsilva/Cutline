@@ -10,6 +10,8 @@
 		title: string;
 		meta: string;
 		editor?: EditorState;
+		transcribing?: boolean;
+		transcriptionProgress?: number;
 		playing?: boolean;
 		current?: number;
 		total?: number;
@@ -30,6 +32,8 @@
 		title,
 		meta,
 		editor,
+		transcribing = false,
+		transcriptionProgress = 0,
 		playing = false,
 		current = 0,
 		total = 0,
@@ -52,6 +56,8 @@
 		{title}
 		{meta}
 		{editor}
+		{transcribing}
+		{transcriptionProgress}
 		{playing}
 		{current}
 		{total}

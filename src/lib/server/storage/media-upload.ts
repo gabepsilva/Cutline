@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { media, project, transcript } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
-import { enqueueJob } from '$lib/server/jobs/job-store';
+import { enqueueJob, getActiveProjectJob } from '$lib/server/jobs/job-store';
 import { assertProjectOwned } from '$lib/server/project-access';
 import { normalizeProjectTitle } from '$lib/server/project-mutations';
 import type { ServerError, ServerResult } from '$lib/server/result';
@@ -27,7 +27,7 @@ import type {
 	UploadUrlRequest,
 	UploadUrlResponse
 } from '$lib/types/media-upload';
-import type { IngestJobPayload } from '$lib/types/job';
+import type { IngestJobPayload, TranscriptionJobPayload } from '$lib/types/job';
 import {
 	UPLOAD_MAX_BYTES,
 	UPLOAD_MULTIPART_THRESHOLD_BYTES,
@@ -323,6 +323,36 @@ export async function completeMediaUpload(
 	});
 
 	await database.update(media).set({ status: 'ingesting' }).where(eq(media.id, mediaId));
+
+	if (row.kind === 'A-roll') {
+		const [transcriptRow] = await database
+			.select({ words: transcript.words })
+			.from(transcript)
+			.where(eq(transcript.projectId, projectId))
+			.limit(1);
+
+		let wordCount = 0;
+		if (transcriptRow?.words) {
+			try {
+				const parsed: unknown = JSON.parse(transcriptRow.words);
+				wordCount = Array.isArray(parsed) ? parsed.length : 0;
+			} catch {
+				wordCount = 0;
+			}
+		}
+
+		if (wordCount === 0) {
+			const existing = await getActiveProjectJob(database, projectId, 'transcription');
+			if (!existing) {
+				const transcriptionPayload: TranscriptionJobPayload = { projectId };
+				await enqueueJob(database, {
+					type: 'transcription',
+					projectId,
+					payload: transcriptionPayload
+				});
+			}
+		}
+	}
 
 	return { ok: true, jobId };
 }

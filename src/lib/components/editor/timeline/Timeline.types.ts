@@ -35,6 +35,7 @@ interface TimelineBase {
 	snapEnabled?: boolean;
 	trackLabels?: TimelineTrackLabel[];
 	ingestAssets?: IngestAssetsState | null;
+	transcriptStatus?: import('$lib/types/transcript-ui').TranscriptUiStatus;
 }
 
 export type TimelineProps = TimelineBase &

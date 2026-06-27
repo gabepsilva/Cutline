@@ -121,4 +121,28 @@ describe('TranscriptPanel.svelte', () => {
 		await expect.element(page.getByText(fixtureUser.name)).toBeInTheDocument();
 		expect(page.getByRole('button', { name: /Seek to/ }).elements()).toHaveLength(0);
 	});
+
+	it('hides search and filler actions while transcribing', async () => {
+		render(TranscriptPanelHarness, {
+			status: 'transcribing',
+			transcriptionProgress: 0.45,
+			transcriptionStage: 'Generating transcript…',
+			sentences: []
+		});
+
+		await expect
+			.element(page.getByRole('searchbox', { name: 'Search transcript' }))
+			.not.toBeInTheDocument();
+		await expect
+			.element(page.getByRole('button', { name: /Remove fillers/ }))
+			.not.toBeInTheDocument();
+		await expect.element(page.getByText('Generating transcript…')).toBeInTheDocument();
+		await expect.element(page.getByText('45%')).toBeInTheDocument();
+	});
+
+	it('shows unavailable copy when transcription cannot run', async () => {
+		render(TranscriptPanelHarness, { status: 'unavailable', sentences: [] });
+
+		await expect.element(page.getByText('Transcription not available')).toBeInTheDocument();
+	});
 });

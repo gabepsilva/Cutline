@@ -1,9 +1,13 @@
 import type { Sentence, Word } from '$lib/types/transcript';
+import type { TranscriptUiStatus } from '$lib/types/transcript-ui';
 import type { TranscriptSpeakerData } from './TranscriptSpeaker.types';
 
 export interface TranscriptPanelProps {
 	sentences: Sentence[];
 	speaker: TranscriptSpeakerData;
+	status?: TranscriptUiStatus;
+	transcriptionProgress?: number;
+	transcriptionStage?: string;
 	searchQuery?: string;
 	fillerCount?: number;
 	hasSelection?: boolean;

@@ -17,6 +17,10 @@ export interface IngestJobPayload {
 	mediaId: string;
 }
 
+export interface TranscriptionJobPayload {
+	projectId: string;
+}
+
 export interface JobStatusResponse {
 	status: JobStatus;
 	progress: number;
