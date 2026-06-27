@@ -19,6 +19,7 @@ on:
       - 'docker-entrypoint.sh'
       - 'package.json'
       - 'bun.lock'
+      - 'bunfig.toml'
       - 'vite.config.ts'
       - 'infra/k8s/**'
       - '.github/workflows/deploy.yml'
