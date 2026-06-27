@@ -6,7 +6,10 @@ import type { Database } from '$lib/server/db/types';
 import { mapMediaRow, mapOverlayRow } from '$lib/server/map-editor-rows';
 import { mapProjectRow } from '$lib/server/map-project-row';
 import { ownedProjectFilter } from '$lib/server/project-access';
+import { isServerError } from '$lib/server/result';
+import { findPrimaryMediaRow, getMediaAssetUrls } from '$lib/server/storage/media-assets';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
+import type { MediaStatus } from '$lib/types/media-upload';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import { deriveUserInitials } from '$lib/utils/user-initials';
 
@@ -48,6 +51,27 @@ export async function loadEditorProject(
 	const words = parseWords(transcriptRow?.words);
 	const captionStyle = (transcriptRow?.captionStyle as CaptionStyle | undefined) ?? 'karaoke';
 
+	const primaryMedia = await findPrimaryMediaRow(database, projectId);
+	let aRoll: EditorProjectLoad['aRoll'] = null;
+	let videoUrl: string | null = null;
+
+	if (primaryMedia) {
+		const status = primaryMedia.status as MediaStatus;
+		aRoll = {
+			mediaId: primaryMedia.id,
+			status,
+			videoUrl: null
+		};
+
+		if (status === 'ready') {
+			const assets = await getMediaAssetUrls(database, user.id, projectId, primaryMedia.id);
+			if (!isServerError(assets)) {
+				videoUrl = assets.transcodeUrl;
+				aRoll = { ...aRoll, videoUrl: assets.transcodeUrl };
+			}
+		}
+	}
+
 	return {
 		project: mapProjectRow(row),
 		meta: editorMeta(words),
@@ -58,7 +82,8 @@ export async function loadEditorProject(
 			name: user.name,
 			initials: deriveUserInitials(user.name)
 		},
-		videoUrl: null,
+		videoUrl,
+		aRoll,
 		resources: mediaRows.map(mapMediaRow),
 		overlays: overlayRows.map(mapOverlayRow)
 	};

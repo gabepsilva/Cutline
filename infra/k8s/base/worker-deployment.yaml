@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cutline-worker
+  namespace: cutline
+  labels:
+    app.kubernetes.io/name: cutline-worker
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  progressDeadlineSeconds: 300
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cutline-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cutline-worker
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: cutline-regcred
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ghcr.io/gabepsilva/cutline:bootstrap
+          imagePullPolicy: IfNotPresent
+          command: ['bun', 'run', 'jobs:worker']
+          env:
+            - name: INLINE_JOB_WORKER
+              value: 'false'
+            - name: WORKER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          envFrom:
+            - configMapRef:
+                name: cutline-config
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: '2'
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: app-dotenv
+              mountPath: /app/.env
+              subPath: dotenv
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: app-dotenv
+          secret:
+            secretName: cutline-app
+        - name: tmp
+          emptyDir: {}

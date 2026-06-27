@@ -16,6 +16,11 @@
 	} from '$lib/editor/editor-save';
 	import { EditorState } from '$lib/editor/editor-state.svelte';
 	import { uploadMediaForEditor } from '$lib/editor/media-upload';
+	import {
+		loadIngestAssets,
+		pollIngestAssets,
+		type IngestAssetsState
+	} from '$lib/editor/ingest-assets';
 	import type { EditorProjectLoad } from '$lib/types/editor-load';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import { resolveEditorKeyAction, shouldPreventDefault } from '$lib/utils/editor-keyboard';
@@ -30,9 +35,46 @@
 		sentences,
 		speaker,
 		videoUrl,
+		aRoll,
 		resources,
 		overlays
 	}: Props = $props();
+
+	let trackedMediaId = $state<string | null>(null);
+	let ingestAssets = $state<IngestAssetsState | null>(null);
+	const playbackUrl = $derived(ingestAssets?.transcodeUrl ?? videoUrl);
+
+	$effect(() => {
+		if (aRoll?.mediaId) {
+			trackedMediaId = aRoll.mediaId;
+		}
+	});
+
+	$effect(() => {
+		const mediaId = trackedMediaId;
+		if (!mediaId) {
+			ingestAssets = null;
+			return;
+		}
+
+		let stopPoll: (() => void) | undefined;
+		let canceled = false;
+
+		void loadIngestAssets(project.id, mediaId).then((state) => {
+			if (canceled) return;
+			ingestAssets = state;
+			if (state.status === 'ingesting') {
+				stopPoll = pollIngestAssets(project.id, mediaId, (next) => {
+					ingestAssets = next;
+				});
+			}
+		});
+
+		return () => {
+			canceled = true;
+			stopPoll?.();
+		};
+	});
 
 	const editor = $derived.by(
 		() => new EditorState({ words, sentences, resources, captionStyle, overlays })
@@ -123,7 +165,8 @@
 
 		emptyUploading = true;
 		try {
-			await uploadMediaForEditor(editor, project.id, file);
+			const uploaded = await uploadMediaForEditor(editor, project.id, file);
+			trackedMediaId = uploaded.mediaId;
 			editor.showMedia = true;
 		} catch {
 			// Network/API errors leave the empty state visible for retry.
@@ -166,12 +209,12 @@
 						{captionTokens}
 						captionStyle={editor.captionStyle}
 						showCaptions={editor.showCaptions}
-						{videoUrl}
+						videoUrl={playbackUrl}
 						ontogglePlay={() => editor.togglePlay()}
 						oncaptionstylechange={(style) => (editor.captionStyle = style)}
 					/>
 				</div>
-				<Timeline {editor} />
+				<Timeline {editor} {ingestAssets} />
 			{:else}
 				<EmptyState
 					title="No transcript yet"

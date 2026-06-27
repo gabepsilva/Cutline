@@ -48,7 +48,7 @@ FROM oven/bun:1.3.13-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664
 WORKDIR /app
 # Pull patched OS packages (e.g. openssl) released after the base image was cut,
 # so the image scan stays clean without waiting for a base-image bump.
-RUN apk upgrade --no-cache
+RUN apk upgrade --no-cache && apk add --no-cache ffmpeg
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000 \
@@ -56,6 +56,9 @@ ENV NODE_ENV=production \
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
 COPY drizzle ./drizzle
+COPY scripts ./scripts
+COPY src ./src
+COPY bunfig.toml ./bunfig.toml
 COPY scripts/migrate.mjs ./scripts/migrate.mjs
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 COPY package.json ./package.json

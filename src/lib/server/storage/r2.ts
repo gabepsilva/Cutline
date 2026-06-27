@@ -2,13 +2,13 @@ import {
 	CompleteMultipartUploadCommand,
 	CreateMultipartUploadCommand,
 	DeleteObjectsCommand,
+	GetObjectCommand,
 	ListObjectsV2Command,
 	PutObjectCommand,
 	S3Client,
 	UploadPartCommand
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { env } from '$env/dynamic/private';
 
 const PRESIGN_EXPIRY_SECONDS = 3600;
 
@@ -25,10 +25,10 @@ let cachedConfig: R2Config | null = null;
 function readR2Config(): R2Config {
 	if (cachedConfig) return cachedConfig;
 
-	const endpoint = env.R2_ENDPOINT;
-	const bucket = env.R2_BUCKET ?? 'cutline-prod';
-	const accessKeyId = env.R2_ACCESS_KEY_ID;
-	const secretAccessKey = env.R2_SECRET_ACCESS_KEY;
+	const endpoint = process.env.R2_ENDPOINT;
+	const bucket = process.env.R2_BUCKET ?? 'cutline-prod';
+	const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+	const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
 
 	if (!endpoint || !accessKeyId || !secretAccessKey) {
 		throw new Error('R2 credentials are not configured');
@@ -72,6 +72,50 @@ export async function presignPutObject(objectKey: string, contentType: string): 
 		expiresIn: PRESIGN_EXPIRY_SECONDS,
 		unhoistableHeaders: new Set(['content-type'])
 	});
+}
+
+export async function presignGetObject(objectKey: string): Promise<string> {
+	const client = getR2Client();
+	const command = new GetObjectCommand({
+		Bucket: getR2Bucket(),
+		Key: objectKey
+	});
+	return getSignedUrl(client, command, { expiresIn: PRESIGN_EXPIRY_SECONDS });
+}
+
+export async function getObjectBytes(objectKey: string): Promise<Uint8Array> {
+	const client = getR2Client();
+	const response = await client.send(
+		new GetObjectCommand({
+			Bucket: getR2Bucket(),
+			Key: objectKey
+		})
+	);
+	if (!response.Body) {
+		throw new Error(`R2 object not found: ${objectKey}`);
+	}
+	return new Uint8Array(await response.Body.transformToByteArray());
+}
+
+export async function putObjectBytes(
+	objectKey: string,
+	body: Uint8Array,
+	contentType: string
+): Promise<void> {
+	const client = getR2Client();
+	await client.send(
+		new PutObjectCommand({
+			Bucket: getR2Bucket(),
+			Key: objectKey,
+			Body: body,
+			ContentType: contentType
+		})
+	);
+}
+
+export async function putObjectJson(objectKey: string, value: unknown): Promise<void> {
+	const body = new TextEncoder().encode(JSON.stringify(value));
+	await putObjectBytes(objectKey, body, 'application/json');
 }
 
 export async function createMultipartUpload(

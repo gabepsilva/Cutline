@@ -1,4 +1,3 @@
-import { env } from '$env/dynamic/private';
 import type { Database } from '$lib/server/db/types';
 import type { JobType } from '$lib/types/job';
 import {
@@ -13,6 +12,10 @@ import {
 	type JobRow
 } from './job-store';
 import { sweepAbandonedUploads } from '$lib/server/storage/orphan-sweep';
+import {
+	markMediaFailedOnIngestDeadLetter,
+	registerIngestHandler
+} from '$lib/server/jobs/handlers/ingest';
 
 export class JobCanceledError extends Error {
 	constructor(message = 'Job canceled') {
@@ -80,9 +83,12 @@ export function registerExportStubHandler(stepDelayMs = 80) {
 	});
 }
 
-function registerDefaultHandlers() {
+function registerDefaultHandlers(database: Database) {
 	if (!handlers.has('export')) {
 		registerExportStubHandler();
+	}
+	if (!handlers.has('ingest')) {
+		registerIngestHandler(database);
 	}
 }
 
@@ -91,7 +97,7 @@ async function runClaimedJob(
 	workerId: string,
 	claimed: JobRow
 ): Promise<'done' | 'retry' | 'failed' | 'canceled'> {
-	registerDefaultHandlers();
+	registerDefaultHandlers(database);
 
 	const handler = handlers.get(claimed.type as JobType);
 	if (!handler) {
@@ -127,6 +133,9 @@ async function runClaimedJob(
 
 		const message = error instanceof Error ? error.message : 'Job handler failed';
 		const outcome = await failJob(database, claimed.id, workerId, message);
+		if (outcome === 'failed' && claimed.type === 'ingest') {
+			await markMediaFailedOnIngestDeadLetter(database, claimed);
+		}
 		return outcome === 'missing' ? 'failed' : outcome;
 	}
 }
@@ -193,7 +202,7 @@ const INLINE_WORKER_MAX_JOBS = 3;
 
 /** Fire-and-forget inline worker kick after enqueue (dev/single-node convenience). */
 export function kickWorker(database: Database, workerId = 'inline') {
-	if (env.INLINE_JOB_WORKER === 'false') {
+	if (process.env.INLINE_JOB_WORKER === 'false') {
 		return;
 	}
 

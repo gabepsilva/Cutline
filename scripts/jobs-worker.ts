@@ -4,6 +4,7 @@ import { createClient } from '@libsql/client';
 import * as schema from '../src/lib/server/db/schema.ts';
 import { enableForeignKeys } from '../src/lib/server/db/enable-foreign-keys.ts';
 import { runWorkerLoop } from '../src/lib/server/jobs/worker.ts';
+import { registerIngestHandler } from '../src/lib/server/jobs/handlers/ingest.ts';
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -19,6 +20,7 @@ await enableForeignKeys(client);
 
 const db = drizzle(client, { schema });
 const workerId = process.env.WORKER_ID ?? `worker-${process.pid}`;
+registerIngestHandler(db);
 const abort = new AbortController();
 
 process.on('SIGINT', () => abort.abort());

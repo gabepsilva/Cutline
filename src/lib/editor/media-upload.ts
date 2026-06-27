@@ -142,7 +142,7 @@ export async function uploadMediaForEditor(
 	projectId: string,
 	file: File,
 	onProgress?: (ratio: number) => void
-): Promise<void> {
+): Promise<{ mediaId: string }> {
 	const result = await uploadProjectMedia(projectId, file, onProgress);
 	editor.addUploadedResource({
 		id: result.mediaId,
@@ -152,6 +152,7 @@ export async function uploadMediaForEditor(
 		thumb: DEFAULT_RECORD_THUMB,
 		status: 'ingesting'
 	});
+	return { mediaId: result.mediaId };
 }
 
 export { UPLOAD_PART_SIZE_BYTES };

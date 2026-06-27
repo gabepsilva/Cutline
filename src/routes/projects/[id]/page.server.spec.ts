@@ -38,6 +38,7 @@ const editorLoadFixture: EditorProjectLoad = {
 	sentences: [],
 	speaker: { name: 'Alex Chen', initials: 'AC' },
 	videoUrl: null,
+	aRoll: null,
 	resources: [],
 	overlays: []
 };

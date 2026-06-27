@@ -5,8 +5,11 @@
 		toTimelineClips,
 		toTimelineTicks
 	} from '$lib/editor/editor-timeline-view';
+	import { waveformBarsFromEdl } from '$lib/editor/waveform';
 	import { mockTimelineDurationSeconds } from '$lib/mocks/timeline.mock';
+	import TimelineFilmstrip from './TimelineFilmstrip.svelte';
 	import TimelinePlayhead from './TimelinePlayhead.svelte';
+	import TimelineProcessing from './TimelineProcessing.svelte';
 	import TimelineRuler from './TimelineRuler.svelte';
 	import TimelineToolbar from './TimelineToolbar.svelte';
 	import TimelineClip from './TimelineClip.svelte';
@@ -24,6 +27,7 @@
 
 	let {
 		editor,
+		ingestAssets = null,
 		ticks,
 		bars,
 		clips,
@@ -48,8 +52,23 @@
 	);
 	const resolvedBars = $derived(
 		editor
-			? toTimelineBars(waveformBars(editor.active, editor.startMap, editor.duration))
+			? toTimelineBars(
+					ingestAssets?.waveform
+						? waveformBarsFromEdl(editor.words, ingestAssets.waveform)
+						: waveformBars(editor.active, editor.startMap, editor.duration)
+				)
 			: (bars ?? [])
+	);
+	const showIngestProcessing = $derived(
+		Boolean(editor && ingestAssets && ingestAssets.status === 'ingesting')
+	);
+	const showFilmstrip = $derived(
+		Boolean(
+			editor &&
+			ingestAssets?.filmstripUrl &&
+			ingestAssets.filmstripMeta &&
+			ingestAssets.status === 'ready'
+		)
 	);
 	const resolvedClips = $derived(
 		editor
@@ -132,13 +151,27 @@
 			/>
 
 			<TimelineTrack>
-				{#each resolvedClips as clip (clip.id)}
-					<TimelineClip id={clip.id} clip={placeholderToClip(clip)} variant="video" />
-				{/each}
+				{#if showFilmstrip && editor && ingestAssets?.filmstripUrl && ingestAssets.filmstripMeta}
+					<TimelineFilmstrip
+						words={editor.words}
+						filmstripUrl={ingestAssets.filmstripUrl}
+						meta={ingestAssets.filmstripMeta}
+					/>
+				{:else}
+					{#each resolvedClips as clip (clip.id)}
+						<TimelineClip id={clip.id} clip={placeholderToClip(clip)} variant="video" />
+					{/each}
+				{/if}
+				{#if showIngestProcessing}
+					<TimelineProcessing />
+				{/if}
 			</TimelineTrack>
 
 			<TimelineTrack variant="waveform" padded={false}>
 				<TimelineWaveform bars={resolvedBars} playedPercent={resolvedPlayheadPercent} />
+				{#if showIngestProcessing}
+					<TimelineProcessing />
+				{/if}
 			</TimelineTrack>
 
 			<TimelineTrack>

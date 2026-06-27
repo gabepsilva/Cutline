@@ -1,4 +1,5 @@
 import type { EditorState } from '$lib/editor/editor-state.svelte';
+import type { IngestAssetsState } from '$lib/editor/ingest-assets';
 import type { Overlay } from '$lib/types/timeline';
 
 export interface TimelineTick {
@@ -33,6 +34,7 @@ interface TimelineBase {
 	class?: string;
 	snapEnabled?: boolean;
 	trackLabels?: TimelineTrackLabel[];
+	ingestAssets?: IngestAssetsState | null;
 }
 
 export type TimelineProps = TimelineBase &

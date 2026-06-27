@@ -181,8 +181,9 @@ describe('uploadMediaForEditor', () => {
 		vi.stubGlobal('XMLHttpRequest', SinglePartXHR as unknown as typeof XMLHttpRequest);
 
 		const file = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
-		await uploadMediaForEditor(editor as never, 'proj-1', file);
+		const result = await uploadMediaForEditor(editor as never, 'proj-1', file);
 
+		expect(result).toEqual({ mediaId: 'media-9' });
 		expect(editor.addUploadedResource).toHaveBeenCalledWith(
 			expect.objectContaining({ id: 'media-9', status: 'ingesting' })
 		);

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+	buildDerivedMediaKeys,
 	buildMediaObjectKey,
 	buildProjectMediaPrefix,
 	extensionFromFilename,
+	mediaAssetPrefixFromObjectKey,
 	resolveUploadContentType,
 	sanitizeUploadFilename
 } from '$lib/server/storage/object-key';
@@ -37,5 +39,23 @@ describe('object-key', () => {
 
 	it('reads extensions from filenames', () => {
 		expect(extensionFromFilename('clip.WEBM')).toBe('webm');
+	});
+});
+
+describe('derived media object keys', () => {
+	it('builds deterministic ingest output keys under the upload prefix', () => {
+		const source = 'users/u1/projects/p1/media/m1/source.mp4';
+		expect(buildDerivedMediaKeys(source)).toEqual({
+			transcodeKey: 'users/u1/projects/p1/media/m1/transcode.mp4',
+			filmstripKey: 'users/u1/projects/p1/media/m1/filmstrip.jpg',
+			filmstripMetaKey: 'users/u1/projects/p1/media/m1/filmstrip.json',
+			waveformKey: 'users/u1/projects/p1/media/m1/waveform.json'
+		});
+	});
+
+	it('derives the asset prefix from a source key', () => {
+		expect(mediaAssetPrefixFromObjectKey('users/u1/projects/p1/media/m1/source.mov')).toBe(
+			'users/u1/projects/p1/media/m1/'
+		);
 	});
 });

@@ -125,6 +125,7 @@ describe('loadEditorProject', () => {
 			expect(data!.resources).toHaveLength(3);
 			expect(data!.overlays).toEqual([]);
 			expect(data!.videoUrl).toBeNull();
+			expect(data!.aRoll).toBeNull();
 		} finally {
 			client.close();
 		}

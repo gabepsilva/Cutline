@@ -55,6 +55,33 @@ export function buildProjectMediaPrefix(userId: string, projectId: string): stri
 	return `users/${userId}/projects/${projectId}/media/`;
 }
 
+/** Prefix `users/.../media/{mediaId}/` derived from a source object key. */
+export function mediaAssetPrefixFromObjectKey(objectKey: string): string {
+	const slash = objectKey.lastIndexOf('/');
+	if (slash < 0) {
+		throw new Error('Invalid media object key');
+	}
+	return `${objectKey.slice(0, slash + 1)}`;
+}
+
+export interface DerivedMediaKeys {
+	transcodeKey: string;
+	filmstripKey: string;
+	filmstripMetaKey: string;
+	waveformKey: string;
+}
+
+/** Deterministic R2 keys for ingest outputs under the upload prefix (M8-02). */
+export function buildDerivedMediaKeys(objectKey: string): DerivedMediaKeys {
+	const prefix = mediaAssetPrefixFromObjectKey(objectKey);
+	return {
+		transcodeKey: `${prefix}transcode.mp4`,
+		filmstripKey: `${prefix}filmstrip.jpg`,
+		filmstripMetaKey: `${prefix}filmstrip.json`,
+		waveformKey: `${prefix}waveform.json`
+	};
+}
+
 export function sanitizeUploadFilename(filename: string): string {
 	const base = filename.trim().split(/[/\\]/).pop() ?? 'upload';
 	const cleaned = base.replace(/[^\w.\-() ]+/g, '_').slice(0, 120);

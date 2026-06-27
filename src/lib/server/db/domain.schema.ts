@@ -55,6 +55,11 @@ export const media = sqliteTable(
 		sizeBytes: integer('size_bytes').notNull().default(0),
 		objectKey: text('object_key'),
 		contentType: text('content_type'),
+		transcodeKey: text('transcode_key'),
+		filmstripKey: text('filmstrip_key'),
+		waveformKey: text('waveform_key'),
+		width: integer('width'),
+		height: integer('height'),
 		// Default 'ready' (not 'pending'): legacy/backfilled rows are usable shelf items; uploads insert 'uploading'.
 		status: text('status').notNull().default('ready'),
 		// Nullable at DB level (0003 ALTER cannot add NOT NULL with expression default); inserts must set explicitly.
