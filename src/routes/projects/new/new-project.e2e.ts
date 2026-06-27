@@ -1,6 +1,16 @@
 import { expect, test } from '@playwright/test';
 import { loginAsE2eUser } from '$lib/test/e2e-auth';
 
+async function mockR2Upload(page: import('@playwright/test').Page) {
+	await page.route(/\.r2\.cloudflarestorage\.com\//, async (route) => {
+		if (route.request().method() === 'PUT') {
+			await route.fulfill({ status: 200 });
+			return;
+		}
+		await route.continue();
+	});
+}
+
 test.describe('new project route', () => {
 	test.beforeEach(async ({ page }) => {
 		await loginAsE2eUser(page);
@@ -14,7 +24,7 @@ test.describe('new project route', () => {
 			'Untitled project'
 		);
 		await expect(page.getByRole('heading', { name: 'Start your video' })).toBeVisible();
-		await expect(page.getByTestId('new-project-timeline-placeholder')).toBeVisible();
+		await expect(page.getByTestId('project-import-timeline-placeholder')).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Export' })).toBeDisabled();
 	});
 
@@ -23,5 +33,21 @@ test.describe('new project route', () => {
 
 		await page.getByRole('button', { name: 'Projects' }).click();
 		await expect(page).toHaveURL('/');
+	});
+
+	test('uploading footage navigates to the full editor', async ({ page }) => {
+		await mockR2Upload(page);
+		await page.goto('/projects/new');
+
+		const fileInput = page.locator('.import-gateway__file-input');
+		await fileInput.setInputFiles({
+			name: 'clip.mp4',
+			mimeType: 'video/mp4',
+			buffer: Buffer.from('fake-video-bytes')
+		});
+
+		await expect(page.getByTestId('import-gateway-uploading')).toBeVisible();
+		await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}$/);
+		await expect(page.getByTestId('editor-workspace')).toBeVisible({ timeout: 30_000 });
 	});
 });

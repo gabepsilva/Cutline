@@ -5,6 +5,8 @@ import type { Project } from '$lib/types/project';
 import type { Overlay } from '$lib/types/timeline';
 import type { CaptionStyle, Sentence, Word } from '$lib/types/transcript';
 
+export type ProjectRouteMode = 'import' | 'editor';
+
 /** Primary uploaded A-roll media for timeline ingest assets (M8-02). */
 export interface ARollMediaLoad {
 	mediaId: string;
@@ -12,8 +14,9 @@ export interface ARollMediaLoad {
 	videoUrl: string | null;
 }
 
-/** Server load shape for the editor route — consumed by `EditorWorkspace`. */
+/** Server load shape for the editor route — consumed by `EditorWorkspace` / import shell. */
 export interface EditorProjectLoad {
+	mode: ProjectRouteMode;
 	project: Project;
 	meta: string;
 	words: Word[];

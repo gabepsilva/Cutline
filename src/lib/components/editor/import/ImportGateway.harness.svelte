@@ -4,13 +4,14 @@
 	interface Props {
 		onrecord?: () => void;
 		onprojectcreated?: (projectId: string) => void;
+		onbatchcomplete?: () => void;
 	}
 
-	let { onrecord, onprojectcreated }: Props = $props();
+	let { onrecord, onprojectcreated, onbatchcomplete }: Props = $props();
 </script>
 
 <div class="import-gateway-harness">
-	<ImportGateway projectTitle="Untitled project" {onrecord} {onprojectcreated} />
+	<ImportGateway projectTitle="Untitled project" {onrecord} {onprojectcreated} {onbatchcomplete} />
 </div>
 
 <style>

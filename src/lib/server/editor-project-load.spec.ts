@@ -112,6 +112,7 @@ describe('loadEditorProject', () => {
 			const data = await loadEditorProject(db, authUser, 'proj-hero');
 			expect(data).not.toBeNull();
 
+			expect(data!.mode).toBe('editor');
 			expect(data!.project).toMatchObject({
 				id: 'proj-hero',
 				title: 'How I edit videos 3x faster',
@@ -141,12 +142,39 @@ describe('loadEditorProject', () => {
 
 			const data = await loadEditorProject(db, authUser, 'proj-empty');
 			expect(data).toMatchObject({
+				mode: 'import',
 				words: [],
 				sentences: [],
 				meta: 'Draft · no transcript',
 				resources: [],
 				overlays: []
 			});
+		} finally {
+			client.close();
+		}
+	});
+
+	it('returns import mode while an upload is still in progress', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedEditorProject(db, {
+				projectId: 'proj-uploading',
+				ownerId: authUser.id
+			});
+			await db.insert(media).values({
+				id: 'media-uploading',
+				projectId: 'proj-uploading',
+				name: 'clip.mp4',
+				durationSeconds: 0,
+				kind: 'A-roll',
+				thumb: 'repeating-linear-gradient(135deg,#1c1c20 0 12px,#191920 12px 24px)',
+				sizeBytes: 1024,
+				objectKey: 'uploads/clip.mp4',
+				status: 'uploading'
+			});
+
+			const data = await loadEditorProject(db, authUser, 'proj-uploading');
+			expect(data?.mode).toBe('import');
 		} finally {
 			client.close();
 		}
