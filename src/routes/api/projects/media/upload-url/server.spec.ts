@@ -119,4 +119,41 @@ describe('api/projects/media/upload-url POST', () => {
 			} as Parameters<typeof POST>[0])
 		).rejects.toMatchObject({ status: 413 });
 	});
+
+	it('returns 400 for invalid JSON', async () => {
+		await expect(
+			POST({
+				request: new Request('http://localhost/api/projects/media/upload-url', {
+					method: 'POST',
+					body: 'not-json'
+				}),
+				locals: { user: authUser }
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 400 });
+	});
+
+	it('returns 500 when init upload fails', async () => {
+		mockedParse.mockReturnValueOnce({
+			title: 'Demo',
+			filename: 'clip.mp4',
+			contentType: 'video/mp4',
+			size: 1024
+		});
+		mockedInit.mockRejectedValueOnce(new Error('R2 credentials are not configured'));
+
+		await expect(
+			POST({
+				request: new Request('http://localhost/api/projects/media/upload-url', {
+					method: 'POST',
+					body: JSON.stringify({
+						title: 'Demo',
+						filename: 'clip.mp4',
+						contentType: 'video/mp4',
+						size: 1024
+					})
+				}),
+				locals: { user: authUser }
+			} as Parameters<typeof POST>[0])
+		).rejects.toMatchObject({ status: 500 });
+	});
 });
