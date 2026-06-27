@@ -25,6 +25,7 @@ const authUser = {
 describe('api/projects/[projectId]/media/[mediaId]/assets GET', () => {
 	it('returns asset URLs for the owner', async () => {
 		mockedGetMediaAssetUrls.mockResolvedValueOnce({
+			mediaId: 'media-1',
 			status: 'ready',
 			transcodeUrl: 'https://cdn.example/transcode.mp4',
 			waveformUrl: null,
@@ -39,6 +40,7 @@ describe('api/projects/[projectId]/media/[mediaId]/assets GET', () => {
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({
+			mediaId: 'media-1',
 			status: 'ready',
 			transcodeUrl: 'https://cdn.example/transcode.mp4',
 			waveformUrl: null,
