@@ -21,11 +21,8 @@
 		onbatchcomplete
 	}: Props = $props();
 
-	let title = $state('Untitled project');
-
-	$effect(() => {
-		title = projectTitle;
-	});
+	let localTitle = $state<string | null>(null);
+	const title = $derived(localTitle ?? projectTitle);
 
 	const editor = $derived.by(
 		() =>
@@ -45,7 +42,7 @@
 	<NewProjectTopBar
 		{title}
 		onback={() => goto(resolve('/'))}
-		ontitlechange={(value) => (title = value)}
+		ontitlechange={(value) => (localTitle = value)}
 	/>
 
 	<div class="project-import-shell__workspace">

@@ -6,6 +6,12 @@
 
 	let { data }: { data: PageData } = $props();
 
+	function editorLoadData(load: PageData) {
+		const { mode, ...editorData } = load;
+		void mode;
+		return editorData;
+	}
+
 	function handleImportBatchComplete() {
 		void invalidateAll();
 	}
@@ -23,6 +29,5 @@
 		onbatchcomplete={handleImportBatchComplete}
 	/>
 {:else}
-	{@const editorData = (({ mode: _mode, ...rest }) => rest)(data)}
-	<EditorWorkspace {...editorData} />
+	<EditorWorkspace {...editorLoadData(data)} />
 {/if}
