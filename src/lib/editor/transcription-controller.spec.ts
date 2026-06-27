@@ -15,6 +15,7 @@ vi.mock('$lib/editor/transcription-status', async (importOriginal) => {
 
 import { invalidateAll } from '$app/navigation';
 import { pollTranscriptionJob } from '$lib/editor/transcription-status';
+import type { JobStatusResponse } from '$lib/types/job';
 
 const aRoll = { mediaId: 'm1', status: 'ready' as const, videoUrl: null };
 
@@ -57,8 +58,8 @@ describe('TranscriptionController', () => {
 	});
 
 	it('polls until terminal and invalidates on success', () => {
-		let onUpdate: ((status: { status: string; progress: number }) => void) | undefined;
-		let onTerminal: ((status: { status: string; progress: number }) => void) | undefined;
+		let onUpdate: ((status: JobStatusResponse) => void) | undefined;
+		let onTerminal: ((status: JobStatusResponse) => void) | undefined;
 
 		vi.mocked(pollTranscriptionJob).mockImplementation((_jobId, update, terminal) => {
 			onUpdate = update;
