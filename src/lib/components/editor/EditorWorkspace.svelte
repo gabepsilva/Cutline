@@ -33,6 +33,7 @@
 		captionStyle,
 		sentences,
 		speaker,
+		speakers,
 		videoUrl,
 		aRoll,
 		resources,
@@ -91,6 +92,12 @@
 
 	const editor = $derived.by(
 		() => new EditorState({ words, sentences, resources, captionStyle, overlays })
+	);
+
+	const speakersByLabel = $derived(
+		Object.fromEntries(
+			speakers.map((entry) => [entry.speaker, { name: entry.name, initials: entry.initials }])
+		)
 	);
 
 	let saveStatus = $state<EditorSaveStatus>('idle');
@@ -181,6 +188,7 @@
 				<TranscriptPanel
 					sentences={editor.sentences}
 					{speaker}
+					{speakersByLabel}
 					status={transcriptUi.status}
 					transcriptionProgress={transcriptUi.progress}
 					transcriptionStage={transcriptUi.stage}

@@ -36,6 +36,8 @@ export const transcript = sqliteTable('transcript', {
 		.unique()
 		.references(() => project.id, { onDelete: 'cascade' }),
 	words: text('words').notNull(),
+	/** Diarized speaker roster (JSON `TranscriptSpeaker[]`); empty for single-speaker (M9-01). */
+	speakers: text('speakers').notNull().default('[]'),
 	captionStyle: text('caption_style').notNull().default('karaoke')
 });
 

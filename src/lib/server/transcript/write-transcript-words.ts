@@ -1,25 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { transcript } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
-import type { Word } from '$lib/types/transcript';
+import type { TranscriptSpeaker, Word } from '$lib/types/transcript';
 
-function parseTranscriptWordCount(raw: string): number {
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		return Array.isArray(parsed) ? parsed.length : 0;
-	} catch {
-		return 0;
-	}
-}
-
-/** Writes words when the project transcript is still empty; returns final word count. */
-export async function writeTranscriptWordsIfEmpty(
+/**
+ * Overwrites the project transcript with a freshly produced `Word[]` + speaker roster.
+ * Re-running replaces any prior result (M9-01 idempotency: re-transcribe = start clean).
+ * Returns the written word count.
+ */
+export async function writeTranscript(
 	database: Database,
 	projectId: string,
-	words: Word[]
+	words: Word[],
+	speakers: TranscriptSpeaker[]
 ): Promise<number> {
 	const [row] = await database
-		.select({ id: transcript.id, words: transcript.words })
+		.select({ id: transcript.id })
 		.from(transcript)
 		.where(eq(transcript.projectId, projectId))
 		.limit(1);
@@ -28,12 +24,9 @@ export async function writeTranscriptWordsIfEmpty(
 		throw new Error('Transcript row not found');
 	}
 
-	const existingCount = parseTranscriptWordCount(row.words);
-	if (existingCount > 0) return existingCount;
-
 	await database
 		.update(transcript)
-		.set({ words: JSON.stringify(words) })
+		.set({ words: JSON.stringify(words), speakers: JSON.stringify(speakers) })
 		.where(eq(transcript.projectId, projectId));
 
 	return words.length;

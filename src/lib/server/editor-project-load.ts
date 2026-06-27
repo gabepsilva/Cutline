@@ -12,7 +12,7 @@ import { findPrimaryMediaRow, getMediaAssetUrls } from '$lib/server/storage/medi
 import { getLatestProjectJob } from '$lib/server/jobs/job-store';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
 import type { MediaStatus } from '$lib/types/media-upload';
-import type { CaptionStyle, Word } from '$lib/types/transcript';
+import type { CaptionStyle, TranscriptSpeaker, Word } from '$lib/types/transcript';
 import { deriveUserInitials } from '$lib/utils/user-initials';
 
 function parseWords(raw: string | null | undefined): Word[] {
@@ -20,6 +20,16 @@ function parseWords(raw: string | null | undefined): Word[] {
 	try {
 		const parsed: unknown = JSON.parse(raw);
 		return Array.isArray(parsed) ? (parsed as Word[]) : [];
+	} catch {
+		return [];
+	}
+}
+
+function parseSpeakers(raw: string | null | undefined): TranscriptSpeaker[] {
+	if (!raw) return [];
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		return Array.isArray(parsed) ? (parsed as TranscriptSpeaker[]) : [];
 	} catch {
 		return [];
 	}
@@ -51,6 +61,7 @@ export async function loadEditorProject(
 	const transcriptRow = transcriptRows[0];
 
 	const words = parseWords(transcriptRow?.words);
+	const speakers = parseSpeakers(transcriptRow?.speakers);
 	const captionStyle = (transcriptRow?.captionStyle as CaptionStyle | undefined) ?? 'karaoke';
 
 	const primaryMedia = await findPrimaryMediaRow(database, projectId);
@@ -95,6 +106,7 @@ export async function loadEditorProject(
 			name: user.name,
 			initials: deriveUserInitials(user.name)
 		},
+		speakers,
 		videoUrl,
 		aRoll,
 		resources: mediaRows.map(mapMediaRow),

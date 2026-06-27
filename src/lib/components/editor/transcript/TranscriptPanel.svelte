@@ -8,10 +8,12 @@
 	import TranscriptTranscribingState from './TranscriptTranscribingState.svelte';
 	import TranscriptUnavailableState from './TranscriptUnavailableState.svelte';
 	import type { TranscriptPanelProps } from './TranscriptPanel.types';
+	import type { TranscriptSpeakerData } from './TranscriptSpeaker.types';
 
 	let {
 		sentences,
 		speaker,
+		speakersByLabel,
 		status = 'ready',
 		transcriptionProgress = 0,
 		transcriptionStage = 'Detecting speech…',
@@ -52,6 +54,51 @@
 	}
 
 	const fillerLabel = $derived(`Remove fillers · ${fillerCount}`);
+
+	/** Speaker label driving a sentence's header (first labeled word), or null when undiarized. */
+	function sentenceSpeakerLabel(words: (typeof sentences)[number]['words']): string | null {
+		return words.find((word) => word.speaker)?.speaker ?? null;
+	}
+
+	function speakerForLabel(label: string | null): TranscriptSpeakerData {
+		return (label && speakersByLabel?.[label]) || speaker;
+	}
+
+	type TranscriptRow =
+		| { kind: 'speaker'; key: string; data: TranscriptSpeakerData }
+		| { kind: 'sentence'; sentence: (typeof sentences)[number]; startTime: number };
+
+	/** Interleaves a speaker header before each run of same-speaker sentences. */
+	const rows = $derived.by(() => {
+		const out: TranscriptRow[] = [];
+
+		// Keep the fallback header visible even before any sentences exist.
+		if (sentences.length === 0) {
+			out.push({ kind: 'speaker', key: 'speaker-default', data: speaker });
+			return out;
+		}
+
+		let lastLabel: string | null | undefined;
+
+		for (const sentence of sentences) {
+			const label = sentenceSpeakerLabel(sentence.words);
+			if (label !== lastLabel) {
+				out.push({
+					kind: 'speaker',
+					key: `speaker-${sentence.id}`,
+					data: speakerForLabel(label)
+				});
+				lastLabel = label;
+			}
+			out.push({
+				kind: 'sentence',
+				sentence,
+				startTime: sentenceStartTime(sentence.id, sentence.words)
+			});
+		}
+
+		return out;
+	});
 </script>
 
 <section class={['transcript-panel', className]} aria-label="Transcript">
@@ -81,19 +128,21 @@
 		{:else if status === 'unavailable'}
 			<TranscriptUnavailableState />
 		{:else}
-			<TranscriptSpeaker {speaker} />
-
-			{#each sentences as sentence (sentence.id)}
-				<TranscriptSentence
-					{sentence}
-					startTime={sentenceStartTime(sentence.id, sentence.words)}
-					{currentWordId}
-					{selectedWordId}
-					{searchQuery}
-					{showFiller}
-					onTimeClick={(event) => onsentenceclick?.(sentence, event)}
-					onWordClick={onwordclick}
-				/>
+			{#each rows as row (row.kind === 'speaker' ? row.key : row.sentence.id)}
+				{#if row.kind === 'speaker'}
+					<TranscriptSpeaker speaker={row.data} />
+				{:else}
+					<TranscriptSentence
+						sentence={row.sentence}
+						startTime={row.startTime}
+						{currentWordId}
+						{selectedWordId}
+						{searchQuery}
+						{showFiller}
+						onTimeClick={(event) => onsentenceclick?.(row.sentence, event)}
+						onWordClick={onwordclick}
+					/>
+				{/if}
 			{/each}
 		{/if}
 	</div>

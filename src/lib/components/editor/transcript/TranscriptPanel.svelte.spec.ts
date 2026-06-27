@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render } from '$lib/test/render';
 import { fixtureSentence, fixtureTranscriptWords } from '$lib/test/fixtures/transcript';
 import { fixtureUser } from '$lib/test/fixtures/user';
+import type { Sentence } from '$lib/types/transcript';
 import TranscriptPanelHarness from './TranscriptPanel.harness.svelte';
 
 const [okayWord, , fillerWord] = fixtureTranscriptWords;
@@ -144,5 +145,29 @@ describe('TranscriptPanel.svelte', () => {
 		render(TranscriptPanelHarness, { status: 'unavailable', sentences: [] });
 
 		await expect.element(page.getByText('Transcription not available')).toBeInTheDocument();
+	});
+
+	it('renders a header per speaker for diarized transcripts', async () => {
+		const speakerA: Sentence = {
+			id: 's0',
+			t0: 0,
+			words: [{ ...okayWord, speaker: 'A' }]
+		};
+		const speakerB: Sentence = {
+			id: 's1',
+			t0: 1,
+			words: [{ ...okayWord, id: 'w9', text: 'Right', clean: 'right', sid: 's1', speaker: 'B' }]
+		};
+
+		render(TranscriptPanelHarness, {
+			sentences: [speakerA, speakerB],
+			speakersByLabel: {
+				A: { name: 'Speaker A', initials: 'A' },
+				B: { name: 'Speaker B', initials: 'B' }
+			}
+		});
+
+		await expect.element(page.getByText('Speaker A')).toBeInTheDocument();
+		await expect.element(page.getByText('Speaker B')).toBeInTheDocument();
 	});
 });

@@ -3,7 +3,7 @@ import type { MediaResource } from '$lib/types/media';
 import type { MediaStatus } from '$lib/types/media-upload';
 import type { Project } from '$lib/types/project';
 import type { Overlay } from '$lib/types/timeline';
-import type { CaptionStyle, Sentence, Word } from '$lib/types/transcript';
+import type { CaptionStyle, Sentence, TranscriptSpeaker, Word } from '$lib/types/transcript';
 
 export type ProjectRouteMode = 'import' | 'editor';
 
@@ -22,7 +22,10 @@ export interface EditorProjectLoad {
 	words: Word[];
 	captionStyle: CaptionStyle;
 	sentences: Sentence[];
+	/** Fallback header for single-speaker / undiarized transcripts (the project owner). */
 	speaker: TranscriptSpeakerData;
+	/** Diarized speaker roster from STT; empty when the transcript is single-speaker (M9-01). */
+	speakers: TranscriptSpeaker[];
 	videoUrl: string | null;
 	aRoll: ARollMediaLoad | null;
 	resources: MediaResource[];

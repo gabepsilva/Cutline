@@ -4,7 +4,10 @@ import type { TranscriptSpeakerData } from './TranscriptSpeaker.types';
 
 export interface TranscriptPanelProps {
 	sentences: Sentence[];
+	/** Fallback header shown for sentences without a diarized speaker label. */
 	speaker: TranscriptSpeakerData;
+	/** Diarized speakers keyed by STT label (e.g. "A"); empty for single-speaker (M9-01). */
+	speakersByLabel?: Record<string, TranscriptSpeakerData>;
 	status?: TranscriptUiStatus;
 	transcriptionProgress?: number;
 	transcriptionStage?: string;

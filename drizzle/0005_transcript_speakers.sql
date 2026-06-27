@@ -1,0 +1,1 @@
+ALTER TABLE `transcript` ADD `speakers` text DEFAULT '[]' NOT NULL;

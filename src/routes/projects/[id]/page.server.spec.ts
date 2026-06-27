@@ -38,6 +38,7 @@ const editorLoadFixture: EditorProjectLoad = {
 	captionStyle: 'karaoke',
 	sentences: [],
 	speaker: { name: 'Alex Chen', initials: 'AC' },
+	speakers: [],
 	videoUrl: null,
 	aRoll: null,
 	resources: [],

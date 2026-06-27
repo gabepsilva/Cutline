@@ -3,10 +3,10 @@ import {
 	readAssemblyAiApiKey,
 	submitAssemblyAiTranscript
 } from '$lib/server/stt/assemblyai-client';
-import { mapAssemblyAiWords } from '$lib/server/stt/assemblyai-map';
+import { buildSpeakers, mapAssemblyAiWords } from '$lib/server/stt/assemblyai-map';
 import { findPrimaryMediaRow } from '$lib/server/storage/media-assets';
 import { presignGetObject } from '$lib/server/storage/r2';
-import { writeTranscriptWordsIfEmpty } from '$lib/server/transcript/write-transcript-words';
+import { writeTranscript } from '$lib/server/transcript/write-transcript-words';
 import type { Database } from '$lib/server/db/types';
 import type { TranscriptionJobPayload } from '$lib/types/job';
 import {
@@ -58,8 +58,14 @@ export async function runTranscriptionJob(
 	}
 
 	const words = mapAssemblyAiWords(completed.words);
-	const wordCount = await writeTranscriptWordsIfEmpty(database, payload.projectId, words);
-	await ctx.complete({ provider: 'assemblyai', transcriptId, wordCount });
+	const speakers = buildSpeakers(completed.words);
+	const wordCount = await writeTranscript(database, payload.projectId, words, speakers);
+	await ctx.complete({
+		provider: 'assemblyai',
+		transcriptId,
+		wordCount,
+		speakerCount: speakers.length
+	});
 }
 
 export function registerTranscriptionHandler(database: Database): void {

@@ -1,6 +1,6 @@
 import { cleanToken, isSingleFiller, markYouKnowFillers } from '$lib/server/stt/filler';
 import type { AssemblyAiWord } from '$lib/server/stt/assemblyai-types';
-import type { Word } from '$lib/types/transcript';
+import type { TranscriptSpeaker, Word } from '$lib/types/transcript';
 
 function endsSentence(text: string): boolean {
 	return /[.?!]["']?$/.test(text.trim());
@@ -32,11 +32,30 @@ export function mapAssemblyAiWords(raw: AssemblyAiWord[]): Word[] {
 			bars: [],
 			filler: isSingleFiller(clean),
 			deleted: false,
-			sid: 's0'
+			sid: 's0',
+			...(item.speaker ? { speaker: item.speaker } : {})
 		};
 	});
 
 	markYouKnowFillers(words);
 	assignSentenceIds(words);
 	return words;
+}
+
+/**
+ * Assembles the diarized speaker roster from AssemblyAI words, in first-appearance
+ * order. Each label becomes `Speaker <label>` with the label as initials.
+ */
+export function buildSpeakers(raw: AssemblyAiWord[]): TranscriptSpeaker[] {
+	const seen = new Set<string>();
+	const speakers: TranscriptSpeaker[] = [];
+
+	for (const item of raw) {
+		const label = item.speaker;
+		if (!label || seen.has(label)) continue;
+		seen.add(label);
+		speakers.push({ speaker: label, name: `Speaker ${label}`, initials: label });
+	}
+
+	return speakers;
 }

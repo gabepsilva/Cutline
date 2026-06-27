@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { transcript } from '$lib/server/db/domain.schema';
-import { writeTranscriptWordsIfEmpty } from '$lib/server/transcript/write-transcript-words';
-import type { Word } from '$lib/types/transcript';
+import { writeTranscript } from '$lib/server/transcript/write-transcript-words';
+import type { TranscriptSpeaker, Word } from '$lib/types/transcript';
 
 const sampleWords: Word[] = [
 	{
@@ -14,75 +14,65 @@ const sampleWords: Word[] = [
 		bars: [],
 		filler: false,
 		deleted: false,
-		sid: 's0'
+		sid: 's0',
+		speaker: 'A'
 	}
 ];
 
-describe('writeTranscriptWordsIfEmpty', () => {
-	it('writes words when the transcript is empty', async () => {
-		const { createTestDb } = await import('$lib/test/test-db');
-		const { project } = await import('$lib/server/db/domain.schema');
-		const { user: authUserTable } = await import('$lib/server/db/auth.schema');
-		const { db } = await createTestDb();
+const sampleSpeakers: TranscriptSpeaker[] = [{ speaker: 'A', name: 'Speaker A', initials: 'A' }];
 
-		await db.insert(authUserTable).values({
-			id: 'user-a',
-			name: 'Alex',
-			email: 'alex@cutline.test',
-			emailVerified: true,
-			createdAt: new Date(),
-			updatedAt: new Date()
-		});
-		await db.insert(project).values({
-			id: 'proj-1',
-			userId: 'user-a',
-			title: 'Demo',
-			kind: 'TALKING HEAD',
-			description: null,
-			durationSeconds: 0,
-			thumb: 'thumb'
-		});
-		await db.insert(transcript).values({ projectId: 'proj-1', words: '[]' });
+async function seedTranscript(projectId: string, ownerId: string, words: string) {
+	const { createTestDb } = await import('$lib/test/test-db');
+	const { project } = await import('$lib/server/db/domain.schema');
+	const { user: authUserTable } = await import('$lib/server/db/auth.schema');
+	const { db } = await createTestDb();
 
-		const count = await writeTranscriptWordsIfEmpty(db, 'proj-1', sampleWords);
+	await db.insert(authUserTable).values({
+		id: ownerId,
+		name: 'Alex',
+		email: `${ownerId}@cutline.test`,
+		emailVerified: true,
+		createdAt: new Date(),
+		updatedAt: new Date()
+	});
+	await db.insert(project).values({
+		id: projectId,
+		userId: ownerId,
+		title: 'Demo',
+		kind: 'TALKING HEAD',
+		description: null,
+		durationSeconds: 0,
+		thumb: 'thumb'
+	});
+	await db.insert(transcript).values({ projectId, words });
+
+	return db;
+}
+
+describe('writeTranscript', () => {
+	it('writes words and the speaker roster when the transcript is empty', async () => {
+		const db = await seedTranscript('proj-1', 'user-a', '[]');
+
+		const count = await writeTranscript(db, 'proj-1', sampleWords, sampleSpeakers);
 		expect(count).toBe(1);
 
 		const [row] = await db.select().from(transcript).where(eq(transcript.projectId, 'proj-1'));
 		expect(JSON.parse(row!.words)).toHaveLength(1);
+		expect(JSON.parse(row!.speakers)).toEqual(sampleSpeakers);
 	});
 
-	it('does not overwrite an existing transcript', async () => {
-		const { createTestDb } = await import('$lib/test/test-db');
-		const { project } = await import('$lib/server/db/domain.schema');
-		const { user: authUserTable } = await import('$lib/server/db/auth.schema');
-		const { db } = await createTestDb();
+	it('overwrites an existing transcript (re-transcribe = start clean)', async () => {
+		const db = await seedTranscript(
+			'proj-2',
+			'user-b',
+			JSON.stringify([{ ...sampleWords[0], id: 'existing' }])
+		);
 
-		await db.insert(authUserTable).values({
-			id: 'user-b',
-			name: 'Alex',
-			email: 'alex2@cutline.test',
-			emailVerified: true,
-			createdAt: new Date(),
-			updatedAt: new Date()
-		});
-		await db.insert(project).values({
-			id: 'proj-2',
-			userId: 'user-b',
-			title: 'Demo',
-			kind: 'TALKING HEAD',
-			description: null,
-			durationSeconds: 0,
-			thumb: 'thumb'
-		});
-		await db.insert(transcript).values({
-			projectId: 'proj-2',
-			words: JSON.stringify([{ ...sampleWords[0], id: 'existing' }])
-		});
-
-		const count = await writeTranscriptWordsIfEmpty(db, 'proj-2', sampleWords);
+		const count = await writeTranscript(db, 'proj-2', sampleWords, sampleSpeakers);
 		expect(count).toBe(1);
 
 		const [row] = await db.select().from(transcript).where(eq(transcript.projectId, 'proj-2'));
-		expect(JSON.parse(row!.words)[0].id).toBe('existing');
+		expect(JSON.parse(row!.words)[0].id).toBe('w0');
+		expect(JSON.parse(row!.speakers)).toEqual(sampleSpeakers);
 	});
 });

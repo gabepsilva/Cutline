@@ -19,6 +19,7 @@
 			name: fixtureUser.name,
 			initials: fixtureUser.initials
 		},
+		speakersByLabel,
 		status = 'ready',
 		transcriptionProgress = 0,
 		transcriptionStage = 'Detecting speech…',
@@ -43,6 +44,7 @@
 <TranscriptPanel
 	{sentences}
 	{speaker}
+	{speakersByLabel}
 	{status}
 	{transcriptionProgress}
 	{transcriptionStage}
