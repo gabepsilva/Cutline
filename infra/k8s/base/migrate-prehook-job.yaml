@@ -1,0 +1,71 @@
+# PreSync migration hook (T-13). Argo CD runs this Job to completion before
+# applying the Deployment; a failed migration blocks the sync (no bad rollout).
+# Image tag comes from overlays/prod kustomize images (same as the app).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cutline-migrate
+  namespace: cutline
+  labels:
+    app.kubernetes.io/name: cutline
+    app.kubernetes.io/component: migrate
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  activeDeadlineSeconds: 120
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cutline
+        app.kubernetes.io/component: migrate
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: cutline-regcred
+      restartPolicy: Never
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: ghcr.io/gabepsilva/cutline:bootstrap
+          imagePullPolicy: IfNotPresent
+          command: ['bun', '/app/scripts/migrate.mjs']
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: HOME
+              value: /tmp
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: app-dotenv
+              mountPath: /app/.env
+              subPath: dotenv
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: app-dotenv
+          secret:
+            secretName: cutline-app
+        - name: tmp
+          emptyDir: {}

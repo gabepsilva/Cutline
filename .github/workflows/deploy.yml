@@ -1,8 +1,9 @@
 name: Deploy
 
-# Continuous delivery to the tk8s cluster (T-12). On merge to master: build the
-# image, scan it (gate), push to GHCR with a build-provenance attestation, roll out
-# the cutline Deployment, then verify the public route.
+# Continuous delivery to the tk8s cluster (T-12 → T-13 GitOps). On merge to master:
+# build the image, scan it (gate), push to GHCR with a build-provenance attestation,
+# commit the prod image tag to git, then wait for Argo CD to sync (PreSync migrate →
+# Deployment rollout) and verify the public route.
 # Production rollout is master-only; PRs never deploy.
 
 on:
@@ -23,7 +24,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
   id-token: write # mint the OIDC token for build-provenance attestation
   attestations: write # write the attestation to the GHCR package
@@ -35,19 +36,21 @@ concurrency:
 jobs:
   deploy:
     name: Build, push & roll out
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     timeout-minutes: 30
     # Self-hosted runner has kubectl access to tk8s; deploy triggers are trusted refs only.
     runs-on: [self-hosted, Linux, X64]
     env:
       IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/cutline
+      ARGO_APP: cutline-prod
       NAMESPACE: cutline
-      DEPLOYMENT: cutline
-      CONTAINER: cutline
       INGRESS: cutline
       HOST: cutline.i.psilva.org
     steps:
       - name: Checkout
         uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare image tags
         run: |
@@ -56,6 +59,7 @@ jobs:
           {
             echo "DATE_TAG=${DATE_TAG}"
             echo "LATEST_TAG=${IMAGE_NAME}:latest"
+            echo "IMAGE_TAG=${DATE_TAG##*:}"
           } >> "$GITHUB_ENV"
 
       - name: Log in to GitHub Container Registry
@@ -96,17 +100,34 @@ jobs:
           subject-digest: ${{ env.IMAGE_DIGEST }}
           push-to-registry: true
 
-      - name: Apply manifests, migrate, and roll out
+      - name: Bump prod image tag (GitOps)
         run: |
           set -eu
-          MIGRATE_JOB="cutline-migrate-${GITHUB_RUN_NUMBER}"
-          # Idempotent: keeps namespace/config/service/ingress/cert/migrate template in sync.
-          kubectl apply -k infra/k8s/overlays/prod
-          kubectl -n "$NAMESPACE" set image "cronjob/cutline-migrate" "migrate=${DATE_TAG}"
-          kubectl -n "$NAMESPACE" create job "$MIGRATE_JOB" --from=cronjob/cutline-migrate
-          kubectl -n "$NAMESPACE" wait --for=condition=complete "job/${MIGRATE_JOB}" --timeout=120s
-          kubectl -n "$NAMESPACE" set image "deployment/${DEPLOYMENT}" "${CONTAINER}=${DATE_TAG}"
-          kubectl -n "$NAMESPACE" rollout status "deployment/${DEPLOYMENT}" --timeout=300s
+          KUSTOMIZE_FILE=infra/k8s/overlays/prod/kustomization.yaml
+          sed -i "s/newTag: .*/newTag: ${IMAGE_TAG}/" "$KUSTOMIZE_FILE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$KUSTOMIZE_FILE"
+          git commit -m "deploy: bump prod image to ${IMAGE_TAG} [skip ci]"
+          git push
+
+      - name: Wait for Argo CD sync
+        run: |
+          set -eu
+          deadline=$((SECONDS + 600))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            sync="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
+            health="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
+            echo "Argo CD ${ARGO_APP}: sync=${sync:-Unknown} health=${health:-Unknown}"
+            if [ "$sync" = "Synced" ] && [ "$health" = "Healthy" ]; then
+              echo "OK: ${ARGO_APP} is Synced and Healthy"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for ${ARGO_APP} to reach Synced + Healthy" >&2
+          kubectl -n argocd get application "$ARGO_APP" -o yaml >&2 || true
+          exit 1
 
       - name: Verify route
         run: |

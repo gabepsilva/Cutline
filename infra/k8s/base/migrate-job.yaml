@@ -1,6 +1,6 @@
-# Suspended CronJob used only as a Job template for deploy-time migrations (M7-01).
-# CD creates a one-shot Job from this spec with `kubectl create job --from=cronjob/…`
-# after pinning the container image to the freshly built tag.
+# Suspended CronJob kept as a manual migration template (M7-01). Deploy-time
+# migrations run via the Argo CD PreSync hook Job in migrate-prehook-job.yaml (T-13).
+# Manual: `kubectl create job … --from=cronjob/cutline-migrate` after `set image`.
 apiVersion: batch/v1
 kind: CronJob
 metadata:

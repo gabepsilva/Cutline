@@ -6,9 +6,8 @@ namespace: cutline
 resources:
   - ../../base
 
-# CD updates the running Deployment with `kubectl set image` (T-12). This pins a
-# concrete starting tag for `kubectl apply -k`; bump it (or let CD manage it) as
-# new images are pushed to GHCR.
+# Authoritative prod image tag (T-13). deploy.yml commits images.newTag after each
+# build; Argo CD syncs this overlay and rolls the Deployment.
 images:
   - name: ghcr.io/gabepsilva/cutline
     newTag: bootstrap
