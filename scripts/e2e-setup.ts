@@ -113,17 +113,6 @@ await db
 			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
 			createdAt: new Date('2026-06-26T08:00:00.000Z'),
 			updatedAt: new Date('2026-06-26T08:00:00.000Z')
-		},
-		{
-			id: 'e2e-transcribing-mock',
-			userId,
-			title: 'Mock transcription draft',
-			kind: 'DEMO',
-			description: null,
-			durationSeconds: 0,
-			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
-			createdAt: new Date('2026-06-26T07:00:00.000Z'),
-			updatedAt: new Date('2026-06-26T07:00:00.000Z')
 		}
 	])
 	.onConflictDoNothing();
@@ -146,12 +135,6 @@ await db
 		{
 			id: 'e2e-transcript-transcribing',
 			projectId: 'e2e-transcribing',
-			words: JSON.stringify([]),
-			captionStyle: 'karaoke'
-		},
-		{
-			id: 'e2e-transcript-transcribing-mock',
-			projectId: 'e2e-transcribing-mock',
 			words: JSON.stringify([]),
 			captionStyle: 'karaoke'
 		}
@@ -192,18 +175,6 @@ await db
 			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
 			sizeBytes: 1024,
 			objectKey: 'e2e/uploads/transcribing.mp4',
-			status: 'ready',
-			createdAt: new Date()
-		},
-		{
-			id: 'e2e-transcribing-mock-media',
-			projectId: 'e2e-transcribing-mock',
-			name: 'clip.mp4',
-			durationSeconds: 120,
-			kind: 'A-roll',
-			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
-			sizeBytes: 1024,
-			objectKey: 'e2e/uploads/transcribing-mock.mp4',
 			status: 'ready',
 			createdAt: new Date()
 		},

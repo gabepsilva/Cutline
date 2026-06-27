@@ -16,7 +16,7 @@ import {
 	markMediaFailedOnIngestDeadLetter,
 	registerIngestHandler
 } from '$lib/server/jobs/handlers/ingest';
-import { registerTranscriptionStubHandler } from '$lib/server/jobs/handlers/transcription-stub';
+import { registerTranscriptionHandler } from '$lib/server/jobs/handlers/transcription';
 
 export class JobCanceledError extends Error {
 	constructor(message = 'Job canceled') {
@@ -92,7 +92,7 @@ function registerDefaultHandlers(database: Database) {
 		registerIngestHandler(database);
 	}
 	if (!handlers.has('transcription')) {
-		registerTranscriptionStubHandler(database);
+		registerTranscriptionHandler(database);
 	}
 }
 

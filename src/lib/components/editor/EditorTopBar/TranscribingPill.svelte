@@ -8,12 +8,13 @@
 
 	let { progress, class: className = '' }: Props = $props();
 
-	const label = $derived(`Transcribing · ${formatTranscriptionPercent(progress)}`);
+	const percentLabel = $derived(formatTranscriptionPercent(progress));
 </script>
 
 <div class={['transcribing-pill', className]} role="status" aria-live="polite">
 	<span class="transcribing-pill__spinner" aria-hidden="true"></span>
-	{label}
+	<span class="transcribing-pill__label">Transcribing</span>
+	<span class="transcribing-pill__percent" aria-hidden="true"> · {percentLabel}</span>
 </div>
 
 <style>

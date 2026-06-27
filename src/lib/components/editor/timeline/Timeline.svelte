@@ -179,7 +179,7 @@
 			<TimelineTrack>
 				{#if showCaptionPlaceholder}
 					<div class="timeline__caption-placeholder">
-						Captions appear once transcription finishes.
+						Captions appear once transcription finishes
 					</div>
 				{:else}
 					{#each resolvedClips as clip (clip.id)}

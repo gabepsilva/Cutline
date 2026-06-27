@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import EditorLayout from '$lib/components/editor/EditorLayout.svelte';
 	import EditorModals from '$lib/components/editor/EditorModals.svelte';
@@ -19,15 +19,8 @@
 		pollIngestAssets,
 		type IngestAssetsState
 	} from '$lib/editor/ingest-assets';
-	import {
-		pollMockTranscription,
-		pollTranscriptionJob,
-		resolveTranscriptUiStatus,
-		shouldUseMockTranscription,
-		toTranscriptionUiState
-	} from '$lib/editor/transcription-status';
+	import { TranscriptionController } from '$lib/editor/transcription-controller.svelte';
 	import type { EditorProjectLoad } from '$lib/types/editor-load';
-	import type { JobStatusResponse } from '$lib/types/job';
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import { resolveEditorKeyAction, shouldPreventDefault } from '$lib/utils/editor-keyboard';
 
@@ -49,9 +42,10 @@
 
 	let trackedMediaId = $state<string | null>(null);
 	let ingestAssets = $state<IngestAssetsState | null>(null);
-	let jobStatus = $state<JobStatusResponse | null>(null);
-	let mockTranscriptionActive = $state(false);
-	let mockProgress = $state(0);
+	const transcription = new TranscriptionController(
+		() => words.length,
+		() => aRoll
+	);
 	const playbackUrl = $derived(ingestAssets?.transcodeUrl ?? videoUrl);
 
 	$effect(() => {
@@ -87,92 +81,11 @@
 	});
 
 	$effect(() => {
-		const jobId = transcriptionJobId;
-		const wordCount = words.length;
-
-		if (wordCount > 0 || !jobId) {
-			jobStatus = null;
-			return;
-		}
-
-		let stopPoll: (() => void) | undefined;
-		let canceled = false;
-
-		stopPoll = pollTranscriptionJob(
-			jobId,
-			(status) => {
-				if (canceled) return;
-				jobStatus = status;
-			},
-			(status) => {
-				if (canceled) return;
-				jobStatus = status;
-				if (status.status === 'succeeded') {
-					void invalidateAll();
-				}
-			}
-		);
-
-		return () => {
-			canceled = true;
-			stopPoll?.();
-		};
+		void words.length;
+		return transcription.bind(transcriptionJobId);
 	});
 
-	$effect(() => {
-		const wordCount = words.length;
-		const useMock = shouldUseMockTranscription({
-			wordCount,
-			transcriptionJobId,
-			aRoll
-		});
-
-		if (!useMock) {
-			mockTranscriptionActive = false;
-			mockProgress = 0;
-			return;
-		}
-
-		mockTranscriptionActive = true;
-		let stopMock: (() => void) | undefined;
-		let canceled = false;
-
-		stopMock = pollMockTranscription(
-			project.id,
-			(progress) => {
-				if (canceled) return;
-				mockProgress = progress;
-			},
-			() => {
-				if (canceled) return;
-				mockTranscriptionActive = false;
-				void invalidateAll();
-			}
-		);
-
-		return () => {
-			canceled = true;
-			stopMock?.();
-		};
-	});
-
-	const transcriptUi = $derived.by(() => {
-		const progress =
-			transcriptionJobId && jobStatus
-				? jobStatus.progress
-				: mockTranscriptionActive
-					? mockProgress
-					: 0;
-
-		const status = resolveTranscriptUiStatus({
-			wordCount: words.length,
-			aRoll,
-			jobStatus,
-			mockActive: mockTranscriptionActive
-		});
-
-		return toTranscriptionUiState(status, progress);
-	});
+	const transcriptUi = $derived(transcription.ui);
 
 	const editor = $derived.by(
 		() => new EditorState({ words, sentences, resources, captionStyle, overlays })

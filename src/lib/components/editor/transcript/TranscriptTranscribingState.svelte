@@ -12,8 +12,8 @@
 	const percentLabel = $derived(formatTranscriptionPercent(progress));
 </script>
 
-<div class={['transcript-transcribing', className]} role="status" aria-live="polite">
-	<div class="transcript-transcribing__banner">
+<div class={['transcript-transcribing', className]}>
+	<div class="transcript-transcribing__banner" role="status" aria-live="polite">
 		<span class="transcript-transcribing__spinner" aria-hidden="true"></span>
 		<div class="transcript-transcribing__copy">
 			<div class="transcript-transcribing__stage">{stage}</div>
@@ -21,7 +21,7 @@
 				Runs in the background — words drop in as they're recognized.
 			</p>
 		</div>
-		<div class="transcript-transcribing__percent">{percentLabel}</div>
+		<div class="transcript-transcribing__percent" aria-hidden="true">{percentLabel}</div>
 	</div>
 
 	<div class="transcript-transcribing__rows">

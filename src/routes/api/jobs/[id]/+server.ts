@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { getOwnedJobStatus } from '$lib/server/jobs/job-store';
+import { kickWorker } from '$lib/server/jobs/worker';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params, locals }) => {
@@ -13,5 +14,9 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 		error(result.status, result.message);
 	}
 
-	return json(result.data);
+	if (result.data?.status === 'queued') {
+		kickWorker(db);
+	}
+
+	return json(result.data!);
 };
