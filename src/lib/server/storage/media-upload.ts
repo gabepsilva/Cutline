@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { media } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
 import { enqueueJob } from '$lib/server/jobs/job-store';
@@ -18,11 +18,11 @@ import {
 import { DEFAULT_RECORD_THUMB } from '$lib/types/media';
 import type {
 	CompleteUploadBody,
-	IngestJobPayload,
 	UploadContentType,
 	UploadUrlRequest,
 	UploadUrlResponse
 } from '$lib/types/media-upload';
+import type { IngestJobPayload } from '$lib/types/job';
 import {
 	UPLOAD_MAX_BYTES,
 	UPLOAD_MULTIPART_THRESHOLD_BYTES,
@@ -157,6 +157,7 @@ export async function createMediaUploadUrl(
 		const url = await presignPutObject(objectKey, input.contentType);
 		return {
 			mediaId,
+			contentType: input.contentType,
 			upload: { mode: 'single', url, objectKey }
 		};
 	}
@@ -172,6 +173,7 @@ export async function createMediaUploadUrl(
 
 	return {
 		mediaId,
+		contentType: input.contentType,
 		upload: {
 			mode: 'multipart',
 			uploadId,
@@ -212,7 +214,21 @@ export async function completeMediaUpload(
 		await completeMultipartUpload(row.objectKey, body.multipart.uploadId, body.multipart.parts);
 	}
 
-	await database.update(media).set({ status: 'uploaded' }).where(eq(media.id, mediaId));
+	const [updated] = await database
+		.update(media)
+		.set({ status: 'uploaded' })
+		.where(
+			and(
+				eq(media.id, mediaId),
+				eq(media.projectId, projectId),
+				inArray(media.status, ['uploading', 'pending'])
+			)
+		)
+		.returning({ id: media.id });
+
+	if (!updated) {
+		return { ok: false, status: 400, message: 'Upload already completed' };
+	}
 
 	const payload: IngestJobPayload = { mediaId };
 	const { id: jobId } = await enqueueJob(database, {

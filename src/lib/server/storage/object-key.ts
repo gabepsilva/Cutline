@@ -55,10 +55,6 @@ export function buildProjectMediaPrefix(userId: string, projectId: string): stri
 	return `users/${userId}/projects/${projectId}/media/`;
 }
 
-export function buildMediaPrefix(userId: string, projectId: string, mediaId: string): string {
-	return `users/${userId}/projects/${projectId}/media/${mediaId}/`;
-}
-
 export function sanitizeUploadFilename(filename: string): string {
 	const base = filename.trim().split(/[/\\]/).pop() ?? 'upload';
 	const cleaned = base.replace(/[^\w.\-() ]+/g, '_').slice(0, 120);

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildMediaObjectKey,
-	buildMediaPrefix,
 	buildProjectMediaPrefix,
 	extensionFromFilename,
 	resolveUploadContentType,
@@ -31,7 +30,9 @@ describe('object-key', () => {
 
 	it('builds cleanup prefixes', () => {
 		expect(buildProjectMediaPrefix('u', 'p')).toBe('users/u/projects/p/media/');
-		expect(buildMediaPrefix('u', 'p', 'm')).toBe('users/u/projects/p/media/m/');
+		expect(buildMediaObjectKey('u', 'p', 'm', 'video/mp4', 'clip.mp4')).toMatch(
+			/^users\/u\/projects\/p\/media\/m\//
+		);
 	});
 
 	it('reads extensions from filenames', () => {

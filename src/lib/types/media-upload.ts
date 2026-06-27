@@ -21,10 +21,6 @@ export const UPLOAD_MULTIPART_THRESHOLD_BYTES = 100 * 1024 * 1024;
 /** Multipart part size — 8 MiB. */
 export const UPLOAD_PART_SIZE_BYTES = 8 * 1024 * 1024;
 
-export interface IngestJobPayload {
-	mediaId: string;
-}
-
 export interface UploadUrlRequest {
 	filename: string;
 	contentType: string;
@@ -54,6 +50,8 @@ export type UploadTargetResponse = SingleUploadResponse | MultipartUploadRespons
 
 export interface UploadUrlResponse {
 	mediaId: string;
+	/** Resolved MIME type — client PUTs must send this exact Content-Type header. */
+	contentType: string;
 	upload: UploadTargetResponse;
 }
 

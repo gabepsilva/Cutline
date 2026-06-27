@@ -50,12 +50,13 @@ function putWithProgress(
 async function uploadSingle(
 	target: SingleUploadResponse,
 	file: File,
+	contentType: string,
 	onProgress?: (ratio: number) => void
 ): Promise<void> {
 	await putWithProgress(
 		target.url,
 		file,
-		file.type,
+		contentType,
 		onProgress
 			? (loaded, total) => {
 					onProgress(total > 0 ? loaded / total : 0);
@@ -67,6 +68,7 @@ async function uploadSingle(
 async function uploadMultipart(
 	target: MultipartUploadResponse,
 	file: File,
+	contentType: string,
 	onProgress?: (ratio: number) => void
 ): Promise<{ uploadId: string; parts: { partNumber: number; etag: string }[] }> {
 	const parts: { partNumber: number; etag: string }[] = [];
@@ -76,7 +78,7 @@ async function uploadMultipart(
 		const start = (part.partNumber - 1) * target.partSize;
 		const end = Math.min(start + target.partSize, file.size);
 		const chunk = file.slice(start, end);
-		const etag = await putWithProgress(part.url, chunk, file.type);
+		const etag = await putWithProgress(part.url, chunk, contentType);
 		if (!etag) {
 			throw new Error('Missing ETag from uploaded part');
 		}
@@ -108,9 +110,9 @@ export async function uploadProjectMedia(
 	let completeBody: Record<string, unknown> = {};
 
 	if (presign.upload.mode === 'single') {
-		await uploadSingle(presign.upload, file, onProgress);
+		await uploadSingle(presign.upload, file, presign.contentType, onProgress);
 	} else {
-		const multipart = await uploadMultipart(presign.upload, file, onProgress);
+		const multipart = await uploadMultipart(presign.upload, file, presign.contentType, onProgress);
 		completeBody = { multipart };
 	}
 

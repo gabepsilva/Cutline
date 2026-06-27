@@ -55,6 +55,7 @@ export const media = sqliteTable(
 		sizeBytes: integer('size_bytes').notNull().default(0),
 		objectKey: text('object_key'),
 		contentType: text('content_type'),
+		// Default 'ready' (not 'pending'): legacy/backfilled rows are usable shelf items; uploads insert 'uploading'.
 		status: text('status').notNull().default('ready'),
 		createdAt: integer('created_at', { mode: 'timestamp_ms' })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

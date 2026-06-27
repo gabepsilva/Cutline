@@ -33,6 +33,7 @@ describe('api/projects/[projectId]/media/upload-url POST', () => {
 		});
 		mockedCreate.mockResolvedValueOnce({
 			mediaId: 'media-1',
+			contentType: 'video/mp4',
 			upload: { mode: 'single', url: 'https://r2/put', objectKey: 'key' }
 		});
 
@@ -48,6 +49,7 @@ describe('api/projects/[projectId]/media/upload-url POST', () => {
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({
 			mediaId: 'media-1',
+			contentType: 'video/mp4',
 			upload: { mode: 'single', url: 'https://r2/put', objectKey: 'key' }
 		});
 	});

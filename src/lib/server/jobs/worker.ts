@@ -12,6 +12,7 @@ import {
 	reportJobProgress,
 	type JobRow
 } from './job-store';
+import { sweepAbandonedUploads } from '$lib/server/storage/orphan-sweep';
 
 export class JobCanceledError extends Error {
 	constructor(message = 'Job canceled') {
@@ -141,9 +142,14 @@ async function claimAndRunJob(database: Database, workerId: string): Promise<boo
 	return true;
 }
 
+async function runWorkerMaintenance(database: Database): Promise<void> {
+	await reapExpiredJobs(database);
+	await sweepAbandonedUploads(database);
+}
+
 /** Claim and run one job. Returns true when a job was processed. */
 export async function runWorkerOnce(database: Database, workerId: string): Promise<boolean> {
-	await reapExpiredJobs(database);
+	await runWorkerMaintenance(database);
 	return claimAndRunJob(database, workerId);
 }
 
@@ -153,7 +159,7 @@ export async function runWorkerBatch(
 	workerId: string,
 	maxJobs = Number.POSITIVE_INFINITY
 ): Promise<number> {
-	await reapExpiredJobs(database);
+	await runWorkerMaintenance(database);
 
 	let processed = 0;
 

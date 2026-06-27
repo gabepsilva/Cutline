@@ -68,7 +68,10 @@ export async function presignPutObject(objectKey: string, contentType: string): 
 		Key: objectKey,
 		ContentType: contentType
 	});
-	return getSignedUrl(client, command, { expiresIn: PRESIGN_EXPIRY_SECONDS });
+	return getSignedUrl(client, command, {
+		expiresIn: PRESIGN_EXPIRY_SECONDS,
+		unhoistableHeaders: new Set(['content-type'])
+	});
 }
 
 export async function createMultipartUpload(

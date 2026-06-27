@@ -44,6 +44,7 @@ describe('uploadProjectMedia', () => {
 				return new Response(
 					JSON.stringify({
 						mediaId: 'media-1',
+						contentType: 'video/mp4',
 						upload: {
 							mode: 'single',
 							url: 'https://r2.example/put',
@@ -68,6 +69,10 @@ describe('uploadProjectMedia', () => {
 
 		expect(result).toEqual({ mediaId: 'media-1', jobId: 'job-1', name: 'clip.mp4' });
 		expect(MockXMLHttpRequest.instances).toHaveLength(1);
+		expect(MockXMLHttpRequest.instances[0]?.setRequestHeader).toHaveBeenCalledWith(
+			'Content-Type',
+			'video/mp4'
+		);
 		expect(fetchMock).toHaveBeenCalledTimes(2);
 		expect(progress.at(-1)).toBe(1);
 	});
@@ -79,6 +84,7 @@ describe('uploadProjectMedia', () => {
 				return new Response(
 					JSON.stringify({
 						mediaId: 'media-2',
+						contentType: 'video/mp4',
 						upload: {
 							mode: 'multipart',
 							uploadId: 'upload-1',
@@ -110,6 +116,39 @@ describe('uploadProjectMedia', () => {
 		expect(result.jobId).toBe('job-2');
 		expect(MockXMLHttpRequest.instances).toHaveLength(2);
 	});
+
+	it('uses resolved content type for PUT even when file.type differs', async () => {
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.endsWith('/upload-url')) {
+				return new Response(
+					JSON.stringify({
+						mediaId: 'media-3',
+						contentType: 'video/quicktime',
+						upload: {
+							mode: 'single',
+							url: 'https://r2.example/put',
+							objectKey: 'key'
+						}
+					}),
+					{ status: 200 }
+				);
+			}
+			if (url.endsWith('/complete')) {
+				return new Response(JSON.stringify({ jobId: 'job-3' }), { status: 200 });
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const file = new File([new Uint8Array([1])], 'take.mov', { type: 'application/octet-stream' });
+		await uploadProjectMedia('proj-1', file);
+
+		expect(MockXMLHttpRequest.instances[0]?.setRequestHeader).toHaveBeenCalledWith(
+			'Content-Type',
+			'video/quicktime'
+		);
+	});
 });
 
 describe('uploadMediaForEditor', () => {
@@ -124,6 +163,7 @@ describe('uploadMediaForEditor', () => {
 				return new Response(
 					JSON.stringify({
 						mediaId: 'media-9',
+						contentType: 'video/mp4',
 						upload: { mode: 'single', url: 'https://r2/put', objectKey: 'key' }
 					}),
 					{ status: 200 }
