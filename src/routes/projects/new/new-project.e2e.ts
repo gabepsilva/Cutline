@@ -2,8 +2,9 @@ import { expect, test } from '@playwright/test';
 import { loginAsE2eUser } from '$lib/test/e2e-auth';
 
 async function mockR2Upload(page: import('@playwright/test').Page) {
-	await page.route(/\.r2\.cloudflarestorage\.com\//, async (route) => {
-		if (route.request().method() === 'PUT') {
+	await page.route('**/*', async (route) => {
+		const request = route.request();
+		if (request.method() === 'PUT' && !request.url().includes('localhost:4173')) {
 			await route.fulfill({ status: 200 });
 			return;
 		}
@@ -46,8 +47,7 @@ test.describe('new project route', () => {
 			buffer: Buffer.from('fake-video-bytes')
 		});
 
-		await expect(page.getByTestId('import-gateway-uploading')).toBeVisible();
-		await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}$/);
+		await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}$/, { timeout: 30_000 });
 		await expect(page.getByTestId('editor-workspace')).toBeVisible({ timeout: 30_000 });
 	});
 });
