@@ -111,7 +111,7 @@ describe('+page.server load', () => {
 function createActionEvent(
 	action: 'rename' | 'delete',
 	fields: Record<string, string> = {},
-	locals: App.Locals = { user: authUser }
+	locals: Partial<App.Locals> = { user: authUser }
 ) {
 	const formData = new FormData();
 	for (const [key, value] of Object.entries(fields)) {

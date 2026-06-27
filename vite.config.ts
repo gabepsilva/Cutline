@@ -13,8 +13,10 @@ export default defineConfig({
 	// @libsql/client loads a native binding (@libsql/<platform> .node) via dynamic
 	// require — bundling it breaks that lookup at runtime. Keep it external so the
 	// adapter-node server requires it from node_modules. (T-10)
+	// pino likewise resolves transports via dynamic require/worker threads, so it
+	// must stay external rather than be flattened by Rollup. (logging, T-10)
 	ssr: {
-		external: ['@libsql/client', 'libsql']
+		external: ['@libsql/client', 'libsql', 'pino', 'pino-pretty']
 	},
 	plugins: [
 		sveltekit({

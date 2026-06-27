@@ -17,6 +17,7 @@ import {
 	registerIngestHandler
 } from '$lib/server/jobs/handlers/ingest';
 import { registerTranscriptionHandler } from '$lib/server/jobs/handlers/transcription';
+import { logger } from '$lib/server/log';
 
 export class JobCanceledError extends Error {
 	constructor(message = 'Job canceled') {
@@ -103,8 +104,11 @@ async function runClaimedJob(
 ): Promise<'done' | 'retry' | 'failed' | 'canceled'> {
 	registerDefaultHandlers(database);
 
+	const log = logger.child({ jobId: claimed.id, type: claimed.type, workerId });
+
 	const handler = handlers.get(claimed.type as JobType);
 	if (!handler) {
+		log.error('no handler registered for job type');
 		await failJob(
 			database,
 			claimed.id,
@@ -126,12 +130,19 @@ async function runClaimedJob(
 		}
 	};
 
+	const start = Date.now();
+	log.info({ attempts: claimed.attempts }, 'job started');
+
 	try {
 		await handler(ctx);
+		log.info({ durationMs: Date.now() - start }, 'job completed');
 		return 'done';
 	} catch (error) {
+		const durationMs = Date.now() - start;
+
 		if (error instanceof JobCanceledError) {
 			await cancelJob(database, claimed.id, workerId);
+			log.info({ durationMs }, 'job canceled');
 			return 'canceled';
 		}
 
@@ -139,6 +150,14 @@ async function runClaimedJob(
 		const outcome = await failJob(database, claimed.id, workerId, message);
 		if (outcome === 'failed' && claimed.type === 'ingest') {
 			await markMediaFailedOnIngestDeadLetter(database, claimed);
+			log.error({ err: error, durationMs }, 'ingest job dead-lettered; media marked failed');
+		} else if (outcome === 'failed') {
+			log.error({ err: error, durationMs }, 'job failed; no retries left');
+		} else if (outcome === 'retry') {
+			log.warn({ err: error, durationMs }, 'job failed; will retry');
+		} else {
+			// 'missing' — lease lost or job vanished between run and fail.
+			log.warn({ err: error, durationMs }, 'job lease lost before failure could be recorded');
 		}
 		return outcome === 'missing' ? 'failed' : outcome;
 	}
