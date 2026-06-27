@@ -1,6 +1,22 @@
 import { expect, test } from '@playwright/test';
 import { loginAsE2eUser } from '$lib/test/e2e-auth';
 
+async function mockExternalPutUpload(page: import('@playwright/test').Page) {
+	await page.route(
+		(url) => {
+			const parsed = new URL(url);
+			return parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1';
+		},
+		async (route) => {
+			if (route.request().method() === 'PUT') {
+				await route.fulfill({ status: 200 });
+				return;
+			}
+			await route.continue();
+		}
+	);
+}
+
 test.describe('new project route', () => {
 	test.beforeEach(async ({ page }) => {
 		await loginAsE2eUser(page);
@@ -14,7 +30,7 @@ test.describe('new project route', () => {
 			'Untitled project'
 		);
 		await expect(page.getByRole('heading', { name: 'Start your video' })).toBeVisible();
-		await expect(page.getByTestId('new-project-timeline-placeholder')).toBeVisible();
+		await expect(page.getByTestId('project-import-timeline-placeholder')).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Export' })).toBeDisabled();
 	});
 
@@ -23,5 +39,25 @@ test.describe('new project route', () => {
 
 		await page.getByRole('button', { name: 'Projects' }).click();
 		await expect(page).toHaveURL('/');
+	});
+
+	test('uploading footage navigates to the full editor', async ({ page }) => {
+		test.skip(
+			!process.env.R2_ACCESS_KEY_ID,
+			'Requires R2 credentials in the preview server environment'
+		);
+
+		await mockExternalPutUpload(page);
+		await page.goto('/projects/new');
+
+		const fileInput = page.locator('.import-gateway__file-input');
+		await fileInput.setInputFiles({
+			name: 'clip.mp4',
+			mimeType: 'video/mp4',
+			buffer: Buffer.from('fake-video-bytes')
+		});
+
+		await expect(page).toHaveURL(/\/projects\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+		await expect(page.getByTestId('editor-workspace')).toBeVisible({ timeout: 30_000 });
 	});
 });

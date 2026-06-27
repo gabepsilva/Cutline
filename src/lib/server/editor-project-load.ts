@@ -5,6 +5,7 @@ import { media, overlay, project, transcript } from '$lib/server/db/domain.schem
 import type { Database } from '$lib/server/db/types';
 import { mapMediaRow, mapOverlayRow } from '$lib/server/map-editor-rows';
 import { mapProjectRow } from '$lib/server/map-project-row';
+import { resolveProjectRouteMode } from '$lib/server/project-route-mode';
 import { ownedProjectFilter } from '$lib/server/project-access';
 import { isServerError } from '$lib/server/result';
 import { findPrimaryMediaRow, getMediaAssetUrls } from '$lib/server/storage/media-assets';
@@ -72,7 +73,10 @@ export async function loadEditorProject(
 		}
 	}
 
+	const mode = resolveProjectRouteMode(mediaRows.map((row) => row.status as MediaStatus));
+
 	return {
+		mode,
 		project: mapProjectRow(row),
 		meta: editorMeta(words),
 		words,

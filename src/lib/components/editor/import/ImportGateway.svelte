@@ -11,9 +11,16 @@
 		projectTitle: string;
 		onrecord?: () => void;
 		onprojectcreated?: (projectId: string) => void;
+		onbatchcomplete?: () => void;
 	}
 
-	let { projectId = null, projectTitle, onrecord, onprojectcreated }: Props = $props();
+	let {
+		projectId = null,
+		projectTitle,
+		onrecord,
+		onprojectcreated,
+		onbatchcomplete
+	}: Props = $props();
 
 	let mode = $state<ImportGatewayMode>('idle');
 	let files = $state<ImportUploadFile[]>([]);
@@ -21,6 +28,7 @@
 	let dragActive = $state(false);
 	let localProjectId = $state<string | null>(null);
 	let projectReady: Promise<string> | null = null;
+	let batchCompleteNotified = false;
 
 	const fileInputId = 'import-gateway-file-input';
 	const fileObjects = new SvelteMap<string, File>();
@@ -28,6 +36,17 @@
 
 	const activeProjectId = $derived(projectId ?? localProjectId);
 	const uploadCountLabel = $derived(`${files.length} file${files.length === 1 ? '' : 's'}`);
+
+	function maybeNotifyBatchComplete() {
+		if (batchCompleteNotified || !files.length) return;
+
+		const allSettled = files.every((file) => file.done || file.error);
+		const hasSuccess = files.some((file) => file.done);
+		if (!allSettled || !hasSuccess) return;
+
+		batchCompleteNotified = true;
+		onbatchcomplete?.();
+	}
 
 	function statusLabelFor(file: ImportUploadFile): string {
 		if (file.error) return 'Failed';
@@ -58,12 +77,14 @@
 				? { ...entry, progress: 100, done: true, statusLabel: formatBytes(entry.size) }
 				: entry
 		);
+		maybeNotifyBatchComplete();
 	}
 
 	function markFileFailed(id: string) {
 		files = files.map((entry) =>
 			entry.id === id ? { ...entry, error: true, statusLabel: 'Failed' } : entry
 		);
+		maybeNotifyBatchComplete();
 	}
 
 	function stopUpload(id: string) {
@@ -198,6 +219,7 @@
 		files = files.filter((file) => file.id !== id);
 		if (!files.length) {
 			mode = 'idle';
+			batchCompleteNotified = false;
 			return;
 		}
 		syncStatusLabels();
@@ -208,6 +230,7 @@
 		fileObjects.clear();
 		files = [];
 		mode = 'idle';
+		batchCompleteNotified = false;
 	}
 
 	function handleRecord(event: MouseEvent) {

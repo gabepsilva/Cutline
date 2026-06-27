@@ -23,12 +23,19 @@ test.describe('editor route', () => {
 		await expect(page.getByRole('button', { name: 'Okay, current' })).toBeVisible();
 	});
 
-	test('shows empty transcript state for projects without transcript data', async ({ page }) => {
+	test('shows import gateway when reopening a draft project', async ({ page }) => {
 		await page.goto(`/projects/${MOCK_EMPTY_TRANSCRIPT_PROJECT_ID}`);
 
+		await expect(page.getByTestId('project-import-shell')).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Start your video' })).toBeVisible();
+		await expect(page.getByTestId('editor-workspace')).not.toBeVisible();
+	});
+
+	test('opens full editor when the project has a completed upload', async ({ page }) => {
+		await page.goto('/projects/e2e-upload-ready');
+
 		await expect(page.getByTestId('editor-workspace')).toBeVisible();
-		await expect(page.getByText('No transcript yet')).toBeVisible();
-		await expect(page.getByRole('region', { name: 'Transcript' })).not.toBeVisible();
+		await expect(page.getByTestId('project-import-shell')).not.toBeVisible();
 	});
 
 	test('transport play button toggles playback', async ({ page }) => {

@@ -117,6 +117,22 @@ describe('ImportGateway.svelte', () => {
 		});
 	});
 
+	it('fires onbatchcomplete when all uploads succeed', async () => {
+		const onbatchcomplete = vi.fn();
+		render(ImportGatewayHarness, { onbatchcomplete });
+
+		const fileInput = document.querySelector<HTMLInputElement>('.import-gateway__file-input');
+		const file = new File(['video'], 'clip.mp4', { type: 'video/mp4' });
+		const dataTransfer = new DataTransfer();
+		dataTransfer.items.add(file);
+		fileInput!.files = dataTransfer.files;
+		fileInput!.dispatchEvent(new Event('change', { bubbles: true }));
+
+		await vi.waitFor(() => {
+			expect(onbatchcomplete).toHaveBeenCalledOnce();
+		});
+	});
+
 	it('cancel all returns to idle gateway', async () => {
 		render(ImportGatewayHarness);
 

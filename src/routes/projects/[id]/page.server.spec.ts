@@ -24,6 +24,7 @@ const authUser = {
 };
 
 const editorLoadFixture: EditorProjectLoad = {
+	mode: 'editor',
 	project: {
 		id: 'proj-hero',
 		title: 'How I edit videos 3x faster',
