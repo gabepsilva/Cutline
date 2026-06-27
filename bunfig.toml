@@ -1,2 +1,4 @@
-[alias]
-"$lib" = "./src/lib"
+# Runtime path aliases for the standalone jobs worker (M8-02).
+# Matches SvelteKit's $lib alias — see https://bun.sh/docs/runtime/bunfig
+[paths]
+"$lib/*" = "./src/lib/*"
