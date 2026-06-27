@@ -1,11 +1,17 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import EditorIconRail from '$lib/components/editor/EditorIconRail.svelte';
 	import ImportGateway from '$lib/components/editor/import/ImportGateway.svelte';
 	import NewProjectTopBar from '$lib/components/editor/import/NewProjectTopBar.svelte';
 
 	let projectTitle = $state('Untitled project');
+	let projectId = $state<string | null>(null);
+
+	function handleProjectCreated(id: string) {
+		projectId = id;
+		replaceState(resolve(`/projects/${id}`), {});
+	}
 </script>
 
 <svelte:head>
@@ -24,7 +30,7 @@
 		<EditorIconRail class="new-project-page__rail" />
 
 		<div class="new-project-page__gateway">
-			<ImportGateway />
+			<ImportGateway {projectId} {projectTitle} onprojectcreated={handleProjectCreated} />
 		</div>
 	</div>
 

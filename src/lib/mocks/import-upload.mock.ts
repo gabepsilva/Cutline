@@ -1,5 +1,5 @@
-// MOCK: Simulates per-file upload progress on the import gateway until real R2 upload lands.
-// TODO(backend): Replace with uploadMediaForEditor / create-on-upload flow in NP-03 (#167).
+// MOCK: Legacy timer-based upload progress helper (superseded by uploadImportMedia in NP-03).
+// TODO(backend): Remove once all import gateway tests use uploadImportMedia mocks.
 
 const TICK_MS = 120;
 const PROGRESS_STEP = 8;

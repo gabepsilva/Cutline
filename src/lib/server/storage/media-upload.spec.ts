@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { parseCompleteUploadBody, parseUploadUrlBody } from '$lib/server/storage/media-upload';
+import {
+	parseCompleteUploadBody,
+	parseUploadUrlBody,
+	parseInitUploadUrlBody
+} from '$lib/server/storage/media-upload';
 import { UPLOAD_MAX_BYTES } from '$lib/types/media-upload';
 
 describe('media-upload parsing', () => {
@@ -53,6 +57,22 @@ describe('media-upload parsing', () => {
 
 	it('allows empty complete bodies for single PUT uploads', () => {
 		expect(parseCompleteUploadBody(null)).toEqual({});
+	});
+
+	it('parses init upload bodies with title', () => {
+		expect(
+			parseInitUploadUrlBody({
+				title: 'My project',
+				filename: 'clip.mp4',
+				contentType: 'video/mp4',
+				size: 1024
+			})
+		).toEqual({
+			title: 'My project',
+			filename: 'clip.mp4',
+			contentType: 'video/mp4',
+			size: 1024
+		});
 	});
 });
 
@@ -109,6 +129,67 @@ describe('createMediaUploadUrl', () => {
 		expect(String((result as { upload: { objectKey: string } }).upload.objectKey)).toMatch(
 			/^users\/user-a\/projects\/proj-1\/media\/[0-9a-f-]+\/source\.mp4$/
 		);
+	});
+});
+
+describe('initProjectMediaUpload', () => {
+	beforeEach(() => {
+		vi.resetModules();
+	});
+
+	it('creates project, transcript, and media rows atomically', async () => {
+		vi.doMock('$lib/server/storage/r2', () => ({
+			presignPutObject: vi.fn().mockResolvedValue('https://r2.example/put'),
+			createMultipartUpload: vi.fn(),
+			presignUploadPart: vi.fn(),
+			completeMultipartUpload: vi.fn()
+		}));
+
+		const { initProjectMediaUpload } = await import('$lib/server/storage/media-upload');
+		const { createTestDb } = await import('$lib/test/test-db');
+		const { media, project, transcript } = await import('$lib/server/db/domain.schema');
+		const { user: authUserTable } = await import('$lib/server/db/auth.schema');
+		const { eq } = await import('drizzle-orm');
+
+		const { db } = await createTestDb();
+		await db.insert(authUserTable).values({
+			id: 'user-a',
+			name: 'Alex',
+			email: 'alex@cutline.test',
+			emailVerified: true,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		});
+
+		const result = await initProjectMediaUpload(db, 'user-a', {
+			title: 'Launch reel',
+			filename: 'clip.mp4',
+			contentType: 'video/mp4',
+			size: 4096
+		});
+
+		expect(result).toMatchObject({
+			projectId: expect.any(String),
+			mediaId: expect.any(String),
+			contentType: 'video/mp4',
+			upload: { mode: 'single', url: 'https://r2.example/put' }
+		});
+
+		if ('ok' in result && result.ok === false) throw new Error('expected success');
+		const success = result as Exclude<typeof result, { ok: false }>;
+
+		const [projectRow] = await db.select().from(project).where(eq(project.id, success.projectId));
+		expect(projectRow).toMatchObject({ title: 'Launch reel', userId: 'user-a' });
+
+		const [transcriptRow] = await db
+			.select()
+			.from(transcript)
+			.where(eq(transcript.projectId, success.projectId));
+		expect(transcriptRow).toBeTruthy();
+
+		const mediaRows = await db.select().from(media).where(eq(media.projectId, success.projectId));
+		expect(mediaRows).toHaveLength(1);
+		expect(mediaRows[0]).toMatchObject({ status: 'uploading', name: 'clip.mp4' });
 	});
 });
 

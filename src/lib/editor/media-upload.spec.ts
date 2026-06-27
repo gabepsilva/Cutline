@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { uploadMediaForEditor, uploadProjectMedia } from '$lib/editor/media-upload';
+import {
+	uploadImportMedia,
+	uploadMediaForEditor,
+	uploadProjectMedia
+} from '$lib/editor/media-upload';
 
 class MockXMLHttpRequest {
 	static instances: MockXMLHttpRequest[] = [];
@@ -147,6 +151,90 @@ describe('uploadProjectMedia', () => {
 		expect(MockXMLHttpRequest.instances[0]?.setRequestHeader).toHaveBeenCalledWith(
 			'Content-Type',
 			'video/quicktime'
+		);
+	});
+});
+
+describe('uploadImportMedia', () => {
+	beforeEach(() => {
+		MockXMLHttpRequest.instances = [];
+		vi.stubGlobal('XMLHttpRequest', MockXMLHttpRequest as unknown as typeof XMLHttpRequest);
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('creates a project on the first upload and completes the file', async () => {
+		const onProjectCreated = vi.fn();
+		const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+			const url = String(input);
+			if (url === '/api/projects/media/upload-url') {
+				return new Response(
+					JSON.stringify({
+						projectId: 'proj-new',
+						mediaId: 'media-1',
+						contentType: 'video/mp4',
+						upload: { mode: 'single', url: 'https://r2.example/put', objectKey: 'key' }
+					}),
+					{ status: 200 }
+				);
+			}
+			if (url.endsWith('/complete')) {
+				return new Response(JSON.stringify({ jobId: 'job-1' }), { status: 200 });
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const file = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+		const result = await uploadImportMedia({
+			projectId: null,
+			projectTitle: 'Launch reel',
+			file,
+			onProjectCreated
+		});
+
+		expect(result).toEqual({
+			projectId: 'proj-new',
+			mediaId: 'media-1',
+			jobId: 'job-1',
+			name: 'clip.mp4'
+		});
+		expect(onProjectCreated).toHaveBeenCalledWith('proj-new');
+		expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/projects/media/upload-url');
+	});
+
+	it('reuses an existing project id for subsequent uploads', async () => {
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.endsWith('/upload-url')) {
+				return new Response(
+					JSON.stringify({
+						mediaId: 'media-2',
+						contentType: 'video/mp4',
+						upload: { mode: 'single', url: 'https://r2.example/put', objectKey: 'key' }
+					}),
+					{ status: 200 }
+				);
+			}
+			if (url.endsWith('/complete')) {
+				return new Response(JSON.stringify({ jobId: 'job-2' }), { status: 200 });
+			}
+			throw new Error(`Unexpected fetch: ${url}`);
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		const file = new File([new Uint8Array([1])], 'b-roll.mp4', { type: 'video/mp4' });
+		const result = await uploadImportMedia({
+			projectId: 'proj-existing',
+			projectTitle: 'Launch reel',
+			file
+		});
+
+		expect(result.projectId).toBe('proj-existing');
+		expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+			'/api/projects/proj-existing/media/upload-url'
 		);
 	});
 });

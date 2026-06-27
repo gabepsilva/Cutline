@@ -3,13 +3,14 @@
 
 	interface Props {
 		onrecord?: () => void;
+		onprojectcreated?: (projectId: string) => void;
 	}
 
-	let { onrecord }: Props = $props();
+	let { onrecord, onprojectcreated }: Props = $props();
 </script>
 
 <div class="import-gateway-harness">
-	<ImportGateway {onrecord} />
+	<ImportGateway projectTitle="Untitled project" {onrecord} {onprojectcreated} />
 </div>
 
 <style>

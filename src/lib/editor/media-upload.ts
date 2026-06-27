@@ -1,6 +1,7 @@
 import type { EditorState } from '$lib/editor/editor-state.svelte';
 import { DEFAULT_RECORD_THUMB } from '$lib/types/media';
 import type {
+	InitUploadUrlResponse,
 	MultipartUploadResponse,
 	SingleUploadResponse,
 	UploadUrlResponse
@@ -96,6 +97,11 @@ export async function uploadProjectMedia(
 	file: File,
 	onProgress?: (ratio: number) => void
 ): Promise<{ mediaId: string; jobId: string; name: string }> {
+	const presign = await requestUploadUrl(projectId, file);
+	return completeProjectMediaUpload(projectId, file, presign, onProgress);
+}
+
+async function requestUploadUrl(projectId: string, file: File): Promise<UploadUrlResponse> {
 	const presignResponse = await fetch(`/api/projects/${projectId}/media/upload-url`, {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
@@ -106,7 +112,15 @@ export async function uploadProjectMedia(
 		})
 	});
 
-	const presign = await readJson<UploadUrlResponse>(presignResponse);
+	return readJson<UploadUrlResponse>(presignResponse);
+}
+
+async function completeProjectMediaUpload(
+	projectId: string,
+	file: File,
+	presign: UploadUrlResponse,
+	onProgress?: (ratio: number) => void
+): Promise<{ mediaId: string; jobId: string; name: string }> {
 	let completeBody: Record<string, unknown> = {};
 
 	if (presign.upload.mode === 'single') {
@@ -134,6 +148,43 @@ export async function uploadProjectMedia(
 		jobId,
 		name: file.name
 	};
+}
+
+export interface UploadImportMediaOptions {
+	projectId: string | null;
+	projectTitle: string;
+	file: File;
+	onProgress?: (ratio: number) => void;
+	onProjectCreated?: (projectId: string) => void;
+}
+
+/** Import gateway upload — creates the project on the first file, then reuses projectId. */
+export async function uploadImportMedia(
+	options: UploadImportMediaOptions
+): Promise<{ projectId: string; mediaId: string; jobId: string; name: string }> {
+	const { projectId, projectTitle, file, onProgress, onProjectCreated } = options;
+
+	if (projectId) {
+		const result = await uploadProjectMedia(projectId, file, onProgress);
+		return { projectId, ...result };
+	}
+
+	const presignResponse = await fetch('/api/projects/media/upload-url', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({
+			title: projectTitle,
+			filename: file.name,
+			contentType: file.type,
+			size: file.size
+		})
+	});
+
+	const presign = await readJson<InitUploadUrlResponse>(presignResponse);
+	onProjectCreated?.(presign.projectId);
+
+	const result = await completeProjectMediaUpload(presign.projectId, file, presign, onProgress);
+	return { projectId: presign.projectId, ...result };
 }
 
 /** Uploads a file and appends an optimistic shelf entry on the editor. */

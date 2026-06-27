@@ -1,8 +1,9 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { media } from '$lib/server/db/domain.schema';
+import { media, project, transcript } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
 import { enqueueJob } from '$lib/server/jobs/job-store';
 import { assertProjectOwned } from '$lib/server/project-access';
+import { normalizeProjectTitle } from '$lib/server/project-mutations';
 import type { ServerError, ServerResult } from '$lib/server/result';
 import {
 	buildMediaObjectKey,
@@ -16,9 +17,13 @@ import {
 	presignUploadPart
 } from '$lib/server/storage/r2';
 import { DEFAULT_RECORD_THUMB } from '$lib/types/media';
+import { projectThumb } from '$lib/types/project';
 import type {
 	CompleteUploadBody,
+	InitUploadUrlRequest,
+	InitUploadUrlResponse,
 	UploadContentType,
+	UploadTargetResponse,
 	UploadUrlRequest,
 	UploadUrlResponse
 } from '$lib/types/media-upload';
@@ -59,6 +64,20 @@ export function parseUploadUrlBody(raw: unknown): UploadUrlRequest | ServerError
 	}
 
 	return { filename, contentType: resolvedType, size };
+}
+
+export function parseInitUploadUrlBody(raw: unknown): InitUploadUrlRequest | ServerError {
+	const parsed = parseUploadUrlBody(raw);
+	if ('ok' in parsed && parsed.ok === false) return parsed;
+
+	if (typeof raw !== 'object' || raw === null) {
+		return { ok: false, status: 400, message: 'Invalid request body' };
+	}
+
+	const title =
+		typeof (raw as { title?: unknown }).title === 'string' ? (raw as { title: string }).title : '';
+
+	return { ...(parsed as UploadUrlRequest), title };
 }
 
 export function parseCompleteUploadBody(raw: unknown): CompleteUploadBody | ServerError {
@@ -119,15 +138,40 @@ export function parseCompleteUploadBody(raw: unknown): CompleteUploadBody | Serv
 	};
 }
 
-export async function createMediaUploadUrl(
-	database: Database,
-	userId: string,
-	projectId: string,
-	input: UploadUrlRequest
-): Promise<UploadUrlResponse | ServerError> {
-	const ownerError = await assertProjectOwned(database, userId, projectId);
-	if (ownerError) return ownerError;
+async function presignUploadTarget(
+	objectKey: string,
+	contentType: string,
+	size: number
+): Promise<UploadTargetResponse> {
+	if (size <= UPLOAD_MULTIPART_THRESHOLD_BYTES) {
+		const url = await presignPutObject(objectKey, contentType);
+		return { mode: 'single', url, objectKey };
+	}
 
+	const uploadId = await createMultipartUpload(objectKey, contentType);
+	const partCount = multipartPartCount(size);
+	const parts = await Promise.all(
+		Array.from({ length: partCount }, async (_, index) => ({
+			partNumber: index + 1,
+			url: await presignUploadPart(objectKey, uploadId, index + 1)
+		}))
+	);
+
+	return {
+		mode: 'multipart',
+		uploadId,
+		objectKey,
+		parts,
+		partSize: UPLOAD_PART_SIZE_BYTES
+	};
+}
+
+async function insertMediaUploadRow(
+	database: Database,
+	projectId: string,
+	input: UploadUrlRequest,
+	userId: string
+): Promise<{ mediaId: string; objectKey: string; displayName: string }> {
 	const mediaId = crypto.randomUUID();
 	const objectKey = buildMediaObjectKey(
 		userId,
@@ -153,34 +197,91 @@ export async function createMediaUploadUrl(
 		createdAt: now
 	});
 
-	if (input.size <= UPLOAD_MULTIPART_THRESHOLD_BYTES) {
-		const url = await presignPutObject(objectKey, input.contentType);
-		return {
-			mediaId,
-			contentType: input.contentType,
-			upload: { mode: 'single', url, objectKey }
-		};
-	}
+	return { mediaId, objectKey, displayName };
+}
 
-	const uploadId = await createMultipartUpload(objectKey, input.contentType);
-	const partCount = multipartPartCount(input.size);
-	const parts = await Promise.all(
-		Array.from({ length: partCount }, async (_, index) => ({
-			partNumber: index + 1,
-			url: await presignUploadPart(objectKey, uploadId, index + 1)
-		}))
+/**
+ * Creates a draft project + transcript + first media row, then presigns R2 upload.
+ * Cancel/abort on the client keeps the draft project and in-progress media rows —
+ * no server cleanup until the user deletes the project or a future cleanup job runs.
+ */
+export async function initProjectMediaUpload(
+	database: Database,
+	userId: string,
+	input: InitUploadUrlRequest
+): Promise<InitUploadUrlResponse | ServerError> {
+	const titleCheck = normalizeProjectTitle(input.title);
+	if (!titleCheck.ok) return titleCheck;
+
+	const title = input.title.trim();
+	const kind = 'TALKING HEAD';
+	const projectId = crypto.randomUUID();
+	const mediaId = crypto.randomUUID();
+	const objectKey = buildMediaObjectKey(
+		userId,
+		projectId,
+		mediaId,
+		input.contentType as UploadContentType,
+		input.filename
 	);
+	const displayName = sanitizeUploadFilename(input.filename);
+	const now = new Date();
+
+	await database.batch([
+		database.insert(project).values({
+			id: projectId,
+			userId,
+			title,
+			kind,
+			description: null,
+			durationSeconds: 0,
+			thumb: projectThumb(kind)
+		}),
+		database.insert(transcript).values({
+			projectId,
+			words: '[]'
+		}),
+		database.insert(media).values({
+			id: mediaId,
+			projectId,
+			name: displayName,
+			durationSeconds: 0,
+			kind: 'B-roll',
+			thumb: DEFAULT_RECORD_THUMB,
+			sizeBytes: input.size,
+			objectKey,
+			contentType: input.contentType,
+			status: 'uploading',
+			createdAt: now
+		})
+	]);
+
+	const upload = await presignUploadTarget(objectKey, input.contentType, input.size);
+
+	return {
+		projectId,
+		mediaId,
+		contentType: input.contentType,
+		upload
+	};
+}
+
+export async function createMediaUploadUrl(
+	database: Database,
+	userId: string,
+	projectId: string,
+	input: UploadUrlRequest
+): Promise<UploadUrlResponse | ServerError> {
+	const ownerError = await assertProjectOwned(database, userId, projectId);
+	if (ownerError) return ownerError;
+
+	const { mediaId, objectKey } = await insertMediaUploadRow(database, projectId, input, userId);
+	const upload = await presignUploadTarget(objectKey, input.contentType, input.size);
 
 	return {
 		mediaId,
 		contentType: input.contentType,
-		upload: {
-			mode: 'multipart',
-			uploadId,
-			objectKey,
-			parts,
-			partSize: UPLOAD_PART_SIZE_BYTES
-		}
+		upload
 	};
 }
 

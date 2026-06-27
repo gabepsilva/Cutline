@@ -103,6 +103,34 @@ describe('createOwnedProject', () => {
 			client.close();
 		}
 	});
+
+	it('persists a custom title when provided', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedUser(db, authUser);
+
+			const result = await createOwnedProject(db, authUser.id, { title: '  Launch video  ' });
+			expect(result.ok).toBe(true);
+			if (!result.ok) throw new Error('expected success');
+
+			const [row] = await db.select().from(project).where(eq(project.id, result.projectId));
+			expect(row?.title).toBe('Launch video');
+		} finally {
+			client.close();
+		}
+	});
+
+	it('rejects empty titles', async () => {
+		const { db, client } = await createTestDb();
+		try {
+			await seedUser(db, authUser);
+
+			const result = await createOwnedProject(db, authUser.id, { title: '   ' });
+			expect(result).toEqual({ ok: false, status: 400, message: 'Title is required' });
+		} finally {
+			client.close();
+		}
+	});
 });
 
 describe('renameOwnedProject', () => {

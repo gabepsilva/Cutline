@@ -1,28 +1,35 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
-	import { startMockImportUpload } from '$lib/mocks/import-upload.mock';
+	import { uploadImportMedia } from '$lib/editor/media-upload';
 	import { formatBytes } from '$lib/utils/format-bytes';
 	import type { ImportGatewayMode, ImportUploadFile } from './ImportGateway.types';
 
 	interface Props {
+		projectId?: string | null;
+		projectTitle: string;
 		onrecord?: () => void;
+		onprojectcreated?: (projectId: string) => void;
 	}
 
-	let { onrecord }: Props = $props();
+	let { projectId = null, projectTitle, onrecord, onprojectcreated }: Props = $props();
 
 	let mode = $state<ImportGatewayMode>('idle');
 	let files = $state<ImportUploadFile[]>([]);
 	let fileInput = $state<HTMLInputElement | null>(null);
 	let dragActive = $state(false);
+	let localProjectId = $state<string | null>(null);
+	let projectReady: Promise<string> | null = null;
 
 	const fileInputId = 'import-gateway-file-input';
+	const fileObjects = new Map<string, File>();
+	const abortControllers = new Map<string, AbortController>();
 
+	const activeProjectId = $derived(projectId ?? localProjectId);
 	const uploadCountLabel = $derived(`${files.length} file${files.length === 1 ? '' : 's'}`);
 
-	const cancelFns: Record<string, () => void> = {};
-
 	function statusLabelFor(file: ImportUploadFile): string {
+		if (file.error) return 'Failed';
 		if (file.done) return formatBytes(file.size);
 		if (file.progress > 0) return `${file.progress}%`;
 		return 'Queued';
@@ -32,41 +39,95 @@
 		files = files.map((file) => ({ ...file, statusLabel: statusLabelFor(file) }));
 	}
 
+	function updateFileProgress(id: string, progress: number) {
+		files = files.map((entry) =>
+			entry.id === id
+				? {
+						...entry,
+						progress,
+						statusLabel: progress >= 100 ? formatBytes(entry.size) : `${progress}%`
+					}
+				: entry
+		);
+	}
+
+	function markFileDone(id: string) {
+		files = files.map((entry) =>
+			entry.id === id
+				? { ...entry, progress: 100, done: true, statusLabel: formatBytes(entry.size) }
+				: entry
+		);
+	}
+
+	function markFileFailed(id: string) {
+		files = files.map((entry) =>
+			entry.id === id ? { ...entry, error: true, statusLabel: 'Failed' } : entry
+		);
+	}
+
 	function stopUpload(id: string) {
-		cancelFns[id]?.();
-		delete cancelFns[id];
+		abortControllers.get(id)?.abort();
+		abortControllers.delete(id);
 	}
 
 	function stopAllUploads() {
-		for (const id of Object.keys(cancelFns)) {
-			cancelFns[id]?.();
-			delete cancelFns[id];
+		for (const controller of abortControllers.values()) {
+			controller.abort();
 		}
+		abortControllers.clear();
 	}
 
-	function startUpload(fileEntry: ImportUploadFile) {
-		const cancel = startMockImportUpload(
-			(progress) => {
-				files = files.map((entry) =>
-					entry.id === fileEntry.id
-						? {
-								...entry,
-								progress,
-								statusLabel: progress >= 100 ? formatBytes(entry.size) : `${progress}%`
+	async function startUpload(fileEntry: ImportUploadFile, file: File) {
+		const controller = new AbortController();
+		abortControllers.set(fileEntry.id, controller);
+
+		try {
+			let pid = activeProjectId;
+
+			if (!pid) {
+				if (!projectReady) {
+					projectReady = (async () => {
+						const result = await uploadImportMedia({
+							projectId: null,
+							projectTitle,
+							file,
+							onProgress: (ratio) => updateFileProgress(fileEntry.id, Math.round(ratio * 100)),
+							onProjectCreated: (id) => {
+								localProjectId = id;
+								onprojectcreated?.(id);
 							}
-						: entry
-				);
-			},
-			() => {
-				delete cancelFns[fileEntry.id];
-				files = files.map((entry) =>
-					entry.id === fileEntry.id
-						? { ...entry, progress: 100, done: true, statusLabel: formatBytes(entry.size) }
-						: entry
-				);
+						});
+						return result.projectId;
+					})();
+
+					await projectReady;
+					if (controller.signal.aborted) return;
+					markFileDone(fileEntry.id);
+					return;
+				}
+
+				pid = await projectReady;
 			}
-		);
-		cancelFns[fileEntry.id] = cancel;
+
+			if (controller.signal.aborted) return;
+
+			await uploadImportMedia({
+				projectId: pid,
+				projectTitle,
+				file,
+				onProgress: (ratio) => updateFileProgress(fileEntry.id, Math.round(ratio * 100))
+			});
+
+			if (controller.signal.aborted) return;
+			markFileDone(fileEntry.id);
+		} catch {
+			if (!controller.signal.aborted) {
+				markFileFailed(fileEntry.id);
+			}
+		} finally {
+			abortControllers.delete(fileEntry.id);
+			fileObjects.delete(fileEntry.id);
+		}
 	}
 
 	function addFiles(selected: FileList | File[]) {
@@ -82,11 +143,16 @@
 			statusLabel: 'Queued'
 		}));
 
+		for (let index = 0; index < entries.length; index += 1) {
+			fileObjects.set(entries[index]!.id, next[index]!);
+		}
+
 		files = [...files, ...entries];
 		mode = 'uploading';
 
 		for (const entry of entries) {
-			startUpload(entry);
+			const file = fileObjects.get(entry.id);
+			if (file) void startUpload(entry, file);
 		}
 	}
 
@@ -119,6 +185,7 @@
 
 	function removeFile(id: string) {
 		stopUpload(id);
+		fileObjects.delete(id);
 		files = files.filter((file) => file.id !== id);
 		if (!files.length) {
 			mode = 'idle';
@@ -129,6 +196,7 @@
 
 	function cancelAll() {
 		stopAllUploads();
+		fileObjects.clear();
 		files = [];
 		mode = 'idle';
 	}

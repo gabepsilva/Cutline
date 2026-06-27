@@ -6,5 +6,6 @@ export interface ImportUploadFile {
 	size: number;
 	progress: number;
 	done: boolean;
+	error?: boolean;
 	statusLabel: string;
 }
