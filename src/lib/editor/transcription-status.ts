@@ -23,6 +23,8 @@ export function resolveTranscriptUiStatus(input: {
 	wordCount: number;
 	aRoll: ARollMediaLoad | null;
 	jobStatus: JobStatusResponse | null;
+	/** Latest transcription job ended non-succeeded with none active (from server load). */
+	failed?: boolean;
 }): TranscriptUiStatus {
 	if (input.wordCount > 0) return 'ready';
 
@@ -36,6 +38,8 @@ export function resolveTranscriptUiStatus(input: {
 	if (input.jobStatus && !TERMINAL_STATUSES.has(input.jobStatus.status)) return 'transcribing';
 
 	if (input.jobStatus && input.jobStatus.status !== 'succeeded') return 'unavailable';
+
+	if (input.failed) return 'unavailable';
 
 	if (hasUploadedRoll) return 'transcribing';
 

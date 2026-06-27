@@ -37,14 +37,16 @@
 		aRoll,
 		resources,
 		overlays,
-		transcriptionJobId
+		transcriptionJobId,
+		transcriptionFailed
 	}: Props = $props();
 
 	let trackedMediaId = $state<string | null>(null);
 	let ingestAssets = $state<IngestAssetsState | null>(null);
 	const transcription = new TranscriptionController(
 		() => words.length,
-		() => aRoll
+		() => aRoll,
+		() => transcriptionFailed
 	);
 	const playbackUrl = $derived(ingestAssets?.transcodeUrl ?? videoUrl);
 

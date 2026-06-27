@@ -13,7 +13,8 @@ export class TranscriptionController {
 
 	constructor(
 		private readWordCount: () => number,
-		private readARoll: () => ARollMediaLoad | null
+		private readARoll: () => ARollMediaLoad | null,
+		private readFailed: () => boolean = () => false
 	) {}
 
 	ui = $derived.by((): TranscriptionUiState => {
@@ -21,7 +22,8 @@ export class TranscriptionController {
 		const status = resolveTranscriptUiStatus({
 			wordCount: this.readWordCount(),
 			aRoll: this.readARoll(),
-			jobStatus: this.jobStatus
+			jobStatus: this.jobStatus,
+			failed: this.readFailed()
 		});
 		return toTranscriptionUiState(status, progress);
 	});

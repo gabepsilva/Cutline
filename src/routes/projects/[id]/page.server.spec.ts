@@ -42,7 +42,8 @@ const editorLoadFixture: EditorProjectLoad = {
 	aRoll: null,
 	resources: [],
 	overlays: [],
-	transcriptionJobId: null
+	transcriptionJobId: null,
+	transcriptionFailed: false
 };
 
 describe('projects/[id]/+page.server load', () => {

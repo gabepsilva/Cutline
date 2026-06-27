@@ -43,6 +43,16 @@ describe('TranscriptionController', () => {
 		});
 	});
 
+	it('derives unavailable ui when a prior job failed and none is active', () => {
+		const controller = new TranscriptionController(
+			() => 0,
+			() => aRoll,
+			() => true
+		);
+
+		expect(controller.ui.status).toBe('unavailable');
+	});
+
 	it('clears job status when words already exist', () => {
 		const controller = new TranscriptionController(
 			() => 3,

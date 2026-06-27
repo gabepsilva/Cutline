@@ -58,6 +58,17 @@ describe('transcription-status', () => {
 		).toBe('unavailable');
 	});
 
+	it('returns unavailable when a prior job failed and none is active (reload)', () => {
+		expect(
+			resolveTranscriptUiStatus({
+				wordCount: 0,
+				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null },
+				jobStatus: null,
+				failed: true
+			})
+		).toBe('unavailable');
+	});
+
 	it('returns unavailable when no A-roll path exists', () => {
 		expect(
 			resolveTranscriptUiStatus({

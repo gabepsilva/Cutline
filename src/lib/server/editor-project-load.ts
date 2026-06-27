@@ -9,7 +9,7 @@ import { resolveProjectRouteMode } from '$lib/server/project-route-mode';
 import { ownedProjectFilter } from '$lib/server/project-access';
 import { isServerError } from '$lib/server/result';
 import { findPrimaryMediaRow, getMediaAssetUrls } from '$lib/server/storage/media-assets';
-import { getActiveProjectJob } from '$lib/server/jobs/job-store';
+import { getLatestProjectJob } from '$lib/server/jobs/job-store';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
 import type { MediaStatus } from '$lib/types/media-upload';
 import type { CaptionStyle, Word } from '$lib/types/transcript';
@@ -75,8 +75,14 @@ export async function loadEditorProject(
 	}
 
 	const mode = resolveProjectRouteMode(mediaRows.map((row) => row.status as MediaStatus));
-	const transcriptionJob =
-		words.length === 0 ? await getActiveProjectJob(database, projectId, 'transcription') : null;
+	const latestTranscriptionJob =
+		words.length === 0 ? await getLatestProjectJob(database, projectId, 'transcription') : null;
+	const transcriptionActive =
+		latestTranscriptionJob?.status === 'queued' || latestTranscriptionJob?.status === 'running';
+	const transcriptionFailed =
+		latestTranscriptionJob != null &&
+		!transcriptionActive &&
+		latestTranscriptionJob.status !== 'succeeded';
 
 	return {
 		mode,
@@ -93,6 +99,7 @@ export async function loadEditorProject(
 		aRoll,
 		resources: mediaRows.map(mapMediaRow),
 		overlays: overlayRows.map(mapOverlayRow),
-		transcriptionJobId: transcriptionJob?.id ?? null
+		transcriptionJobId: transcriptionActive ? (latestTranscriptionJob?.id ?? null) : null,
+		transcriptionFailed
 	};
 }

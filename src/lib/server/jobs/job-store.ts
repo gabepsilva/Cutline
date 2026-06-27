@@ -412,6 +412,22 @@ export async function getActiveProjectJob(
 	return row ?? null;
 }
 
+/** Most recent job of a type for a project, regardless of status — used to surface failed STT on reload. */
+export async function getLatestProjectJob(
+	database: Database,
+	projectId: string,
+	type: JobType
+): Promise<JobRow | null> {
+	const [row] = await database
+		.select()
+		.from(job)
+		.where(and(eq(job.projectId, projectId), eq(job.type, type)))
+		.orderBy(desc(job.createdAt))
+		.limit(1);
+
+	return row ?? null;
+}
+
 export async function enqueueOwnedJob(
 	database: Database,
 	userId: string,
