@@ -11,15 +11,17 @@
 	}
 
 	let { project, class: className = '', onclick, showMenu = true }: Props = $props();
+
+	const isDraft = $derived(project.isDraft === true);
 </script>
 
-<article class={['project-card', className]}>
+<article class={['project-card', isDraft && 'project-card--draft', className]}>
 	<button type="button" class="project-card__main" onclick={(event) => onclick?.(project, event)}>
 		<VideoThumb
 			variant="project"
 			thumb={project.thumb}
 			durationLabel={project.durationLabel}
-			kind={project.kind}
+			kind={isDraft ? 'Draft' : project.kind}
 		/>
 		<div class="project-card__body">
 			<p class="project-card__title">{project.title}</p>
@@ -45,6 +47,19 @@
 
 	.project-card:hover {
 		border-color: var(--border-7);
+	}
+
+	.project-card--draft {
+		border-style: dashed;
+		border-color: var(--border-6);
+	}
+
+	.project-card--draft:hover {
+		border-color: var(--border-8);
+	}
+
+	.project-card--draft :global(.video-thumb__kind) {
+		color: var(--accent);
 	}
 
 	.project-card__main {
