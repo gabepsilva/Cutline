@@ -16,4 +16,12 @@ test.describe('home dashboard', () => {
 		await expect(page.getByRole('heading', { name: 'Recent projects', level: 2 })).toBeVisible();
 		await expect(page.getByText('Q3 launch recap')).toBeVisible();
 	});
+
+	test('new project navigates to import gateway without creating a project', async ({ page }) => {
+		await page.getByRole('button', { name: 'New project' }).click();
+
+		await expect(page).toHaveURL('/projects/new');
+		await expect(page.getByTestId('new-project-page')).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Start your video' })).toBeVisible();
+	});
 });

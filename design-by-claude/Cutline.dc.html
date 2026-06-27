@@ -22,6 +22,7 @@
   input{ font-family:inherit; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
   @keyframes pulseRec{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+  @keyframes shine{ 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
 </style>
 </helmet>
 
@@ -62,7 +63,7 @@
           <div style="font-size:13px; color:#6f6e75; margin-bottom:4px;">Welcome back, Alex</div>
           <div style="font-size:26px; font-weight:600; letter-spacing:-.02em;">Home</div>
         </div>
-        <div onClick="{{ openProject }}" style="display:flex; align-items:center; gap:9px; background:var(--accent,#ff6a3d); color:#0b0b0d; font-weight:600; font-size:13.5px; padding:11px 18px; border-radius:9px; cursor:pointer;">
+        <div onClick="{{ newProject }}" style="display:flex; align-items:center; gap:9px; background:var(--accent,#ff6a3d); color:#0b0b0d; font-weight:600; font-size:13.5px; padding:11px 18px; border-radius:9px; cursor:pointer;">
           <div style="width:13px; height:13px; position:relative;"><div style="position:absolute; inset:0; margin:auto; width:13px; height:2px; background:#0b0b0d; border-radius:2px;"></div><div style="position:absolute; inset:0; margin:auto; width:2px; height:13px; background:#0b0b0d; border-radius:2px;"></div></div>
           New project
         </div>
@@ -107,6 +108,99 @@
   </div>
   </sc-if>
 
+  <!-- ================= NEW PROJECT (EMPTY STATE) ================= -->
+  <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex; flex-direction:column; width:100%; height:100vh;">
+
+    <!-- top bar -->
+    <div style="height:54px; flex:0 0 54px; background:#0e0e10; border-bottom:1px solid #1d1d21; display:flex; align-items:center; padding:0 16px; gap:14px;">
+      <div onClick="{{ back }}" style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#a3a2a8; font-size:13px; padding:6px 9px; border-radius:7px;">
+        <div style="width:0;height:0;border-right:7px solid currentColor;border-top:5px solid transparent;border-bottom:5px solid transparent;"></div>
+        Projects
+      </div>
+      <div style="width:1px; height:22px; background:#26262b;"></div>
+      <input value="{{ projectName }}" onInput="{{ onRenameProject }}" placeholder="Untitled project" style="background:transparent; border:none; outline:none; color:#f3f2f0; font-size:13.5px; font-weight:600; width:220px; padding:6px 8px; border-radius:7px;" style-focus="background:#141417; box-shadow:inset 0 0 0 1px #2a2a30;" />
+      <div style="margin-left:auto; display:flex; align-items:center; gap:8px; font-size:13px; color:#5f5e66; padding:9px 17px; border:1px solid #1d1d21; border-radius:8px; cursor:not-allowed;">Export</div>
+    </div>
+
+    <!-- empty workspace -->
+    <div style="flex:1; display:flex; min-height:0;">
+      <!-- icon rail (dimmed) -->
+      <div style="width:54px; flex:0 0 54px; background:#0c0c0e; border-right:1px solid #1a1a1e; display:flex; flex-direction:column; align-items:center; padding:14px 0; gap:6px; opacity:.45;">
+        <div style="width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#5f5e66;"><div style="width:13px;height:9px;border-radius:1px;border:1.5px solid currentColor;"></div></div>
+        <div style="width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#5f5e66;"><div style="width:13px;height:13px;border-radius:50%;border:1.5px solid currentColor;"></div></div>
+        <div style="width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#5f5e66;"><div style="display:flex; gap:2px; align-items:flex-end;"><div style="width:2px;height:7px;background:currentColor;"></div><div style="width:2px;height:12px;background:currentColor;"></div><div style="width:2px;height:9px;background:currentColor;"></div></div></div>
+      </div>
+
+      <!-- center: import gateway -->
+      <div style="flex:1; min-width:0; display:flex; align-items:center; justify-content:center; padding:40px; background:radial-gradient(120% 90% at 50% 0%, #131316 0%, #0a0a0c 60%); overflow-y:auto;">
+
+        <sc-if value="{{ importIdle }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ uploadFootage }}" style="width:100%; max-width:680px; border:1.5px dashed #2c2c33; border-radius:20px; padding:48px 40px; display:flex; flex-direction:column; align-items:center; text-align:center; background:rgba(16,16,19,.5); cursor:pointer;" style-hover="border-color:var(--accent,#ff6a3d); background:rgba(20,20,24,.6);">
+          <div style="width:62px; height:62px; border-radius:16px; background:var(--accent,#ff6a3d); display:flex; align-items:center; justify-content:center; margin-bottom:22px;">
+            <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 16V4M12 4l-5 5M12 4l5 5" fill="none" stroke="#0b0b0d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="#0b0b0d" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </div>
+          <div style="font-size:23px; font-weight:600; letter-spacing:-.02em; margin-bottom:10px;">Start your video</div>
+          <div style="font-size:14px; color:#8b8a90; line-height:1.6; max-width:420px; margin-bottom:30px;">Drop a clip here, or pick a source below. Cutline transcribes your footage automatically so you can cut, trim, and caption just by editing the text.</div>
+
+          <div style="display:flex; gap:14px; width:100%; max-width:520px;">
+            <div onClick="{{ openRecordNew }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:11px; padding:20px 14px; border:1px solid #232328; border-radius:13px; background:#101013; cursor:pointer;" style-hover="border-color:#3a3a42; background:#141417;">
+              <div style="width:38px; height:38px; border-radius:50%; background:rgba(255,90,77,.13); border:1px solid rgba(255,90,77,.42); display:flex; align-items:center; justify-content:center;"><div style="width:14px; height:14px; border-radius:50%; background:#ff5a4d;"></div></div>
+              <div style="font-size:13.5px; font-weight:500;">Record</div>
+              <div style="font-size:11px; color:#6f6e75;">Camera or screen</div>
+            </div>
+            <div onClick="{{ uploadFootage }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:11px; padding:20px 14px; border:1px solid #232328; border-radius:13px; background:#101013; cursor:pointer;" style-hover="border-color:#3a3a42; background:#141417;">
+              <div style="width:38px; height:38px; border-radius:50%; background:#17171a; border:1px solid #2a2a30; display:flex; align-items:center; justify-content:center; color:#cfcdd2;"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M12 16V5M12 5l-4 4M12 5l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 17v2h14v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+              <div style="font-size:13.5px; font-weight:500;">Upload a file</div>
+              <div style="font-size:11px; color:#6f6e75;">MP4, MOV, WAV</div>
+            </div>
+          </div>
+
+          <div style="margin-top:26px; font-size:11px; color:#4f4e56; font-family:'JetBrains Mono',monospace;">Up to 2 GB · English, Spanish, French &amp; 20 more</div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ importUploading }}" hint-placeholder-val="{{ false }}">
+        <div style="width:100%; max-width:520px; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:18px;">
+            <div style="font-size:17px; font-weight:600;">Uploading footage</div>
+            <div style="font-size:12px; color:#6f6e75; font-family:'JetBrains Mono',monospace;">{{ uploadCount }} files</div>
+            <div onClick="{{ cancelImport }}" style="margin-left:auto; font-size:12px; color:#8b8a90; padding:6px 12px; border:1px solid #26262b; border-radius:8px; cursor:pointer;" style-hover="color:#f3f2f0; border-color:#3a3a42;">Cancel all</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <sc-for list="{{ uploadFiles }}" as="f" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:13px; padding:13px 15px; background:#101013; border:1px solid #1f1f24; border-radius:12px;">
+                <div style="flex:0 0 38px; width:38px; height:38px; border-radius:9px; background:#141417; border:1px solid #26262b; display:flex; align-items:center; justify-content:center; color:#cfcdd2;">
+                  <svg width="17" height="17" viewBox="0 0 24 24"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8l-4-5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 3v5h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                </div>
+                <div style="flex:1; min-width:0;">
+                  <div style="display:flex; align-items:center; gap:8px; margin-bottom:7px;">
+                    <div style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ f.name }}</div>
+                    <div style="margin-left:auto; font-size:11px; color:#6f6e75; font-family:'JetBrains Mono',monospace; white-space:nowrap;">{{ f.statusLabel }}</div>
+                  </div>
+                  <div style="width:100%; height:5px; background:#1f1f24; border-radius:3px; overflow:hidden;"><div style="height:100%; width:{{ f.pct }}; background:var(--accent,#ff6a3d); border-radius:3px; transition:width .15s;"></div></div>
+                </div>
+                <sc-if value="{{ f.done }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:0 0 auto; width:20px; height:20px; border-radius:50%; background:rgba(255,106,61,.16); display:flex; align-items:center; justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24"><polyline points="5,12 10,17 19,7" fill="none" stroke="var(--accent,#ff6a3d)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                </sc-if>
+                <div onClick="{{ f.remove }}" style="flex:0 0 auto; width:22px; height:22px; border-radius:6px; border:1px solid #26262b; color:#7b7a81; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px;" style-hover="color:#f3f2f0; border-color:#3a3a42;">✕</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:16px; font-size:11.5px; color:#6f6e75; font-family:'JetBrains Mono',monospace;">Transcription starts automatically once each file finishes uploading.</div>
+        </div>
+        </sc-if>
+
+      </div>
+    </div>
+
+    <!-- empty timeline -->
+    <div style="height:130px; flex:0 0 130px; background:#0c0c0e; border-top:1px solid #1d1d21; display:flex; align-items:center; justify-content:center;">
+      <div style="font-size:12px; color:#3f3e45; font-family:'JetBrains Mono',monospace;">Timeline appears once your footage is transcribed</div>
+    </div>
+  </div>
+  </sc-if>
+
   <!-- ================= EDITOR ================= -->
   <sc-if value="{{ isEditor }}" hint-placeholder-val="{{ true }}">
   <div style="display:flex; flex-direction:column; width:100%; height:100vh;">
@@ -119,9 +213,15 @@
       </div>
       <div style="width:1px; height:22px; background:#26262b;"></div>
       <div style="display:flex; flex-direction:column; line-height:1.2;">
-        <div style="font-size:13.5px; font-weight:600;">How I edit videos 3x faster</div>
+        <div style="font-size:13.5px; font-weight:600;">{{ editorTitle }}</div>
         <div style="font-size:10.5px; color:#5f5e66; font-family:'JetBrains Mono',monospace;">Auto-saved · MP4 1080p</div>
       </div>
+      <sc-if value="{{ transcribing }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:center; gap:8px; padding:6px 11px; border-radius:8px; background:rgba(255,106,61,.1); border:1px solid rgba(255,106,61,.3); font-size:12px; color:var(--accent,#ff6a3d); font-weight:500;">
+          <div style="width:12px; height:12px; border-radius:50%; border:2px solid rgba(255,106,61,.3); border-top-color:var(--accent,#ff6a3d); animation:spin .8s linear infinite;"></div>
+          Transcribing · {{ transcribePct }}
+        </div>
+      </sc-if>
 
       <!-- transport -->
       <div style="margin:0 auto; display:flex; align-items:center; gap:6px; background:#141417; border:1px solid #222227; border-radius:11px; padding:5px 10px;">
@@ -167,6 +267,7 @@
       <div style="flex:1.25; min-width:0; display:flex; flex-direction:column; border-right:1px solid #1a1a1e; background:#0d0d0f;">
         <div style="padding:14px 22px; border-bottom:1px solid #1a1a1e; display:flex; align-items:center; gap:12px;">
           <div style="font-size:13.5px; font-weight:600;">Transcript</div>
+          <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex; align-items:center; gap:8px; background:#141417; border:1px solid #232328; border-radius:8px; padding:6px 10px; flex:1; max-width:260px;">
             <div style="width:12px; height:12px; border-radius:50%; border:1.5px solid #5f5e66; position:relative;"><div style="position:absolute; right:-4px; bottom:-3px; width:5px; height:1.5px; background:#5f5e66; transform:rotate(45deg);"></div></div>
             <input value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search transcript" style="background:transparent; border:none; outline:none; color:#f3f2f0; font-size:12.5px; width:100%;" />
@@ -175,6 +276,7 @@
             <div style="width:6px; height:6px; border-radius:50%; background:var(--accent,#ff6a3d);"></div>
             Remove fillers · {{ fillerCount }}
           </div>
+          </sc-if>
         </div>
 
         <!-- selection bar -->
@@ -186,11 +288,28 @@
         </sc-if>
 
         <div style="flex:1; overflow-y:auto; padding:24px 22px 80px;">
+          <!-- async transcription state -->
+          <sc-if value="{{ transcribing }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:12px; padding:13px 15px; margin-bottom:24px; background:rgba(255,106,61,.07); border:1px solid rgba(255,106,61,.22); border-radius:11px;">
+              <div style="width:16px; height:16px; flex:0 0 16px; border-radius:50%; border:2px solid rgba(255,106,61,.3); border-top-color:var(--accent,#ff6a3d); animation:spin .8s linear infinite;"></div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:13px; font-weight:600; color:#f3f2f0;">{{ transcribeStage }}</div>
+                <div style="font-size:11px; color:#8b8a90; margin-top:2px;">Runs in the background — words drop in as they're recognized.</div>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent,#ff6a3d);">{{ transcribePct }}</div>
+            </div>
+            <div style="display:flex; gap:16px; margin-bottom:15px;"><div style="flex:0 0 46px; padding-top:4px;"><div style="height:11px; width:30px; border-radius:4px; background:#16161a;"></div></div><div style="flex:1; display:flex; flex-direction:column; gap:12px; padding-top:3px;"><div style="height:13px; width:94%; border-radius:5px; background:linear-gradient(90deg,#15151a 25%,#202027 50%,#15151a 75%); background-size:200% 100%; animation:shine 1.5s linear infinite;"></div><div style="height:13px; width:72%; border-radius:5px; background:linear-gradient(90deg,#15151a 25%,#202027 50%,#15151a 75%); background-size:200% 100%; animation:shine 1.5s linear infinite;"></div></div></div>
+            <div style="display:flex; gap:16px; margin-bottom:15px;"><div style="flex:0 0 46px; padding-top:4px;"><div style="height:11px; width:30px; border-radius:4px; background:#16161a;"></div></div><div style="flex:1; display:flex; flex-direction:column; gap:12px; padding-top:3px;"><div style="height:13px; width:88%; border-radius:5px; background:linear-gradient(90deg,#15151a 25%,#202027 50%,#15151a 75%); background-size:200% 100%; animation:shine 1.5s linear infinite;"></div><div style="height:13px; width:96%; border-radius:5px; background:linear-gradient(90deg,#15151a 25%,#202027 50%,#15151a 75%); background-size:200% 100%; animation:shine 1.5s linear infinite;"></div><div style="height:13px; width:61%; border-radius:5px; background:linear-gradient(90deg,#15151a 25%,#202027 50%,#15151a 75%); background-size:200% 100%; animation:shine 1.5s linear infinite;"></div></div></div>
+            <div style="display:flex; gap:16px; margin-bottom:15px;"><div style="flex:0 0 46px; padding-top:4px;"><div style="height:11px; width:30px; border-radius:4px; background:#16161a;"></div></div><div style="flex:1; display:flex; flex-direction:column; gap:12px; padding-top:3px;"><div style="height:13px; width:80%; border-radius:5px; background:linear-gradient(90deg,#15151a 25%,#202027 50%,#15151a 75%); background-size:200% 100%; animation:shine 1.5s linear infinite;"></div><div style="height:13px; width:46%; border-radius:5px; background:linear-gradient(90deg,#15151a 25%,#202027 50%,#15151a 75%); background-size:200% 100%; animation:shine 1.5s linear infinite;"></div></div></div>
+          </sc-if>
+
           <!-- speaker block -->
+          <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
             <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#3a3a42,#222226); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#d6d5da;">AC</div>
             <div style="line-height:1.25;"><div style="font-size:13px; font-weight:600;">Alex Chen</div><div style="font-size:10.5px; color:#6f6e75; font-family:'JetBrains Mono',monospace;">Creator · single speaker</div></div>
           </div>
+          </sc-if>
 
           <sc-for list="{{ sentences }}" as="sen" hint-placeholder-count="8">
             <div style="display:flex; gap:16px; margin-bottom:13px;">
@@ -242,7 +361,7 @@
           <div style="flex:1; background:#101013; border:1px solid #1f1f24; border-radius:11px; padding:13px 15px;">
             <div style="font-size:10.5px; color:#6f6e75; text-transform:uppercase; letter-spacing:.07em; margin-bottom:7px;">Edits</div>
             <div style="font-family:'JetBrains Mono',monospace; font-size:19px; color:#f3f2f0;">{{ deletedCount }} <span style="font-size:12px; color:#6f6e75;">cut</span></div>
-            <div style="font-size:11px; color:#8b8a90; margin-top:5px;">{{ wordCount }} words remain</div>
+            <div style="font-size:11px; color:#8b8a90; margin-top:5px;">{{ wordsRemainLabel }}</div>
           </div>
         </div>
         <div style="margin-top:12px; padding:13px 15px; background:#101013; border:1px solid #1f1f24; border-radius:11px;">
@@ -334,7 +453,10 @@
 
           <!-- CC blocks -->
           <div style="flex:1; position:relative; padding:5px; overflow:hidden;">
-            <sc-for list="{{ clips }}" as="c" hint-placeholder-count="8">
+            <sc-if value="{{ transcribing }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute; inset:0; display:flex; align-items:center; padding-left:10px; font-size:11px; color:#3f3e45; font-family:'JetBrains Mono',monospace;">Captions appear once transcription finishes</div>
+            </sc-if>
+            <sc-for list="{{ captionClips }}" as="c" hint-placeholder-count="8">
               <div style="position:absolute; top:5px; bottom:5px; left:{{ c.left }}; width:{{ c.width }}; border-radius:4px; background:rgba(255,106,61,.1); border:1px solid rgba(255,106,61,.28); overflow:hidden; padding:0 7px; display:flex; align-items:center;">
                 <div style="font-size:10px; color:#d8c2b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.label }}</div>
               </div>
@@ -519,6 +641,12 @@ class Component extends DCLogic {
     const t = this.buildTranscript();
     this.state = {
       screen: 'dashboard',
+      projectName: 'How I edit videos 3x faster',
+      importPhase: 'idle', // idle | uploading
+      uploadFiles: [],     // [{id,name,size,progress,status}]
+      transcribing: false, // async transcription running inside the editor
+      transcribeProgress: 0,
+      media: null,         // { dur, bars } — exists before transcript does
       words: t.words,
       sentences: t.sentences,
       currentTime: 0,
@@ -547,6 +675,8 @@ class Component extends DCLogic {
     this._raf = null;
     this._last = 0;
     this._expTimer = null;
+    this._tt = null;
+    this._ut = null;
     this._cd = null;
     this._rt = null;
     this._stream = null;
@@ -599,6 +729,8 @@ class Component extends DCLogic {
     cancelAnimationFrame(this._raf);
     window.removeEventListener('keydown', this.onKey);
     if (this._expTimer) clearInterval(this._expTimer);
+    if (this._tt) clearInterval(this._tt);
+    if (this._ut) clearInterval(this._ut);
     if (this._cd) clearInterval(this._cd);
     if (this._rt) clearInterval(this._rt);
     this.stopCamera();
@@ -684,9 +816,26 @@ class Component extends DCLogic {
   }
 
   totalDuration(){
+    // before a transcript exists, the media clip still has a real duration
+    if (this.state.words.length === 0) return (this.state.media && this.state.media.dur) || 0.001;
     let acc = 0;
     this.state.words.forEach(w => { if (!w.deleted) acc += w.dur + 0.02; });
     return Math.max(0.001, acc);
+  }
+
+  genWaveform(dur){
+    const bars = [];
+    let seed = 42;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return (seed % 1000) / 1000; };
+    const n = Math.max(48, Math.round(dur * 7));
+    for (let i = 0; i < n; i++){
+      const left = (i / n) * 100;
+      const width = (100 / n) * 0.62;
+      const env = 0.32 + 0.55 * Math.abs(Math.sin(i * 0.45) * Math.cos(i * 0.13));
+      const h = (0.16 + rnd() * 0.84) * env;
+      bars.push({ left: left.toFixed(3) + '%', width: Math.max(0.25, width).toFixed(3) + '%', height: (8 + h * 78).toFixed(1) + '%' });
+    }
+    return bars;
   }
 
   togglePlay(){
@@ -697,8 +846,83 @@ class Component extends DCLogic {
   toStart(){ this.setState({ currentTime: 0 }); }
   toEnd(){ this.setState({ currentTime: this.totalDuration(), playing: false }); }
 
-  openProject(){ this.setState({ screen: 'editor' }); }
-  back(){ this.setState({ screen: 'dashboard', playing: false }); }
+  openProject(){ this.setState({ screen: 'editor', projectName: 'How I edit videos 3x faster' }); }
+  back(){
+    if (this._tt){ clearInterval(this._tt); this._tt = null; }
+    if (this._ut){ clearInterval(this._ut); this._ut = null; }
+    this.stopCamera();
+    this.setState({ screen: 'dashboard', playing: false, importPhase: 'idle', uploadFiles: [], transcribing: false, recordPhase: 'none' });
+  }
+
+  newProject(){
+    this.setState({ screen: 'new', importPhase: 'idle', uploadFiles: [], transcribing: false, transcribeProgress: 0, projectName: 'Untitled project' });
+  }
+  onRenameProject(e){ this.setState({ projectName: e.target.value }); }
+
+  // recorded locally — no upload, straight into async transcription
+  openRecordNew(){ this.enterEditorTranscribing(); }
+
+  // simulate the OS picker returning several files
+  uploadFootage(){
+    const picked = [
+      { name: 'intro-take-2.mp4', size: '212 MB' },
+      { name: 'screen-demo.mov', size: '486 MB' },
+      { name: 'outro.mp4', size: '88 MB' },
+    ];
+    const list = picked.map((f, i) => ({ id: 'up' + Date.now() + '_' + i, name: f.name, size: f.size, progress: 0, status: 'uploading' }));
+    this.setState({ importPhase: 'uploading', uploadFiles: list });
+    if (this._ut) clearInterval(this._ut);
+    this._ut = setInterval(() => {
+      let allDone = true;
+      const next = this.state.uploadFiles.map(f => {
+        if (f.status === 'done') return f;
+        const p = f.progress + 0.012 + Math.random() * 0.05;
+        if (p >= 1) return { ...f, progress: 1, status: 'done' };
+        allDone = false;
+        return { ...f, progress: p };
+      });
+      this.setState({ uploadFiles: next });
+      if (allDone){ clearInterval(this._ut); this._ut = null; this.enterEditorTranscribing(); }
+    }, 50);
+  }
+  removeUpload(id){
+    const rest = this.state.uploadFiles.filter(f => f.id !== id);
+    if (!rest.length){ this.cancelImport(); return; }
+    this.setState({ uploadFiles: rest });
+  }
+  cancelImport(){
+    if (this._ut){ clearInterval(this._ut); this._ut = null; }
+    this.setState({ importPhase: 'idle', uploadFiles: [] });
+  }
+
+  // enter the editor right away — media is fully editable; transcript streams in asynchronously
+  enterEditorTranscribing(){
+    if (this._tt) clearInterval(this._tt);
+    // build the transcript now but withhold it; derive the media duration + waveform from it
+    const t = this.buildTranscript();
+    let dur = 0; t.words.forEach(w => dur += w.dur + 0.02);
+    this._pending = t;
+    this.setState({
+      screen: 'editor',
+      importPhase: 'idle',
+      transcribing: true,
+      transcribeProgress: 0,
+      words: [], sentences: [],
+      media: { dur, bars: this.genWaveform(dur) },
+      currentTime: 0, playing: false, selectedId: null, overlays: [],
+      projectName: (this.state.projectName && this.state.projectName.trim()) ? this.state.projectName : 'Untitled project',
+    });
+    // emulate ~15s of transcription (100ms ticks, avg ~0.0067/tick)
+    this._tt = setInterval(() => {
+      const p = this.state.transcribeProgress + 0.0048 + Math.random() * 0.0038;
+      if (p >= 1){
+        clearInterval(this._tt); this._tt = null;
+        const pend = this._pending || this.buildTranscript();
+        this.setState({ transcribeProgress: 1, transcribing: false, words: pend.words, sentences: pend.sentences });
+      } else this.setState({ transcribeProgress: p });
+    }, 100);
+  }
+
 
   wordClick(w){
     if (w.deleted){
@@ -759,7 +983,8 @@ class Component extends DCLogic {
     const startMap = {};
     let acc = 0;
     active.forEach(w => { startMap[w.id] = acc; acc += w.dur + 0.02; });
-    const total = Math.max(0.001, acc);
+    const hasTranscript = s.words.length > 0;
+    const total = hasTranscript ? Math.max(0.001, acc) : ((s.media && s.media.dur) || 0.001);
     this._startMap = startMap;
     const ct = Math.min(s.currentTime, total);
 
@@ -811,7 +1036,8 @@ class Component extends DCLogic {
     }
 
     // waveform bars (active words concatenated)
-    const bars = [];
+    const wordBars = [];
+    const bars = wordBars;
     active.forEach(w => {
       const st = startMap[w.id];
       const n = w.bars.length;
@@ -835,6 +1061,10 @@ class Component extends DCLogic {
       const widthPct = Math.max(1.2, ((b - a) / total) * 100);
       clips.push({ left: leftPct.toFixed(3) + '%', width: (widthPct - 0.5).toFixed(3) + '%', label: aw.slice(0, 5).map(w => w.text).join(' ') });
     });
+
+    // before transcript: V1 shows the whole media clip; CC track is empty (captions need a transcript)
+    const videoClips = hasTranscript ? clips : [{ left: '0%', width: '99%', label: '' }];
+    const captionClips = hasTranscript ? clips : [];
 
     // ruler ticks
     const ticks = [];
@@ -876,8 +1106,30 @@ class Component extends DCLogic {
       accent,
       isDashboard: s.screen === 'dashboard',
       isEditor: s.screen === 'editor',
+      isNew: s.screen === 'new',
       projects,
       openProject: () => this.openProject(),
+      newProject: () => this.newProject(),
+      projectName: s.projectName,
+      editorTitle: s.projectName,
+      onRenameProject: (e) => this.onRenameProject(e),
+      uploadFootage: () => this.uploadFootage(),
+      openRecordNew: () => this.openRecordNew(),
+      importIdle: s.importPhase === 'idle',
+      importUploading: s.importPhase === 'uploading',
+      uploadFiles: s.uploadFiles.map(f => ({
+        id: f.id, name: f.name, size: f.size,
+        pct: Math.round(f.progress * 100) + '%',
+        done: f.status === 'done',
+        statusLabel: f.status === 'done' ? 'Ready' : 'Uploading · ' + f.size,
+        remove: () => this.removeUpload(f.id),
+      })),
+      uploadCount: s.uploadFiles.length,
+      cancelImport: () => this.cancelImport(),
+      transcribing: s.transcribing,
+      ready: !s.transcribing,
+      transcribePct: Math.round(s.transcribeProgress * 100) + '%',
+      transcribeStage: s.transcribeProgress < 0.45 ? 'Detecting speech…' : s.transcribeProgress < 0.8 ? 'Generating transcript…' : 'Aligning words to timeline…',
       back: () => this.back(),
       togglePlay: () => this.togglePlay(),
       toStart: () => this.toStart(),
@@ -890,8 +1142,9 @@ class Component extends DCLogic {
       captionWords,
       showCaptions: s.showCaptions,
       toggleCaptions: () => this.toggleCaptions(),
-      bars,
-      clips,
+      bars: hasTranscript ? wordBars : ((s.media && s.media.bars) || []),
+      clips: videoClips,
+      captionClips,
       ticks,
       playheadPct,
       overlays,
@@ -924,7 +1177,8 @@ class Component extends DCLogic {
       fillerCount,
       deletedCount,
       wordCount: active.length,
-      savedLabel: deletedCount > 0 ? ('−' + deletedCount + ' words trimmed') : 'Original cut',
+      savedLabel: !hasTranscript ? 'Transcription pending' : (deletedCount > 0 ? ('−' + deletedCount + ' words trimmed') : 'Original cut'),
+      wordsRemainLabel: hasTranscript ? (active.length + ' words remain') : 'Awaiting transcript',
       removeFillers: () => this.removeFillers(),
       hasSelection: !!selWord,
       selectedText: selWord ? selWord.text : '',
