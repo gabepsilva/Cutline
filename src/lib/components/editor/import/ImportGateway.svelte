@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
 	import { uploadImportMedia } from '$lib/editor/media-upload';
 	import { formatBytes } from '$lib/utils/format-bytes';
@@ -22,8 +23,8 @@
 	let projectReady: Promise<string> | null = null;
 
 	const fileInputId = 'import-gateway-file-input';
-	const fileObjects = new Map<string, File>();
-	const abortControllers = new Map<string, AbortController>();
+	const fileObjects = new SvelteMap<string, File>();
+	const abortControllers = new SvelteMap<string, AbortController>();
 
 	const activeProjectId = $derived(projectId ?? localProjectId);
 	const uploadCountLabel = $derived(`${files.length} file${files.length === 1 ? '' : 's'}`);

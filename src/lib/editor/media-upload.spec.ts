@@ -167,7 +167,7 @@ describe('uploadImportMedia', () => {
 
 	it('creates a project on the first upload and completes the file', async () => {
 		const onProjectCreated = vi.fn();
-		const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+		const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
 			const url = String(input);
 			if (url === '/api/projects/media/upload-url') {
 				return new Response(
