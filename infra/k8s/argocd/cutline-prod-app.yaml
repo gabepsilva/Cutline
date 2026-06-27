@@ -1,8 +1,9 @@
 # One-time registration on tk8s:
 #   kubectl apply -f infra/k8s/argocd/cutline-prod-app.yaml
 #
-# Public repo — no repo-creds required. Argo tracks infra/k8s/overlays/prod; CI
-# commits images.newTag and Argo syncs the cluster (T-13).
+# Public repo — no repo-creds required. Argo tracks the CI-managed `deploy/prod`
+# branch (not `master`, which stays review-gated): deploy.yml force-pushes
+# `master` + the pinned images.newTag to `deploy/prod`, and Argo syncs (T-13).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -14,7 +15,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/gabepsilva/Cutline
-    targetRevision: master
+    targetRevision: deploy/prod
     path: infra/k8s/overlays/prod
   destination:
     server: https://kubernetes.default.svc

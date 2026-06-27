@@ -9,7 +9,7 @@ Layout (kustomize + Argo CD GitOps, T-13):
 infra/k8s/
   argocd/          one-time Application registration (cutline-prod)
   base/            namespace, configmap, OnePasswordItems, deployment, migrate hook/job, service, certificate, ingress
-  overlays/prod/   namespace + authoritative image tag (CI commits newTag)
+  overlays/prod/   namespace + image tag (CI pins newTag on the deploy/prod branch)
 ```
 
 ## Runtime contract
@@ -71,13 +71,18 @@ kubectl -n cutline get secret cutline-app -o jsonpath='{.data}' | jq 'keys'
 
 ## Argo CD (T-13)
 
-Cluster state tracks `infra/k8s/overlays/prod` in git. The `cutline-prod` Application
-uses automated sync with `prune` + `selfHeal` — git is the single source of truth for the
-running image tag and manifests.
+Argo tracks `infra/k8s/overlays/prod` on the **`deploy/prod`** branch — a CI-managed
+pointer branch that equals the latest `master` plus the pinned `images.newTag`. `master`
+stays review-gated (protected, code-owner review); only the unprotected `deploy/prod` is
+force-pushed by CI, so deploys never bypass branch protection. The `cutline-prod`
+Application uses automated sync with `prune` + `selfHeal` — git is the single source of
+truth for the running image tag and manifests.
 
-**One-time registration** (after Argo CD is installed on tk8s):
+**One-time registration** (after Argo CD is installed on tk8s). Seed `deploy/prod` first
+so Argo has a revision to track, then register:
 
 ```sh
+git push origin master:refs/heads/deploy/prod   # seed the deploy branch (once)
 kubectl apply -f infra/k8s/argocd/cutline-prod-app.yaml
 kubectl -n argocd get application cutline-prod
 ```
@@ -92,11 +97,17 @@ kubectl -n argocd get application cutline-prod \
 Deploy flow (`.github/workflows/deploy.yml`):
 
 ```
-build → push → commit images.newTag → Argo sync (PreSync migrate Job → Deployment) → curl /healthz
+build → push → pin images.newTag on deploy/prod → Argo sync (PreSync migrate Job → Deployment) → curl /healthz
 ```
 
-**Rollback:** revert the `newTag` commit on `master` (or use Argo history). With
-`selfHeal: true`, manual drift (e.g. `kubectl set image …`) is reverted to match git.
+The deploy waits for Argo to report **the pushed `deploy/prod` revision** as
+`Synced` + `Healthy` with `operationState=Succeeded` — so a green deploy means the new
+image actually rolled, not a stale status from the previous sync.
+
+**Rollback:** re-pin the desired tag on `deploy/prod` (re-run the deploy for the target
+commit, or push `deploy/prod` with the wanted `newTag`), or use Argo history
+(`argocd app rollback cutline-prod`). With `selfHeal: true`, manual drift
+(e.g. `kubectl set image …`) is reverted to match git.
 
 Preview/ephemeral envs stay **out of Argo** — CI-managed only.
 
@@ -108,7 +119,7 @@ the new schema is in place before pods roll out.
 
 | Resource                                    | Role                                              |
 | ------------------------------------------- | ------------------------------------------------- |
-| Job `cutline-migrate` (PreSync hook)        | Runs on every Argo sync with the synced image tag |
+| Job `cutline-migrate-hook` (PreSync hook)   | Runs on every Argo sync with the synced image tag |
 | CronJob `cutline-migrate` (`suspend: true`) | Manual Job template only — never scheduled        |
 
 The migrate pod mounts `cutline-app` → `/app/.env` **only** (no ConfigMap `envFrom`). Bun
@@ -125,7 +136,7 @@ kubectl -n cutline wait --for=condition=complete job/cutline-migrate-manual --ti
 ```
 
 **Rollback:** not a concern pre-launch — Turso holds no production data yet. To revert the
-cutover, redeploy the previous image tag (revert the `newTag` commit). Note: re-adding
+cutover, redeploy the previous image tag (re-pin `newTag` on `deploy/prod`). Note: re-adding
 `DATABASE_URL=file:…` to the ConfigMap is **not** a valid rollback — the entrypoint no longer
 migrates, so web pods would start against an empty, unmigrated SQLite and fail on first query.
 
@@ -145,11 +156,12 @@ the Deployment can start cleanly.
 ## Deploys
 
 Continuous delivery is handled by `.github/workflows/deploy.yml` (T-13): on merge to
-`master` it builds + pushes `ghcr.io/gabepsilva/cutline:<date>_<run>`, commits the tag to
-`overlays/prod/kustomization.yaml`, and waits for Argo CD to sync (PreSync migrate →
-Deployment rollout).
+`master` it builds + pushes `ghcr.io/gabepsilva/cutline:<date>_<run>`, force-pushes
+`master` + the pinned `newTag` to the `deploy/prod` branch, and waits for Argo CD to sync
+that revision (PreSync migrate → Deployment rollout).
 
-Manual rollout of a specific tag (revert or bump `newTag` in git and push, or use Argo UI).
+Manual rollout of a specific tag (re-pin `newTag` on `deploy/prod` and push, or use the
+Argo UI / `argocd app rollback`).
 
 ## Verify
 
