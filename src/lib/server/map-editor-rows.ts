@@ -47,7 +47,8 @@ export function mediaInsertFromOverlay(
 		durationSeconds: Math.max(1, Math.round(item.dur)),
 		kind: inferMediaKind(item.resId),
 		thumb: item.thumb,
-		sizeBytes: 0
+		sizeBytes: 0,
+		createdAt: new Date()
 	};
 }
 

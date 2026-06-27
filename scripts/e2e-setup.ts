@@ -115,7 +115,8 @@ await db
 			durationSeconds: resource.dur,
 			kind: resource.kind,
 			thumb: resource.thumb,
-			sizeBytes: 0
+			sizeBytes: 0,
+			createdAt: new Date()
 		}))
 	)
 	.onConflictDoNothing();

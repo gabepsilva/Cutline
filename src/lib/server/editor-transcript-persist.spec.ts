@@ -186,6 +186,7 @@ describe('persistEditorProject', () => {
 				kind: 'Recording',
 				durationSeconds: 8
 			});
+			expect(mediaRows[0]?.createdAt).toBeInstanceOf(Date);
 
 			const overlayRows = await db.select().from(overlay).where(eq(overlay.projectId, 'proj-1'));
 			expect(overlayRows).toHaveLength(1);
