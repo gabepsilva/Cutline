@@ -113,17 +113,6 @@ await db
 			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
 			createdAt: new Date('2026-06-26T08:00:00.000Z'),
 			updatedAt: new Date('2026-06-26T08:00:00.000Z')
-		},
-		{
-			id: 'e2e-awaiting-transcribe',
-			userId,
-			title: 'Awaiting transcribe',
-			kind: 'DEMO',
-			description: null,
-			durationSeconds: 120,
-			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
-			createdAt: new Date('2026-06-26T07:00:00.000Z'),
-			updatedAt: new Date('2026-06-26T07:00:00.000Z')
 		}
 	])
 	.onConflictDoNothing();
@@ -148,12 +137,6 @@ await db
 			projectId: 'e2e-transcribing',
 			words: JSON.stringify([]),
 			captionStyle: 'karaoke'
-		},
-		{
-			id: 'e2e-transcript-awaiting',
-			projectId: 'e2e-awaiting-transcribe',
-			words: JSON.stringify([]),
-			captionStyle: 'karaoke'
 		}
 	])
 	.onConflictDoNothing();
@@ -175,12 +158,14 @@ await db
 			id: 'e2e-upload-ready-media',
 			projectId: 'e2e-upload-ready',
 			name: 'clip.mp4',
-			durationSeconds: 0,
-			kind: 'A-roll',
+			durationSeconds: 120,
+			kind: 'B-roll',
 			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
 			sizeBytes: 1024,
 			objectKey: 'e2e/uploads/clip.mp4',
-			status: 'ingesting',
+			transcodeKey: 'e2e/uploads/clip-transcode.mp4',
+			status: 'ready',
+			hasAudio: true,
 			createdAt: new Date()
 		},
 		{
@@ -195,20 +180,6 @@ await db
 			status: 'ready',
 			hasAudio: true,
 			createdAt: new Date()
-		},
-		{
-			id: 'e2e-awaiting-media',
-			projectId: 'e2e-awaiting-transcribe',
-			name: 'clip.mp4',
-			durationSeconds: 120,
-			kind: 'B-roll',
-			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
-			sizeBytes: 1024,
-			objectKey: 'e2e/uploads/awaiting.mp4',
-			transcodeKey: 'e2e/uploads/awaiting-transcode.mp4',
-			status: 'ready',
-			hasAudio: true,
-			createdAt: new Date('2026-06-26T07:00:00.000Z')
 		},
 		{
 			id: 'e2e-q3-media',
