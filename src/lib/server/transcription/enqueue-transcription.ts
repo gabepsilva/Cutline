@@ -1,9 +1,11 @@
 import { assertProjectOwned } from '$lib/server/project-access';
 import type { Database } from '$lib/server/db/types';
 import { enqueueJob, getActiveProjectJob } from '$lib/server/jobs/job-store';
-import type { ServerResult } from '$lib/server/result';
+import type { ServerError } from '$lib/server/result';
 import { findPrimaryMediaRow } from '$lib/server/storage/media-assets';
 import type { TranscriptionJobPayload } from '$lib/types/job';
+
+export type EnqueueManualTranscriptionResult = { ok: true; jobId: string } | ServerError;
 
 /** User-triggered transcription for the project's primary source clip (#191). */
 export async function enqueueManualTranscription(
@@ -11,7 +13,7 @@ export async function enqueueManualTranscription(
 	userId: string,
 	projectId: string,
 	causationId?: string
-): Promise<ServerResult & { jobId?: string }> {
+): Promise<EnqueueManualTranscriptionResult> {
 	const ownerError = await assertProjectOwned(database, userId, projectId);
 	if (ownerError) {
 		return ownerError;

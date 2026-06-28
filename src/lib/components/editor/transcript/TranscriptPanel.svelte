@@ -21,6 +21,7 @@
 		mediaProcessing = false,
 		transcribeDisabled = false,
 		transcribePending = false,
+		transcriptionError = null,
 		searchQuery = '',
 		fillerCount = 0,
 		hasSelection = false,
@@ -44,9 +45,7 @@
 	const isTranscribing = $derived(status === 'transcribing');
 	const showTranscribeAction = $derived(isReady || isIdle || status === 'unavailable');
 	const transcribeActionClass = $derived(
-		isReady
-			? 'transcript-panel__transcribe-action'
-			: 'transcript-panel__transcribe-action transcript-panel__transcribe-action--primary'
+		isReady ? 'transcript-panel__transcribe-action' : 'transcript-panel__transcribe-action--primary'
 	);
 
 	const startMap = $derived.by(() => {
@@ -153,7 +152,7 @@
 		{:else if status === 'no-audio'}
 			<TranscriptUnavailableState variant="no-audio" />
 		{:else if status === 'unavailable'}
-			<TranscriptUnavailableState />
+			<TranscriptUnavailableState errorMessage={transcriptionError} />
 		{:else if isIdle}
 			<TranscriptIdleState processing={mediaProcessing} />
 		{:else}

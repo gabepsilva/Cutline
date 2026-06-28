@@ -25,12 +25,16 @@ export function resolveTranscriptUiStatus(input: {
 	jobStatus: JobStatusResponse | null;
 	/** Latest transcription job ended non-succeeded with none active (from server load). */
 	failed?: boolean;
+	/** Client-side POST failure or surfaced request error. */
+	clientError?: string | null;
 }): TranscriptUiStatus {
 	if (input.wordCount > 0) return 'ready';
 
 	if (input.aRoll?.hasAudio === false && input.aRoll.status === 'ready') {
 		return 'no-audio';
 	}
+
+	if (input.clientError) return 'unavailable';
 
 	if (input.jobStatus && !TERMINAL_STATUSES.has(input.jobStatus.status)) return 'transcribing';
 

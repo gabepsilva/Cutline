@@ -15,6 +15,8 @@ export interface TranscriptPanelProps {
 	mediaProcessing?: boolean;
 	transcribeDisabled?: boolean;
 	transcribePending?: boolean;
+	/** Surfaced POST or job failure message for the unavailable state. */
+	transcriptionError?: string | null;
 	searchQuery?: string;
 	fillerCount?: number;
 	hasSelection?: boolean;

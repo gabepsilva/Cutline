@@ -26,6 +26,7 @@
 		mediaProcessing = false,
 		transcribeDisabled = false,
 		transcribePending = false,
+		transcriptionError = null,
 		searchQuery = '',
 		fillerCount = 1,
 		hasSelection = false,
@@ -55,6 +56,7 @@
 	{mediaProcessing}
 	{transcribeDisabled}
 	{transcribePending}
+	{transcriptionError}
 	{searchQuery}
 	{fillerCount}
 	{hasSelection}

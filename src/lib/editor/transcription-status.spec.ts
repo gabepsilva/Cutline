@@ -87,6 +87,17 @@ describe('transcription-status', () => {
 		).toBe('unavailable');
 	});
 
+	it('returns unavailable for a surfaced client error', () => {
+		expect(
+			resolveTranscriptUiStatus({
+				wordCount: 0,
+				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null, hasAudio: true },
+				jobStatus: null,
+				clientError: 'Transcription already in progress'
+			})
+		).toBe('unavailable');
+	});
+
 	it('returns no-audio for ready silent A-roll', () => {
 		expect(
 			resolveTranscriptUiStatus({

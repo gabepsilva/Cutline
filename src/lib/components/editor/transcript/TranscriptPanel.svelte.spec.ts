@@ -182,6 +182,17 @@ describe('TranscriptPanel.svelte', () => {
 		await expect.element(page.getByRole('button', { name: 'Transcribe' })).toBeDisabled();
 	});
 
+	it('shows surfaced error copy in the unavailable state', async () => {
+		render(TranscriptPanelHarness, {
+			status: 'unavailable',
+			sentences: [],
+			transcriptionError: 'Transcription already in progress'
+		});
+
+		await expect.element(page.getByText('Transcription failed')).toBeInTheDocument();
+		await expect.element(page.getByText('Transcription already in progress')).toBeInTheDocument();
+	});
+
 	it('fires ontranscribe when the transcribe action is clicked', async () => {
 		const ontranscribe = vi.fn();
 		render(TranscriptPanelHarness, { status: 'idle', sentences: [], ontranscribe });

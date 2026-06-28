@@ -6,6 +6,7 @@
 	import EditorModals from '$lib/components/editor/EditorModals.svelte';
 	import PreviewPanel from '$lib/components/editor/preview/PreviewPanel.svelte';
 	import Timeline from '$lib/components/editor/timeline/Timeline.svelte';
+	import ReTranscribeConfirmModal from '$lib/components/editor/transcript/ReTranscribeConfirmModal.svelte';
 	import TranscriptPanel from '$lib/components/editor/transcript/TranscriptPanel.svelte';
 	import { captionWordsForCurrentSentence, trimmedLabel } from '$lib/editor/editor-derive';
 	import {
@@ -44,6 +45,7 @@
 
 	let trackedMediaId = $state<string | null>(null);
 	let ingestAssets = $state<IngestAssetsState | null>(null);
+	let retranscribeConfirmOpen = $state(false);
 	const transcription = new TranscriptionController(
 		() => words.length,
 		() => aRoll,
@@ -153,6 +155,19 @@
 	const totalLabel = $derived(formatTimecode(editor.duration));
 	const savedLabel = $derived(trimmedLabel(editor.deletedCount));
 
+	function handleTranscribeRequest() {
+		if (words.length > 0) {
+			retranscribeConfirmOpen = true;
+			return;
+		}
+		void transcription.request(project.id);
+	}
+
+	function confirmRetranscribe() {
+		retranscribeConfirmOpen = false;
+		void transcription.request(project.id);
+	}
+
 	function handleWindowKeydown(event: KeyboardEvent) {
 		const target = event.target;
 		const tagName = target instanceof HTMLElement ? target.tagName : '';
@@ -203,6 +218,7 @@
 					{mediaProcessing}
 					{transcribeDisabled}
 					transcribePending={transcription.requesting}
+					transcriptionError={transcription.errorMessage}
 					searchQuery={editor.query}
 					fillerCount={editor.fillerCount}
 					hasSelection={selectedWord !== null && selectedWord !== undefined}
@@ -215,7 +231,7 @@
 					ondelete={() => editor.deleteSelected()}
 					onsentenceclick={(sentence) => editor.seekSentence(sentence)}
 					onwordclick={(word) => editor.selectWord(word)}
-					ontranscribe={() => void transcription.request(project.id)}
+					ontranscribe={handleTranscribeRequest}
 				/>
 				<PreviewPanel
 					playing={editor.playing}
@@ -234,6 +250,11 @@
 			</div>
 			<Timeline {editor} {ingestAssets} transcriptStatus={transcriptUi.status} />
 			<EditorModals {editor} projectId={project.id} projectTitle={project.title} />
+			<ReTranscribeConfirmModal
+				open={retranscribeConfirmOpen}
+				onclose={() => (retranscribeConfirmOpen = false)}
+				onconfirm={confirmRetranscribe}
+			/>
 		</div>
 	</div>
 </EditorLayout>

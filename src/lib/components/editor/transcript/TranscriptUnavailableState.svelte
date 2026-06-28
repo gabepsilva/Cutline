@@ -2,9 +2,11 @@
 	interface Props {
 		class?: string;
 		variant?: 'unavailable' | 'no-audio';
+		/** Overrides the default body copy (e.g. surfaced POST or job error). */
+		errorMessage?: string | null;
 	}
 
-	let { class: className = '', variant = 'unavailable' }: Props = $props();
+	let { class: className = '', variant = 'unavailable', errorMessage = null }: Props = $props();
 
 	const copy = $derived(
 		variant === 'no-audio'
@@ -14,7 +16,7 @@
 				}
 			: {
 					title: 'Transcription failed',
-					body: 'Something went wrong. Press Transcribe to try again.'
+					body: errorMessage ?? 'Something went wrong. Press Transcribe to try again.'
 				}
 	);
 </script>

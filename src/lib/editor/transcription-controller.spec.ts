@@ -120,4 +120,51 @@ describe('TranscriptionController', () => {
 		expect(controller.pendingJobId).toBe('job-new');
 		expect(controller.jobStatus).toEqual({ status: 'queued', progress: 0 });
 	});
+
+	it('surfaces request errors as unavailable ui', async () => {
+		vi.mocked(requestTranscription).mockRejectedValueOnce(
+			new Error('Transcription already in progress')
+		);
+
+		const controller = new TranscriptionController(
+			() => 0,
+			() => aRoll
+		);
+
+		await controller.request('proj-1');
+
+		expect(controller.requestError).toBe('Transcription already in progress');
+		expect(controller.ui.status).toBe('unavailable');
+		expect(controller.errorMessage).toBe('Transcription already in progress');
+	});
+
+	it('keeps unavailable ui after a live terminal job failure', () => {
+		let onTerminal: ((status: JobStatusResponse) => void) | undefined;
+
+		vi.mocked(pollTranscriptionJob).mockImplementation((_jobId, _update, terminal) => {
+			onTerminal = terminal;
+			return () => undefined;
+		});
+
+		const controller = new TranscriptionController(
+			() => 0,
+			() => aRoll
+		);
+		const cleanup = controller.bind('job-1');
+
+		onTerminal?.({ status: 'failed', progress: 0, error: 'AssemblyAI timeout' });
+		expect(controller.pendingJobId).toBeNull();
+		expect(controller.jobStatus).toEqual({
+			status: 'failed',
+			progress: 0,
+			error: 'AssemblyAI timeout'
+		});
+
+		cleanup();
+		controller.bind(null);
+
+		expect(controller.jobStatus?.status).toBe('failed');
+		expect(controller.ui.status).toBe('unavailable');
+		expect(controller.errorMessage).toBe('AssemblyAI timeout');
+	});
 });

@@ -9,6 +9,12 @@ import {
 import type { ARollMediaLoad } from '$lib/types/editor-load';
 import type { JobStatusResponse } from '$lib/types/job';
 
+const TERMINAL_FAILURE_STATUSES = new Set(['failed', 'canceled']);
+
+function isTerminalFailure(status: JobStatusResponse['status'] | undefined): boolean {
+	return status != null && TERMINAL_FAILURE_STATUSES.has(status);
+}
+
 export class TranscriptionController {
 	jobStatus = $state<JobStatusResponse | null>(null);
 	/** Client-side job id after a manual transcribe request, before server load catches up. */
@@ -22,13 +28,16 @@ export class TranscriptionController {
 		private readFailed: () => boolean = () => false
 	) {}
 
+	errorMessage = $derived(this.requestError ?? this.jobStatus?.error ?? null);
+
 	ui = $derived.by((): TranscriptionUiState => {
 		const progress = this.jobStatus?.progress ?? 0;
 		const status = resolveTranscriptUiStatus({
 			wordCount: this.readWordCount(),
 			aRoll: this.readARoll(),
 			jobStatus: this.jobStatus,
-			failed: this.readFailed() && !this.pendingJobId
+			failed: this.readFailed() && !this.pendingJobId,
+			clientError: this.requestError
 		});
 		return toTranscriptionUiState(status, progress);
 	});
@@ -41,7 +50,9 @@ export class TranscriptionController {
 		}
 
 		if (!jobId) {
-			this.jobStatus = null;
+			if (!isTerminalFailure(this.jobStatus?.status)) {
+				this.jobStatus = null;
+			}
 			return () => {};
 		}
 
@@ -73,6 +84,9 @@ export class TranscriptionController {
 
 		this.requesting = true;
 		this.requestError = null;
+		if (isTerminalFailure(this.jobStatus?.status)) {
+			this.jobStatus = null;
+		}
 
 		try {
 			const jobId = await requestTranscription(projectId);
