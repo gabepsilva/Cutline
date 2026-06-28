@@ -4,14 +4,24 @@ import { UPLOAD_CONTENT_TYPES } from '$lib/types/media-upload';
 const EXTENSION_BY_CONTENT_TYPE: Record<UploadContentType, string> = {
 	'video/mp4': 'mp4',
 	'video/quicktime': 'mov',
-	'video/webm': 'webm'
+	'video/webm': 'webm',
+	'audio/mpeg': 'mp3',
+	'audio/wav': 'wav',
+	'audio/mp4': 'm4a',
+	'audio/aac': 'aac',
+	'audio/ogg': 'ogg'
 };
 
 const CONTENT_TYPE_BY_EXTENSION: Record<string, UploadContentType> = {
 	mp4: 'video/mp4',
 	mov: 'video/quicktime',
 	qt: 'video/quicktime',
-	webm: 'video/webm'
+	webm: 'video/webm',
+	mp3: 'audio/mpeg',
+	wav: 'audio/wav',
+	m4a: 'audio/mp4',
+	aac: 'audio/aac',
+	ogg: 'audio/ogg'
 };
 
 export function isUploadContentType(value: string): value is UploadContentType {

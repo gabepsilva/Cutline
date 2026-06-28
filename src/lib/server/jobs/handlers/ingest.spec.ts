@@ -87,7 +87,7 @@ describe('runIngestJob transcription enqueue', () => {
 			filmstripPath: '/tmp/filmstrip.jpg',
 			filmstripMeta: { frameCount: 1, intervalSec: 1, frameW: 64, frameH: 48, cols: 1, rows: 1 },
 			waveform: { version: 1, peaksPerSecond: 50, length: 10, data: [0.1] },
-			probe: { durationSeconds: 2, width: 320, height: 240, hasAudio: true }
+			probe: { durationSeconds: 2, width: 320, height: 240, hasAudio: true, hasVideo: true }
 		});
 		mockPipeline.readOutputFiles.mockResolvedValue({
 			transcode: new Uint8Array([1]),
@@ -175,7 +175,7 @@ describe('runIngestJob transcription enqueue', () => {
 			filmstripPath: '/tmp/filmstrip.jpg',
 			filmstripMeta: { frameCount: 1, intervalSec: 1, frameW: 64, frameH: 48, cols: 1, rows: 1 },
 			waveform: { version: 1, peaksPerSecond: 50, length: 0, data: [] },
-			probe: { durationSeconds: 2, width: 320, height: 240, hasAudio: false }
+			probe: { durationSeconds: 2, width: 320, height: 240, hasAudio: false, hasVideo: true }
 		});
 		mockPipeline.readOutputFiles.mockResolvedValue({
 			transcode: new Uint8Array([1]),

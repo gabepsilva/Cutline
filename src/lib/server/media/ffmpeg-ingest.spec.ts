@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	cleanupIngestOutputs,
 	ffprobeMedia,
+	generateAudioOnlyTestFixture,
 	generateSilentTestVideoFixture,
 	generateTestVideoFixture,
 	runLocalIngestPipeline
@@ -25,15 +26,16 @@ describe.runIf(ffmpegAvailable)('ffmpeg ingest pipeline', () => {
 			expect(probe.width).toBe(320);
 			expect(probe.height).toBe(240);
 			expect(probe.hasAudio).toBe(true);
+			expect(probe.hasVideo).toBe(true);
 
 			const outputs = await runLocalIngestPipeline(sourcePath);
 			expect(outputs.waveform.length).toBeGreaterThanOrEqual(
 				Math.floor(probe.durationSeconds * outputs.waveform.peaksPerSecond) - 1
 			);
 			expect(outputs.waveform.data.every((value) => value >= 0 && value <= 1)).toBe(true);
-			expect(outputs.filmstripMeta.frameCount).toBeGreaterThan(0);
-			expect(outputs.filmstripMeta.cols).toBeGreaterThan(0);
-			expect(outputs.filmstripMeta.rows).toBeGreaterThan(0);
+			expect(outputs.filmstripMeta?.frameCount).toBeGreaterThan(0);
+			expect(outputs.filmstripMeta?.cols).toBeGreaterThan(0);
+			expect(outputs.filmstripMeta?.rows).toBeGreaterThan(0);
 
 			await cleanupIngestOutputs(outputs);
 		} finally {
@@ -49,11 +51,37 @@ describe.runIf(ffmpegAvailable)('ffmpeg ingest pipeline', () => {
 			await generateSilentTestVideoFixture(sourcePath);
 			const probe = await ffprobeMedia(sourcePath);
 			expect(probe.hasAudio).toBe(false);
+			expect(probe.hasVideo).toBe(true);
 
 			const outputs = await runLocalIngestPipeline(sourcePath);
 			expect(outputs.waveform.length).toBe(0);
 			expect(outputs.waveform.data).toEqual([]);
-			expect(outputs.filmstripMeta.frameCount).toBeGreaterThan(0);
+			expect(outputs.filmstripMeta?.frameCount).toBeGreaterThan(0);
+
+			await cleanupIngestOutputs(outputs);
+		} finally {
+			await rm(workDir, { recursive: true, force: true });
+		}
+	}, 120_000);
+
+	it('ingests audio-only media with a waveform and no filmstrip', async () => {
+		const workDir = await mkdtemp(join(tmpdir(), 'cutline-fixture-'));
+		const sourcePath = join(workDir, 'audio-fixture.mp3');
+
+		try {
+			await generateAudioOnlyTestFixture(sourcePath);
+			const probe = await ffprobeMedia(sourcePath);
+			expect(probe.hasAudio).toBe(true);
+			expect(probe.hasVideo).toBe(false);
+			expect(probe.width).toBeNull();
+			expect(probe.height).toBeNull();
+
+			const outputs = await runLocalIngestPipeline(sourcePath);
+			expect(outputs.filmstripMeta).toBeNull();
+			expect(outputs.filmstripPath).toBeNull();
+			expect(outputs.waveform.length).toBeGreaterThanOrEqual(
+				Math.floor(probe.durationSeconds * outputs.waveform.peaksPerSecond) - 1
+			);
 
 			await cleanupIngestOutputs(outputs);
 		} finally {

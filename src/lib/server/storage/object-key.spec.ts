@@ -22,6 +22,11 @@ describe('object-key', () => {
 		);
 	});
 
+	it('resolves audio content type from filename when MIME is generic', () => {
+		expect(resolveUploadContentType('sfx.mp3', 'application/octet-stream')).toBe('audio/mpeg');
+		expect(resolveUploadContentType('bed.wav', 'application/octet-stream')).toBe('audio/wav');
+	});
+
 	it('rejects unsupported uploads', () => {
 		expect(resolveUploadContentType('notes.txt', 'text/plain')).toBeNull();
 	});
