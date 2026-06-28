@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest';
 import {
 	cleanupIngestOutputs,
 	ffprobeMedia,
-	generateSilentTestVideoFixture,
 	generateTestVideoFixture,
 	runLocalIngestPipeline
 } from '$lib/server/media/ffmpeg-ingest';
@@ -46,7 +45,7 @@ describe.runIf(ffmpegAvailable)('ffmpeg ingest pipeline', () => {
 		const sourcePath = join(workDir, 'silent-fixture.mp4');
 
 		try {
-			await generateSilentTestVideoFixture(sourcePath);
+			await generateTestVideoFixture(sourcePath, { audio: false });
 			const probe = await ffprobeMedia(sourcePath);
 			expect(probe.hasAudio).toBe(false);
 

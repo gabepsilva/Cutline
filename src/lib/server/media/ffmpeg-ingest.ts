@@ -102,8 +102,13 @@ export async function ffprobeMedia(inputPath: string): Promise<FfprobeResult> {
 	return { durationSeconds, width, height, hasAudio };
 }
 
-function emptyWaveform(peaksPerSecond = WAVEFORM_PEAKS_PER_SECOND) {
-	return { version: 1 as const, peaksPerSecond, length: 0, data: [] as number[] };
+function emptyWaveform() {
+	return {
+		version: 1 as const,
+		peaksPerSecond: WAVEFORM_PEAKS_PER_SECOND,
+		length: 0,
+		data: [] as number[]
+	};
 }
 
 function filmstripLayout(durationSeconds: number): {
@@ -190,8 +195,6 @@ export async function buildWaveformPeaks(
 		'-y',
 		'-i',
 		inputPath,
-		'-map',
-		'a?',
 		'-ac',
 		'1',
 		'-ar',
@@ -259,48 +262,24 @@ export async function runLocalIngestPipeline(sourcePath: string): Promise<Ingest
 	}
 }
 
-/** Create a tiny silent test video via lavfi (no audio stream). */
-export async function generateSilentTestVideoFixture(outputPath: string): Promise<void> {
-	await mkdir(join(outputPath, '..'), { recursive: true }).catch(() => undefined);
-	await runCommand([
-		'ffmpeg',
-		'-y',
-		'-f',
-		'lavfi',
-		'-i',
-		'testsrc=duration=2:size=320x240:rate=10',
-		'-c:v',
-		'libx264',
-		'-pix_fmt',
-		'yuv420p',
-		'-an',
-		outputPath
-	]);
-}
-
 /** Create a tiny deterministic test video via lavfi (CI fixture generator). */
-export async function generateTestVideoFixture(outputPath: string): Promise<void> {
+export async function generateTestVideoFixture(
+	outputPath: string,
+	{ audio = true }: { audio?: boolean } = {}
+): Promise<void> {
 	await mkdir(join(outputPath, '..'), { recursive: true }).catch(() => undefined);
-	await runCommand([
-		'ffmpeg',
-		'-y',
-		'-f',
-		'lavfi',
-		'-i',
-		'testsrc=duration=2:size=320x240:rate=10',
-		'-f',
-		'lavfi',
-		'-i',
-		'sine=frequency=440:duration=2',
-		'-c:v',
-		'libx264',
-		'-pix_fmt',
-		'yuv420p',
-		'-c:a',
-		'aac',
-		'-shortest',
-		outputPath
-	]);
+	const args = ['ffmpeg', '-y', '-f', 'lavfi', '-i', 'testsrc=duration=2:size=320x240:rate=10'];
+	if (audio) {
+		args.push('-f', 'lavfi', '-i', 'sine=frequency=440:duration=2');
+	}
+	args.push('-c:v', 'libx264', '-pix_fmt', 'yuv420p');
+	if (audio) {
+		args.push('-c:a', 'aac', '-shortest');
+	} else {
+		args.push('-an');
+	}
+	args.push(outputPath);
+	await runCommand(args);
 }
 
 export async function readOutputFiles(outputs: IngestOutputs): Promise<{
