@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { requestJobCancel } from '$lib/server/jobs/job-store';
+import { event } from '$lib/server/log';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ params, locals }) => {
@@ -12,6 +13,11 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 	if (cancelError) {
 		error(cancelError.status, cancelError.message);
 	}
+
+	event(locals.log, 'job.canceled', {
+		actorId: locals.user.id,
+		target: { type: 'job', id: params.id }
+	});
 
 	return json({ ok: true });
 };

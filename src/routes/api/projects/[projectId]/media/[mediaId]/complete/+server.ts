@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { completeMediaUpload, parseCompleteUploadBody } from '$lib/server/storage/media-upload';
 import { isServerError } from '$lib/server/result';
 import { kickWorker } from '$lib/server/jobs/worker';
+import { event } from '$lib/server/log';
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
 	if (!locals.user) {
@@ -28,12 +29,19 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 			locals.user.id,
 			params.projectId,
 			params.mediaId,
-			parsed
+			parsed,
+			locals.requestId
 		);
 		if (isServerError(result)) {
 			error(result.status, result.message);
 		}
 		kickWorker(db);
+		event(locals.log, 'media.upload.completed', {
+			actorId: locals.user.id,
+			target: { type: 'media', id: params.mediaId },
+			causationId: locals.requestId,
+			jobId: result.jobId
+		});
 		return json({ jobId: result.jobId });
 	} catch (cause) {
 		if (isHttpError(cause)) throw cause;

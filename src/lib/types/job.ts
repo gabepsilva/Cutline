@@ -15,10 +15,14 @@ export interface ExportJobPayload {
 
 export interface IngestJobPayload {
 	mediaId: string;
+	actorId?: string;
+	causationId?: string;
 }
 
 export interface TranscriptionJobPayload {
 	projectId: string;
+	actorId?: string;
+	causationId?: string;
 }
 
 export interface JobStatusResponse {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import pino from 'pino';
 
 vi.mock('$lib/server/db', () => ({
 	db: {}
@@ -22,18 +23,31 @@ const authUser = {
 	updatedAt: new Date('2026-06-01T00:00:00.000Z')
 };
 
+function testLocals() {
+	const lines: Record<string, unknown>[] = [];
+	const log = pino({ level: 'info' }, { write: (s: string) => lines.push(JSON.parse(s)) });
+	return { locals: { user: authUser, requestId: 'req-test', log }, lines };
+}
+
 describe('api/jobs/[id]/cancel POST', () => {
 	it('cancels a job for the signed-in owner', async () => {
 		mockedCancel.mockResolvedValueOnce(null);
 
+		const { locals, lines } = testLocals();
 		const response = await POST({
 			params: { id: 'job-1' },
-			locals: { user: authUser }
+			locals
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ ok: true });
 		expect(mockedCancel).toHaveBeenCalledWith({}, authUser.id, 'job-1');
+		expect(lines[0]).toMatchObject({
+			event: 'job.canceled',
+			actorId: authUser.id,
+			target: { type: 'job', id: 'job-1' },
+			msg: 'event'
+		});
 	});
 
 	it('returns 401 when unauthenticated', async () => {

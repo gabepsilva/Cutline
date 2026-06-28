@@ -242,7 +242,7 @@ describe('completeMediaUpload', () => {
 			status: 'uploading'
 		});
 
-		const result = await completeMediaUpload(db, 'user-a', 'proj-1', 'media-1', {});
+		const result = await completeMediaUpload(db, 'user-a', 'proj-1', 'media-1', {}, 'req-test');
 		expect(result).toMatchObject({ ok: true });
 
 		const [row] = await db.select().from(media).where(eq(media.id, 'media-1'));
