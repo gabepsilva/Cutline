@@ -6,7 +6,7 @@ import { user as authUserTable } from '$lib/server/db/auth.schema';
 import { completeMediaUpload } from '$lib/server/storage/media-upload';
 
 describe('completeMediaUpload causation threading', () => {
-	it('stamps actorId and causationId on ingest and transcription job payloads', async () => {
+	it('stamps actorId and causationId on ingest job payload', async () => {
 		const { db } = await createTestDb();
 
 		await db.insert(authUserTable).values({
@@ -44,12 +44,10 @@ describe('completeMediaUpload causation threading', () => {
 		expect(result).toMatchObject({ ok: true });
 
 		const jobs = await db.select().from(job).where(eq(job.projectId, 'proj-1'));
-		expect(jobs).toHaveLength(2);
+		expect(jobs).toHaveLength(1);
 
 		const ingestJob = jobs.find((row) => row.type === 'ingest');
-		const transcriptionJob = jobs.find((row) => row.type === 'transcription');
 		expect(ingestJob).toBeDefined();
-		expect(transcriptionJob).toBeDefined();
 
 		for (const row of jobs) {
 			const payload = JSON.parse(row.payload) as { actorId?: string; causationId?: string };

@@ -44,6 +44,48 @@ vi.mock('$lib/server/transcript/write-transcript-words', () => ({
 import { runTranscriptionJob } from './transcription';
 
 describe('runTranscriptionJob events', () => {
+	it('completes without calling AssemblyAI when media has no audio', async () => {
+		const { findPrimaryMediaRow } = await import('$lib/server/storage/media-assets');
+		vi.mocked(findPrimaryMediaRow).mockResolvedValueOnce({
+			hasAudio: false
+		} as never);
+
+		const complete = vi.fn().mockResolvedValue(undefined);
+		const ctx: JobHandlerContext = {
+			job: {
+				id: 'job-1',
+				type: 'transcription',
+				projectId: 'proj-1',
+				status: 'running',
+				progress: 0,
+				payload: JSON.stringify({ projectId: 'proj-1' }),
+				result: null,
+				error: null,
+				attempts: 1,
+				maxAttempts: 3,
+				priority: 0,
+				cancelRequested: false,
+				lockedBy: 'worker-1',
+				leaseUntil: new Date(Date.now() + 60_000),
+				runAfter: new Date(),
+				createdAt: new Date(),
+				startedAt: new Date(),
+				finishedAt: null,
+				updatedAt: new Date()
+			},
+			log: pino({ level: 'silent' }),
+			reportProgress: vi.fn().mockResolvedValue(undefined),
+			isCancelRequested: vi.fn().mockResolvedValue(false),
+			complete
+		};
+
+		const { submitAssemblyAiTranscript } = await import('$lib/server/stt/assemblyai-client');
+		await runTranscriptionJob({} as never, ctx);
+
+		expect(submitAssemblyAiTranscript).not.toHaveBeenCalled();
+		expect(complete).toHaveBeenCalledWith({ skipped: true, reason: 'no-audio' });
+	});
+
 	it('emits transcript.produced with actorId and causationId from payload', async () => {
 		const { log, lines } = capture();
 

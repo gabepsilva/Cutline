@@ -62,6 +62,8 @@ export const media = sqliteTable(
 		waveformKey: text('waveform_key'),
 		width: integer('width'),
 		height: integer('height'),
+		/** Null until ingest probe runs; false for silent video (no audio stream). */
+		hasAudio: integer('has_audio', { mode: 'boolean' }),
 		// Default 'ready' (not 'pending'): legacy/backfilled rows are usable shelf items; uploads insert 'uploading'.
 		status: text('status').notNull().default('ready'),
 		// Nullable at DB level (0003 ALTER cannot add NOT NULL with expression default); inserts must set explicitly.

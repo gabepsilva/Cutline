@@ -1,5 +1,5 @@
 /** Transcript pane UI mode — independent of persisted word count during async STT. */
-export type TranscriptUiStatus = 'ready' | 'transcribing' | 'unavailable';
+export type TranscriptUiStatus = 'ready' | 'transcribing' | 'unavailable' | 'no-audio';
 
 export interface TranscriptionProgress {
 	progress: number;

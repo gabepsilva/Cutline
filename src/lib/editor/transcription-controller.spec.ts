@@ -17,7 +17,7 @@ import { invalidateAll } from '$app/navigation';
 import { pollTranscriptionJob } from '$lib/editor/transcription-status';
 import type { JobStatusResponse } from '$lib/types/job';
 
-const aRoll = { mediaId: 'm1', status: 'ready' as const, videoUrl: null };
+const aRoll = { mediaId: 'm1', status: 'ready' as const, videoUrl: null, hasAudio: true };
 
 describe('TranscriptionController', () => {
 	beforeEach(() => {
