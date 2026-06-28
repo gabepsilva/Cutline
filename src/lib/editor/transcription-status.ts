@@ -32,22 +32,15 @@ export function resolveTranscriptUiStatus(input: {
 		return 'no-audio';
 	}
 
-	const hasUploadedRoll = Boolean(
-		input.aRoll &&
-		(input.aRoll.status === 'uploaded' ||
-			input.aRoll.status === 'ingesting' ||
-			input.aRoll.status === 'ready')
-	);
-
 	if (input.jobStatus && !TERMINAL_STATUSES.has(input.jobStatus.status)) return 'transcribing';
 
 	if (input.jobStatus && input.jobStatus.status !== 'succeeded') return 'unavailable';
 
 	if (input.failed) return 'unavailable';
 
-	if (hasUploadedRoll) return 'transcribing';
+	if (!input.aRoll || input.aRoll.status === 'failed') return 'unavailable';
 
-	return 'unavailable';
+	return 'idle';
 }
 
 /** Poll a transcription job until terminal, invoking `onUpdate` on each tick. */

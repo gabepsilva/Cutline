@@ -40,6 +40,24 @@ describe('transcription-status', () => {
 		).toBe('transcribing');
 	});
 
+	it('returns idle when media exists but no transcript or active job', () => {
+		expect(
+			resolveTranscriptUiStatus({
+				wordCount: 0,
+				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null, hasAudio: true },
+				jobStatus: null
+			})
+		).toBe('idle');
+
+		expect(
+			resolveTranscriptUiStatus({
+				wordCount: 0,
+				aRoll: { mediaId: 'm1', status: 'ingesting', videoUrl: null, hasAudio: true },
+				jobStatus: null
+			})
+		).toBe('idle');
+	});
+
 	it('returns unavailable for failed or canceled terminal jobs', () => {
 		expect(
 			resolveTranscriptUiStatus({

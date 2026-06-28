@@ -85,10 +85,18 @@
 
 	$effect(() => {
 		void words.length;
-		return transcription.bind(transcriptionJobId);
+		const jobId = transcriptionJobId ?? transcription.pendingJobId;
+		return transcription.bind(jobId);
 	});
 
 	const transcriptUi = $derived(transcription.ui);
+	const mediaProcessing = $derived(aRoll?.status === 'uploaded' || aRoll?.status === 'ingesting');
+	const transcribeDisabled = $derived(
+		!aRoll ||
+			aRoll.hasAudio === false ||
+			aRoll.status !== 'ready' ||
+			transcriptUi.status === 'transcribing'
+	);
 
 	const editor = $derived.by(
 		() => new EditorState({ words, sentences, resources, captionStyle, overlays })
@@ -192,6 +200,9 @@
 					status={transcriptUi.status}
 					transcriptionProgress={transcriptUi.progress}
 					transcriptionStage={transcriptUi.stage}
+					{mediaProcessing}
+					{transcribeDisabled}
+					transcribePending={transcription.requesting}
 					searchQuery={editor.query}
 					fillerCount={editor.fillerCount}
 					hasSelection={selectedWord !== null && selectedWord !== undefined}
@@ -204,6 +215,7 @@
 					ondelete={() => editor.deleteSelected()}
 					onsentenceclick={(sentence) => editor.seekSentence(sentence)}
 					onwordclick={(word) => editor.selectWord(word)}
+					ontranscribe={() => void transcription.request(project.id)}
 				/>
 				<PreviewPanel
 					playing={editor.playing}

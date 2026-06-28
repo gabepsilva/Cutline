@@ -150,10 +150,45 @@ describe('TranscriptPanel.svelte', () => {
 			.toBeInTheDocument();
 	});
 
-	it('shows unavailable copy when transcription cannot run', async () => {
+	it('shows unavailable copy when transcription failed', async () => {
 		render(TranscriptPanelHarness, { status: 'unavailable', sentences: [] });
 
-		await expect.element(page.getByText('Transcription not available')).toBeInTheDocument();
+		await expect.element(page.getByText('Transcription failed')).toBeInTheDocument();
+		await expect.element(page.getByRole('button', { name: 'Transcribe' })).toBeInTheDocument();
+	});
+
+	it('shows idle copy and transcribe action when no transcript exists', async () => {
+		render(TranscriptPanelHarness, { status: 'idle', sentences: [] });
+
+		await expect.element(page.getByText('No transcript yet')).toBeInTheDocument();
+		await expect.element(page.getByRole('button', { name: 'Transcribe' })).toBeInTheDocument();
+	});
+
+	it('disables transcribe while the clip is still processing', async () => {
+		render(TranscriptPanelHarness, {
+			status: 'idle',
+			sentences: [],
+			mediaProcessing: true,
+			transcribeDisabled: true
+		});
+
+		await expect
+			.element(
+				page.getByText(
+					'Your clip is still processing. Transcribe will be available once ingest finishes.'
+				)
+			)
+			.toBeInTheDocument();
+		await expect.element(page.getByRole('button', { name: 'Transcribe' })).toBeDisabled();
+	});
+
+	it('fires ontranscribe when the transcribe action is clicked', async () => {
+		const ontranscribe = vi.fn();
+		render(TranscriptPanelHarness, { status: 'idle', sentences: [], ontranscribe });
+
+		await userEvent.click(page.getByRole('button', { name: 'Transcribe' }));
+
+		expect(ontranscribe).toHaveBeenCalledOnce();
 	});
 
 	it('renders a header per speaker for diarized transcripts', async () => {

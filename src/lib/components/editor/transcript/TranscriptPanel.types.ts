@@ -11,6 +11,10 @@ export interface TranscriptPanelProps {
 	status?: TranscriptUiStatus;
 	transcriptionProgress?: number;
 	transcriptionStage?: string;
+	/** Primary clip still ingesting — idle copy explains wait; transcribe stays disabled. */
+	mediaProcessing?: boolean;
+	transcribeDisabled?: boolean;
+	transcribePending?: boolean;
 	searchQuery?: string;
 	fillerCount?: number;
 	hasSelection?: boolean;
@@ -26,5 +30,6 @@ export interface TranscriptPanelProps {
 	ondelete?: (event: MouseEvent) => void;
 	onsentenceclick?: (sentence: Sentence, event: MouseEvent) => void;
 	onwordclick?: (word: Word, event: MouseEvent) => void;
+	ontranscribe?: (event: MouseEvent) => void;
 	class?: string;
 }

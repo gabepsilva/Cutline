@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { activeWords, buildStartMap } from '$lib/editor/editor-derive';
 	import Button from '$lib/components/ui/Button.svelte';
+	import TranscriptIdleState from './TranscriptIdleState.svelte';
 	import TranscriptSearch from './TranscriptSearch.svelte';
 	import TranscriptSelectionBar from './TranscriptSelectionBar.svelte';
 	import TranscriptSentence from './TranscriptSentence.svelte';
@@ -17,6 +18,9 @@
 		status = 'ready',
 		transcriptionProgress = 0,
 		transcriptionStage = 'Detecting speech…',
+		mediaProcessing = false,
+		transcribeDisabled = false,
+		transcribePending = false,
 		searchQuery = '',
 		fillerCount = 0,
 		hasSelection = false,
@@ -31,11 +35,19 @@
 		ondelete,
 		onsentenceclick,
 		onwordclick,
+		ontranscribe,
 		class: className = ''
 	}: TranscriptPanelProps = $props();
 
 	const isReady = $derived(status === 'ready');
+	const isIdle = $derived(status === 'idle');
 	const isTranscribing = $derived(status === 'transcribing');
+	const showTranscribeAction = $derived(isReady || isIdle || status === 'unavailable');
+	const transcribeActionClass = $derived(
+		isReady
+			? 'transcript-panel__transcribe-action'
+			: 'transcript-panel__transcribe-action transcript-panel__transcribe-action--primary'
+	);
 
 	const startMap = $derived.by(() => {
 		const words = sentences.flatMap((sentence) => sentence.words);
@@ -106,6 +118,19 @@
 		<h2 class="transcript-panel__title">Transcript</h2>
 		{#if isReady}
 			<TranscriptSearch value={searchQuery} oninput={onsearch} />
+		{/if}
+		{#if showTranscribeAction}
+			<Button
+				variant={isReady ? 'secondary' : 'primary'}
+				size="sm"
+				class={transcribeActionClass}
+				disabled={transcribeDisabled || transcribePending}
+				onclick={ontranscribe}
+			>
+				{transcribePending ? 'Starting…' : 'Transcribe'}
+			</Button>
+		{/if}
+		{#if isReady}
 			<Button
 				variant="accent-outline"
 				size="sm"
@@ -129,6 +154,8 @@
 			<TranscriptUnavailableState variant="no-audio" />
 		{:else if status === 'unavailable'}
 			<TranscriptUnavailableState />
+		{:else if isIdle}
+			<TranscriptIdleState processing={mediaProcessing} />
 		{:else}
 			{#each rows as row (row.kind === 'speaker' ? row.key : row.sentence.id)}
 				{#if row.kind === 'speaker'}
@@ -173,6 +200,11 @@
 		font-size: 13.5px;
 		font-weight: 600;
 		color: var(--text-1);
+	}
+
+	.transcript-panel :global(.transcript-panel__transcribe-action--primary) {
+		margin-left: auto;
+		flex-shrink: 0;
 	}
 
 	.transcript-panel :global(.transcript-panel__filler-action) {

@@ -13,8 +13,8 @@
 					body: 'This footage has no audio track — there is nothing to transcribe.'
 				}
 			: {
-					title: 'Transcription not available',
-					body: 'Upload A-roll footage to generate a transcript, or retry if a previous job failed.'
+					title: 'Transcription failed',
+					body: 'Something went wrong. Press Transcribe to try again.'
 				}
 	);
 </script>

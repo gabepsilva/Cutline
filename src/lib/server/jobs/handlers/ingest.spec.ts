@@ -47,7 +47,7 @@ function ingestContext(job: JobRow, log: pino.Logger): JobHandlerContext {
 }
 
 describe('runIngestJob transcription enqueue', () => {
-	it('enqueues transcription for audio-bearing A-roll after probe', async () => {
+	it('does not auto-enqueue transcription after ingest (#191)', async () => {
 		const { db } = await createTestDb();
 		const { log } = capture();
 
@@ -123,93 +123,10 @@ describe('runIngestJob transcription enqueue', () => {
 		await runIngestJob(db, ingestContext(jobRow, log));
 
 		const jobs = await db.select().from(job).where(eq(job.projectId, 'proj-1'));
-		expect(jobs).toHaveLength(1);
-		expect(jobs[0]?.type).toBe('transcription');
-		expect(JSON.parse(jobs[0]!.payload)).toMatchObject({
-			projectId: 'proj-1',
-			actorId: 'user-a',
-			causationId: 'req-xyz'
-		});
-
-		const [updated] = await db.select().from(media).where(eq(media.id, 'media-1'));
-		expect(updated?.hasAudio).toBe(true);
-	});
-
-	it('does not enqueue transcription for silent A-roll', async () => {
-		const { db } = await createTestDb();
-		const { log } = capture();
-
-		await db.insert(authUserTable).values({
-			id: 'user-a',
-			name: 'Alex',
-			email: 'alex@cutline.test',
-			emailVerified: true,
-			createdAt: new Date(),
-			updatedAt: new Date()
-		});
-		await db.insert(project).values({
-			id: 'proj-1',
-			userId: 'user-a',
-			title: 'Demo',
-			kind: 'TALKING HEAD',
-			description: null,
-			durationSeconds: 0,
-			thumb: 'thumb'
-		});
-		await db.insert(transcript).values({ projectId: 'proj-1', words: '[]' });
-		await db.insert(media).values({
-			id: 'media-1',
-			projectId: 'proj-1',
-			name: 'clip.mp4',
-			durationSeconds: 0,
-			kind: 'A-roll',
-			thumb: 'thumb',
-			sizeBytes: 100,
-			objectKey: 'users/user-a/projects/proj-1/media/media-1/source.mp4',
-			contentType: 'video/mp4',
-			status: 'uploaded'
-		});
-
-		mockPipeline.runLocalIngestPipeline.mockResolvedValue({
-			transcodePath: '/tmp/transcode.mp4',
-			filmstripPath: '/tmp/filmstrip.jpg',
-			filmstripMeta: { frameCount: 1, intervalSec: 1, frameW: 64, frameH: 48, cols: 1, rows: 1 },
-			waveform: { version: 1, peaksPerSecond: 50, length: 0, data: [] },
-			probe: { durationSeconds: 2, width: 320, height: 240, hasAudio: false, hasVideo: true }
-		});
-		mockPipeline.readOutputFiles.mockResolvedValue({
-			transcode: new Uint8Array([1]),
-			filmstrip: new Uint8Array([2])
-		});
-
-		const jobRow = {
-			id: 'job-1',
-			type: 'ingest',
-			projectId: 'proj-1',
-			status: 'running',
-			progress: 0,
-			payload: JSON.stringify({ mediaId: 'media-1' }),
-			result: null,
-			error: null,
-			attempts: 1,
-			maxAttempts: 3,
-			priority: 0,
-			cancelRequested: false,
-			lockedBy: 'worker-1',
-			leaseUntil: new Date(Date.now() + 60_000),
-			runAfter: new Date(),
-			createdAt: new Date(),
-			startedAt: new Date(),
-			finishedAt: null,
-			updatedAt: new Date()
-		} satisfies JobRow;
-
-		await runIngestJob(db, ingestContext(jobRow, log));
-
-		const jobs = await db.select().from(job).where(eq(job.projectId, 'proj-1'));
 		expect(jobs).toHaveLength(0);
 
 		const [updated] = await db.select().from(media).where(eq(media.id, 'media-1'));
-		expect(updated?.hasAudio).toBe(false);
+		expect(updated?.hasAudio).toBe(true);
+		expect(updated?.status).toBe('ready');
 	});
 });
