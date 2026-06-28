@@ -2,7 +2,7 @@
 
 Cutline observability is delivered in two phases:
 
-- **Phase 1** — Structured pino access and job logs (`requestId`, job lifecycle lines on stdout).
+- **Phase 1** — Structured pino access and job logs (`requestId`, job lifecycle lines on stdout). Access lines are **off by default** (`LOG_ACCESS=true` to enable) until the log pipeline (#176) ships.
 - **Phase 2** — Semantic domain and auth events (this document): one pino line per meaningful action.
 
 ## Event shape
@@ -39,6 +39,7 @@ Use the `event()` helper in `$lib/server/log` so field names stay uniform.
 | `auth.login.success`     | better-auth session create hook               | user id          | user id    | `method` (`password` \| `github`)                      |
 | `auth.login.failure`     | better-auth sign-in hook (failed email login) | —                | —          | `method`, `email` (attempted email only)               |
 | `project.created`        | upload-url API (new project + first media)    | user id          | project id | —                                                      |
+| `project.deleted`        | dashboard delete action                       | user id          | project id | `causationId`                                          |
 | `media.upload.completed` | complete upload API                           | user id          | media id   | `jobId`, `causationId`                                 |
 | `job.canceled`           | cancel job API                                | user id          | job id     | —                                                      |
 | `media.ingested`         | ingest job handler (media → ready)            | from job payload | media id   | `causationId`                                          |
