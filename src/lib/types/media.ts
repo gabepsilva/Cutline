@@ -38,6 +38,9 @@ export function recordingThumb(): string {
 export const DEFAULT_RECORD_THUMB =
 	'repeating-linear-gradient(135deg,#161619 0 14px,#121215 14px 28px)';
 
+/** Fallback thumb for audio-only uploads (waveform-style stripes). */
+export const DEFAULT_AUDIO_THUMB = 'repeating-linear-gradient(90deg,#1a2433 0 3px,#141c28 3px 8px)';
+
 /** Build a recording resource after capture stops. */
 export function createRecordingResource(counter: number, durationSeconds: number): MediaResource {
 	const duration = Math.max(1, Math.round(durationSeconds));

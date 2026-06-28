@@ -98,9 +98,15 @@ export async function runIngestJob(database: Database, ctx: JobHandlerContext): 
 		const keys = buildDerivedMediaKeys(row.objectKey);
 		const files = await readOutputFiles(outputs);
 
-		await putObjectBytes(keys.transcodeKey, files.transcode, 'video/mp4');
-		await putObjectBytes(keys.filmstripKey, files.filmstrip, 'image/jpeg');
-		await putObjectJson(keys.filmstripMetaKey, outputs.filmstripMeta);
+		await putObjectBytes(
+			keys.transcodeKey,
+			files.transcode,
+			probe.hasVideo ? 'video/mp4' : 'audio/mp4'
+		);
+		if (files.filmstrip && outputs.filmstripMeta) {
+			await putObjectBytes(keys.filmstripKey, files.filmstrip, 'image/jpeg');
+			await putObjectJson(keys.filmstripMetaKey, outputs.filmstripMeta);
+		}
 		await putObjectJson(keys.waveformKey, outputs.waveform);
 
 		await database
@@ -108,7 +114,7 @@ export async function runIngestJob(database: Database, ctx: JobHandlerContext): 
 			.set({
 				status: 'ready',
 				transcodeKey: keys.transcodeKey,
-				filmstripKey: keys.filmstripKey,
+				filmstripKey: outputs.filmstripMeta ? keys.filmstripKey : null,
 				waveformKey: keys.waveformKey,
 				width: probe.width,
 				height: probe.height,
@@ -130,8 +136,8 @@ export async function runIngestJob(database: Database, ctx: JobHandlerContext): 
 		await ctx.reportProgress(1);
 		await ctx.complete({
 			transcodeKey: keys.transcodeKey,
-			filmstripKey: keys.filmstripKey,
-			waveformKey: keys.waveformKey
+			waveformKey: keys.waveformKey,
+			...(outputs.filmstripMeta ? { filmstripKey: keys.filmstripKey } : {})
 		});
 	} finally {
 		await cleanupTempPath(sourcePath);

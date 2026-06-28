@@ -406,7 +406,7 @@
 		class="import-gateway__file-input"
 		type="file"
 		multiple
-		accept="video/mp4,video/quicktime,video/webm,audio/wav,.mp4,.mov,.webm,.wav"
+		accept="video/mp4,video/quicktime,video/webm,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/ogg,.mp4,.mov,.webm,.mp3,.wav,.m4a,.aac,.ogg"
 		aria-hidden="true"
 		tabindex={-1}
 		onchange={handleFileInput}

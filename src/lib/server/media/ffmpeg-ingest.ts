@@ -7,15 +7,16 @@ import { WAVEFORM_PEAKS_PER_SECOND } from '$lib/types/ingest-assets';
 
 export interface FfprobeResult {
 	durationSeconds: number;
-	width: number;
-	height: number;
+	width: number | null;
+	height: number | null;
 	hasAudio: boolean;
+	hasVideo: boolean;
 }
 
 export interface IngestOutputs {
 	transcodePath: string;
-	filmstripPath: string;
-	filmstripMeta: FilmstripMeta;
+	filmstripPath: string | null;
+	filmstripMeta: FilmstripMeta | null;
 	waveform: {
 		version: number;
 		peaksPerSecond: number;
@@ -89,17 +90,18 @@ export async function ffprobeMedia(inputPath: string): Promise<FfprobeResult> {
 	const streams = parsed.streams ?? [];
 	const videoStream = streams.find((stream) => stream.codec_type === 'video');
 	const hasAudio = streams.some((stream) => stream.codec_type === 'audio');
-	const width = videoStream?.width ?? 0;
-	const height = videoStream?.height ?? 0;
+	const hasVideo = videoStream !== undefined;
+	const width = videoStream?.width ?? null;
+	const height = videoStream?.height ?? null;
 
 	if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
 		throw new Error('Could not determine media duration');
 	}
-	if (width <= 0 || height <= 0) {
+	if (hasVideo && ((width ?? 0) <= 0 || (height ?? 0) <= 0)) {
 		throw new Error('Could not determine video dimensions');
 	}
 
-	return { durationSeconds, width, height, hasAudio };
+	return { durationSeconds, width, height, hasAudio, hasVideo };
 }
 
 function emptyWaveform() {
@@ -122,6 +124,24 @@ function filmstripLayout(durationSeconds: number): {
 	const cols = Math.max(1, Math.ceil(Math.sqrt(frameCount)));
 	const rows = Math.max(1, Math.ceil(frameCount / cols));
 	return { intervalSec, frameCount, cols, rows };
+}
+
+/** Transcode to faststart AAC MP4 (audio-only). */
+export async function transcodeToAudioMp4(inputPath: string, outputPath: string): Promise<void> {
+	await runCommand([
+		'ffmpeg',
+		'-y',
+		'-i',
+		inputPath,
+		'-vn',
+		'-c:a',
+		'aac',
+		'-b:a',
+		'128k',
+		'-movflags',
+		'+faststart',
+		outputPath
+	]);
 }
 
 /** Transcode to faststart H.264/AAC MP4. */
@@ -237,21 +257,30 @@ export async function runLocalIngestPipeline(sourcePath: string): Promise<Ingest
 
 	try {
 		const probe = await ffprobeMedia(sourcePath);
-		await transcodeToMp4(sourcePath, transcodePath);
-		const filmstripMeta = await buildFilmstrip(
-			sourcePath,
-			filmstripPath,
-			probe.durationSeconds,
-			probe.width,
-			probe.height
-		);
+
+		if (probe.hasVideo) {
+			await transcodeToMp4(sourcePath, transcodePath);
+		} else {
+			await transcodeToAudioMp4(sourcePath, transcodePath);
+		}
+
+		const filmstripMeta = probe.hasVideo
+			? await buildFilmstrip(
+					sourcePath,
+					filmstripPath,
+					probe.durationSeconds,
+					probe.width!,
+					probe.height!
+				)
+			: null;
+
 		const waveform = probe.hasAudio
 			? await buildWaveformPeaks(sourcePath, probe.durationSeconds)
 			: emptyWaveform();
 
 		return {
 			transcodePath,
-			filmstripPath,
+			filmstripPath: filmstripMeta ? filmstripPath : null,
 			filmstripMeta,
 			waveform,
 			probe
@@ -260,6 +289,24 @@ export async function runLocalIngestPipeline(sourcePath: string): Promise<Ingest
 		await rm(workDir, { recursive: true, force: true });
 		throw error;
 	}
+}
+
+/** Create a tiny audio-only test fixture via lavfi (CI fixture generator). */
+export async function generateAudioOnlyTestFixture(outputPath: string): Promise<void> {
+	await mkdir(join(outputPath, '..'), { recursive: true }).catch(() => undefined);
+	await runCommand([
+		'ffmpeg',
+		'-y',
+		'-f',
+		'lavfi',
+		'-i',
+		'sine=frequency=440:duration=2',
+		'-c:a',
+		'libmp3lame',
+		'-q:a',
+		'4',
+		outputPath
+	]);
 }
 
 /** Create a tiny deterministic test video via lavfi (CI fixture generator). */
@@ -284,13 +331,13 @@ export async function generateTestVideoFixture(
 
 export async function readOutputFiles(outputs: IngestOutputs): Promise<{
 	transcode: Uint8Array;
-	filmstrip: Uint8Array;
+	filmstrip: Uint8Array | null;
 }> {
-	const [transcode, filmstrip] = await Promise.all([
-		readFile(outputs.transcodePath),
-		readFile(outputs.filmstripPath)
-	]);
-	return { transcode: new Uint8Array(transcode), filmstrip: new Uint8Array(filmstrip) };
+	const transcode = new Uint8Array(await readFile(outputs.transcodePath));
+	const filmstrip = outputs.filmstripPath
+		? new Uint8Array(await readFile(outputs.filmstripPath))
+		: null;
+	return { transcode, filmstrip };
 }
 
 export async function cleanupIngestOutputs(outputs: IngestOutputs): Promise<void> {
