@@ -14,6 +14,7 @@ import {
 	registerJobHandler,
 	type JobHandlerContext
 } from '$lib/server/jobs/worker';
+import { event } from '$lib/server/log';
 
 async function resolveTranscriptionAudioKey(
 	database: Database,
@@ -60,6 +61,14 @@ export async function runTranscriptionJob(
 	const words = mapAssemblyAiWords(completed.words);
 	const speakers = buildSpeakers(completed.words);
 	const wordCount = await writeTranscript(database, payload.projectId, words, speakers);
+	event(ctx.log, 'transcript.produced', {
+		actorId: payload.actorId,
+		target: { type: 'project', id: payload.projectId },
+		causationId: payload.causationId,
+		provider: 'assemblyai',
+		wordCount,
+		speakerCount: speakers.length
+	});
 	await ctx.complete({
 		provider: 'assemblyai',
 		transcriptId,

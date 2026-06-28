@@ -35,3 +35,21 @@ export const logger: Logger = pino({
 			}
 		: {})
 });
+
+/** Stable, audit-ready shape for one semantic domain/auth event. */
+export interface EventFields {
+	actorId?: string;
+	/** What the action acted on, e.g. { type: 'media', id }. Named inline to avoid the DOM `EventTarget` global. */
+	target?: { type: string; id: string };
+	/** Originating requestId, threaded so indirect (worker) actions tie back to the request that caused them. */
+	causationId?: string;
+	[key: string]: unknown;
+}
+
+/**
+ * Emits one semantic event on the given request/job-scoped child logger.
+ * Keeps field names uniform: { event, actorId, target, causationId, ...data }.
+ */
+export function event(log: Logger, name: string, fields: EventFields = {}): void {
+	log.info({ event: name, ...fields }, 'event');
+}

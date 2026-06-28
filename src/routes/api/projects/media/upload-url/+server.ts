@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { initProjectMediaUpload, parseInitUploadUrlBody } from '$lib/server/storage/media-upload';
 import { isServerError } from '$lib/server/result';
+import { event } from '$lib/server/log';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) {
@@ -31,6 +32,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		if (isServerError(result)) {
 			error(result.status, result.message);
 		}
+		event(locals.log, 'project.created', {
+			actorId: locals.user.id,
+			target: { type: 'project', id: result.projectId }
+		});
 		return json(result);
 	} catch (cause) {
 		if (isHttpError(cause)) throw cause;

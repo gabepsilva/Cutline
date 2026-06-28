@@ -18,6 +18,7 @@ import {
 } from '$lib/server/jobs/handlers/ingest';
 import { registerTranscriptionHandler } from '$lib/server/jobs/handlers/transcription';
 import { logger } from '$lib/server/log';
+import type { Logger } from 'pino';
 
 export class JobCanceledError extends Error {
 	constructor(message = 'Job canceled') {
@@ -28,6 +29,7 @@ export class JobCanceledError extends Error {
 
 export interface JobHandlerContext {
 	job: JobRow;
+	log: Logger;
 	reportProgress: (progress: number) => Promise<void>;
 	isCancelRequested: () => Promise<boolean>;
 	complete: (result: unknown) => Promise<void>;
@@ -120,6 +122,7 @@ async function runClaimedJob(
 
 	const ctx: JobHandlerContext = {
 		job: claimed,
+		log,
 		reportProgress: async (progress) => {
 			await reportJobProgress(database, claimed.id, workerId, progress);
 			await extendJobLease(database, claimed.id, workerId);

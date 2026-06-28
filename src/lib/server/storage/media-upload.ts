@@ -274,7 +274,8 @@ export async function completeMediaUpload(
 	userId: string,
 	projectId: string,
 	mediaId: string,
-	body: CompleteUploadBody
+	body: CompleteUploadBody,
+	causationId: string
 ): Promise<ServerResult & { jobId?: string }> {
 	const ownerError = await assertProjectOwned(database, userId, projectId);
 	if (ownerError) return ownerError;
@@ -315,7 +316,7 @@ export async function completeMediaUpload(
 		return { ok: false, status: 400, message: 'Upload already completed' };
 	}
 
-	const payload: IngestJobPayload = { mediaId };
+	const payload: IngestJobPayload = { mediaId, actorId: userId, causationId };
 	const { id: jobId } = await enqueueJob(database, {
 		type: 'ingest',
 		projectId,
@@ -344,7 +345,11 @@ export async function completeMediaUpload(
 		if (wordCount === 0) {
 			const existing = await getActiveProjectJob(database, projectId, 'transcription');
 			if (!existing) {
-				const transcriptionPayload: TranscriptionJobPayload = { projectId };
+				const transcriptionPayload: TranscriptionJobPayload = {
+					projectId,
+					actorId: userId,
+					causationId
+				};
 				await enqueueJob(database, {
 					type: 'transcription',
 					projectId,

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import pino from 'pino';
 
 vi.mock('$lib/server/db', () => ({
 	db: {}
@@ -24,6 +25,12 @@ const authUser = {
 	updatedAt: new Date('2026-06-01T00:00:00.000Z')
 };
 
+function testLocals() {
+	const lines: Record<string, unknown>[] = [];
+	const log = pino({ level: 'info' }, { write: (s: string) => lines.push(JSON.parse(s)) });
+	return { locals: { user: authUser, requestId: 'req-test', log }, lines };
+}
+
 describe('api/projects/media/upload-url POST', () => {
 	it('creates a project and returns presigned upload data', async () => {
 		mockedParse.mockReturnValueOnce({
@@ -39,6 +46,7 @@ describe('api/projects/media/upload-url POST', () => {
 			upload: { mode: 'single', url: 'https://r2/put', objectKey: 'key' }
 		});
 
+		const { locals, lines } = testLocals();
 		const response = await POST({
 			request: new Request('http://localhost/api/projects/media/upload-url', {
 				method: 'POST',
@@ -49,7 +57,7 @@ describe('api/projects/media/upload-url POST', () => {
 					size: 1024
 				})
 			}),
-			locals: { user: authUser }
+			locals
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(200);
@@ -64,6 +72,12 @@ describe('api/projects/media/upload-url POST', () => {
 			authUser.id,
 			expect.objectContaining({ title: 'My demo', filename: 'clip.mp4' })
 		);
+		expect(lines[0]).toMatchObject({
+			event: 'project.created',
+			actorId: authUser.id,
+			target: { type: 'project', id: 'proj-new' },
+			msg: 'event'
+		});
 	});
 
 	it('returns 401 when unauthenticated', async () => {

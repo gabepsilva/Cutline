@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import pino from 'pino';
 
 vi.mock('$lib/server/db', () => ({
 	db: {}
@@ -29,6 +30,19 @@ const authUser = {
 	createdAt: new Date('2026-06-01T00:00:00.000Z'),
 	updatedAt: new Date('2026-06-01T00:00:00.000Z')
 };
+
+function testLocals() {
+	const lines: Record<string, unknown>[] = [];
+	const log = pino({ level: 'info' }, { write: (s: string) => lines.push(JSON.parse(s)) });
+	return {
+		locals: {
+			user: authUser,
+			requestId: 'req-test',
+			log
+		},
+		lines
+	};
+}
 
 describe('api/projects/[projectId]/media/[mediaId]/complete POST', () => {
 	it('returns 401 when unauthenticated', async () => {
@@ -80,19 +94,35 @@ describe('api/projects/[projectId]/media/[mediaId]/complete POST', () => {
 		mockedParse.mockReturnValueOnce({});
 		mockedComplete.mockResolvedValueOnce({ ok: true, jobId: 'job-1' });
 
+		const { locals, lines } = testLocals();
 		const response = await POST({
 			params: { projectId: 'proj-1', mediaId: 'media-1' },
 			request: new Request('http://localhost/api/projects/proj-1/media/media-1/complete', {
 				method: 'POST',
 				body: JSON.stringify({})
 			}),
-			locals: { user: authUser }
+			locals
 		} as Parameters<typeof POST>[0]);
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({ jobId: 'job-1' });
-		expect(mockedComplete).toHaveBeenCalledWith({}, authUser.id, 'proj-1', 'media-1', {});
+		expect(mockedComplete).toHaveBeenCalledWith(
+			{},
+			authUser.id,
+			'proj-1',
+			'media-1',
+			{},
+			'req-test'
+		);
 		expect(mockedKick).toHaveBeenCalledWith({});
+		expect(lines[0]).toMatchObject({
+			event: 'media.upload.completed',
+			actorId: authUser.id,
+			target: { type: 'media', id: 'media-1' },
+			causationId: 'req-test',
+			jobId: 'job-1',
+			msg: 'event'
+		});
 	});
 
 	it('returns 404 when media is missing', async () => {
