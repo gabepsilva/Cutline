@@ -163,7 +163,6 @@ await db
 			thumb: 'repeating-linear-gradient(135deg,#1a1d28 0 12px,#15171f 12px 24px)',
 			sizeBytes: 1024,
 			objectKey: 'e2e/uploads/clip.mp4',
-			transcodeKey: 'e2e/uploads/clip-transcode.mp4',
 			status: 'ready',
 			hasAudio: true,
 			createdAt: new Date()
