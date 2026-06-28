@@ -36,8 +36,6 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ['bun', '/app/dist/jobs-worker.js']
           env:
-            - name: INLINE_JOB_WORKER
-              value: 'false'
             - name: WORKER_ID
               valueFrom:
                 fieldRef:

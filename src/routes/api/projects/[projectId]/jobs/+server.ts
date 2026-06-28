@@ -1,7 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { enqueueOwnedJob, parseEnqueueBody } from '$lib/server/jobs/job-store';
-import { kickWorker } from '$lib/server/jobs/worker';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
@@ -35,8 +34,6 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	if (!result.ok) {
 		error(result.status, result.message);
 	}
-
-	kickWorker(db);
 
 	return json({ id: result.jobId });
 };

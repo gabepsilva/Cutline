@@ -29,6 +29,14 @@ npm run dev
 npm run dev -- --open
 ```
 
+Background jobs (media ingest, transcription, export) run in a **separate worker
+process** — the web server only enqueues them. To process jobs locally, start the
+worker in a second terminal:
+
+```sh
+bun run jobs:worker
+```
+
 ## Building
 
 To create a production version of your app:

@@ -3,7 +3,6 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { completeMediaUpload, parseCompleteUploadBody } from '$lib/server/storage/media-upload';
 import { isServerError } from '$lib/server/result';
-import { kickWorker } from '$lib/server/jobs/worker';
 import { event } from '$lib/server/log';
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
@@ -35,7 +34,6 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 		if (isServerError(result)) {
 			error(result.status, result.message);
 		}
-		kickWorker(db);
 		event(locals.log, 'media.upload.completed', {
 			actorId: locals.user.id,
 			target: { type: 'media', id: params.mediaId },

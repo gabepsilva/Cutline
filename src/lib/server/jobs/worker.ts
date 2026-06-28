@@ -222,15 +222,3 @@ export async function runWorkerLoop(
 		}
 	}
 }
-
-/** Max jobs processed per inline kick — avoids draining the queue in one web request. */
-const INLINE_WORKER_MAX_JOBS = 3;
-
-/** Fire-and-forget inline worker kick after enqueue (dev/single-node convenience). */
-export function kickWorker(database: Database, workerId = 'inline') {
-	if (process.env.INLINE_JOB_WORKER === 'false') {
-		return;
-	}
-
-	void runWorkerBatch(database, workerId, INLINE_WORKER_MAX_JOBS);
-}

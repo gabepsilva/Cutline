@@ -9,17 +9,11 @@ vi.mock('$lib/server/jobs/job-store', () => ({
 	parseEnqueueBody: vi.fn()
 }));
 
-vi.mock('$lib/server/jobs/worker', () => ({
-	kickWorker: vi.fn()
-}));
-
 import { enqueueOwnedJob, parseEnqueueBody } from '$lib/server/jobs/job-store';
-import { kickWorker } from '$lib/server/jobs/worker';
 import { POST } from './+server';
 
 const mockedParse = vi.mocked(parseEnqueueBody);
 const mockedEnqueue = vi.mocked(enqueueOwnedJob);
-const mockedKick = vi.mocked(kickWorker);
 
 const authUser = {
 	id: 'user-a',
@@ -52,7 +46,6 @@ describe('api/projects/[projectId]/jobs POST', () => {
 		expect(mockedEnqueue).toHaveBeenCalledWith({}, authUser.id, 'proj-1', 'export', {
 			format: 'mp4'
 		});
-		expect(mockedKick).toHaveBeenCalledWith({});
 	});
 
 	it('returns 401 when unauthenticated', async () => {

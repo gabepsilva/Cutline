@@ -10,17 +10,11 @@ vi.mock('$lib/server/storage/media-upload', () => ({
 	parseCompleteUploadBody: vi.fn()
 }));
 
-vi.mock('$lib/server/jobs/worker', () => ({
-	kickWorker: vi.fn()
-}));
-
 import { completeMediaUpload, parseCompleteUploadBody } from '$lib/server/storage/media-upload';
-import { kickWorker } from '$lib/server/jobs/worker';
 import { POST } from './+server';
 
 const mockedParse = vi.mocked(parseCompleteUploadBody);
 const mockedComplete = vi.mocked(completeMediaUpload);
-const mockedKick = vi.mocked(kickWorker);
 
 const authUser = {
 	id: 'user-a',
@@ -90,7 +84,7 @@ describe('api/projects/[projectId]/media/[mediaId]/complete POST', () => {
 		).rejects.toMatchObject({ status: 400 });
 	});
 
-	it('completes upload and kicks the worker', async () => {
+	it('completes upload and emits media.upload.completed', async () => {
 		mockedParse.mockReturnValueOnce({});
 		mockedComplete.mockResolvedValueOnce({ ok: true, jobId: 'job-1' });
 
@@ -114,7 +108,6 @@ describe('api/projects/[projectId]/media/[mediaId]/complete POST', () => {
 			{},
 			'req-test'
 		);
-		expect(mockedKick).toHaveBeenCalledWith({});
 		expect(lines[0]).toMatchObject({
 			event: 'media.upload.completed',
 			actorId: authUser.id,
