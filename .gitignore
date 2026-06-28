@@ -31,3 +31,7 @@ scripts/agent-loop/abort
 
 # SQLite (local dev + CI throwaway DBs)
 *.db
+*.sqlite
+*-journal
+*-wal
+*-shm
