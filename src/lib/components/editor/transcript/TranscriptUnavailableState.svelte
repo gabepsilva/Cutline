@@ -1,16 +1,27 @@
 <script lang="ts">
 	interface Props {
 		class?: string;
+		variant?: 'unavailable' | 'no-audio';
 	}
 
-	let { class: className = '' }: Props = $props();
+	let { class: className = '', variant = 'unavailable' }: Props = $props();
+
+	const copy = $derived(
+		variant === 'no-audio'
+			? {
+					title: 'No audio in this clip',
+					body: 'This footage has no audio track — there is nothing to transcribe.'
+				}
+			: {
+					title: 'Transcription not available',
+					body: 'Upload A-roll footage to generate a transcript, or retry if a previous job failed.'
+				}
+	);
 </script>
 
 <div class={['transcript-unavailable', className]} role="status">
-	<p class="transcript-unavailable__title">Transcription not available</p>
-	<p class="transcript-unavailable__body">
-		Upload A-roll footage to generate a transcript, or retry if a previous job failed.
-	</p>
+	<p class="transcript-unavailable__title">{copy.title}</p>
+	<p class="transcript-unavailable__body">{copy.body}</p>
 </div>
 
 <style>

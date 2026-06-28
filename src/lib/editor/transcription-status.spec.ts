@@ -34,7 +34,7 @@ describe('transcription-status', () => {
 		expect(
 			resolveTranscriptUiStatus({
 				wordCount: 0,
-				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null },
+				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null, hasAudio: true },
 				jobStatus: { status: 'running', progress: 0.4 }
 			})
 		).toBe('transcribing');
@@ -44,7 +44,7 @@ describe('transcription-status', () => {
 		expect(
 			resolveTranscriptUiStatus({
 				wordCount: 0,
-				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null },
+				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null, hasAudio: true },
 				jobStatus: { status: 'failed', progress: 0 }
 			})
 		).toBe('unavailable');
@@ -52,7 +52,7 @@ describe('transcription-status', () => {
 		expect(
 			resolveTranscriptUiStatus({
 				wordCount: 0,
-				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null },
+				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null, hasAudio: true },
 				jobStatus: { status: 'canceled', progress: 0 }
 			})
 		).toBe('unavailable');
@@ -62,11 +62,21 @@ describe('transcription-status', () => {
 		expect(
 			resolveTranscriptUiStatus({
 				wordCount: 0,
-				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null },
+				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null, hasAudio: true },
 				jobStatus: null,
 				failed: true
 			})
 		).toBe('unavailable');
+	});
+
+	it('returns no-audio for ready silent A-roll', () => {
+		expect(
+			resolveTranscriptUiStatus({
+				wordCount: 0,
+				aRoll: { mediaId: 'm1', status: 'ready', videoUrl: null, hasAudio: false },
+				jobStatus: null
+			})
+		).toBe('no-audio');
 	});
 
 	it('returns unavailable when no A-roll path exists', () => {

@@ -16,11 +16,9 @@ import {
 } from '$lib/server/jobs/worker';
 import { event } from '$lib/server/log';
 
-async function resolveTranscriptionAudioKey(
-	database: Database,
-	projectId: string
-): Promise<string> {
-	const mediaRow = await findPrimaryMediaRow(database, projectId);
+function resolveTranscriptionAudioKey(
+	mediaRow: Awaited<ReturnType<typeof findPrimaryMediaRow>>
+): string {
 	if (!mediaRow) {
 		throw new Error('No source media found for transcription');
 	}
@@ -38,8 +36,17 @@ export async function runTranscriptionJob(
 	ctx: JobHandlerContext
 ): Promise<void> {
 	const payload = JSON.parse(ctx.job.payload) as TranscriptionJobPayload;
+	// Primary == earliest source upload; treated as A-roll for STT (kind column unreliable — see #190).
+	const mediaRow = await findPrimaryMediaRow(database, payload.projectId);
+
+	if (mediaRow?.hasAudio === false) {
+		await ctx.reportProgress(1);
+		await ctx.complete({ skipped: true, reason: 'no-audio' });
+		return;
+	}
+
 	const apiKey = readAssemblyAiApiKey();
-	const objectKey = await resolveTranscriptionAudioKey(database, payload.projectId);
+	const objectKey = resolveTranscriptionAudioKey(mediaRow);
 	const audioUrl = await presignGetObject(objectKey);
 
 	await ctx.reportProgress(0.05);

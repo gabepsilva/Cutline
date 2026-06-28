@@ -141,6 +141,15 @@ describe('TranscriptPanel.svelte', () => {
 		await expect.element(page.getByText('45%')).toBeInTheDocument();
 	});
 
+	it('shows no-audio copy for silent clips', async () => {
+		render(TranscriptPanelHarness, { status: 'no-audio', sentences: [] });
+
+		await expect.element(page.getByText('No audio in this clip')).toBeInTheDocument();
+		await expect
+			.element(page.getByText('This footage has no audio track — there is nothing to transcribe.'))
+			.toBeInTheDocument();
+	});
+
 	it('shows unavailable copy when transcription cannot run', async () => {
 		render(TranscriptPanelHarness, { status: 'unavailable', sentences: [] });
 

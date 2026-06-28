@@ -71,7 +71,7 @@ export async function getMediaAssetUrls(
 	};
 }
 
-/** Primary uploaded A-roll for a project — earliest source upload with an object key. */
+/** Primary uploaded source clip for a project — earliest upload with an object key. */
 export async function findPrimaryMediaRow(database: Database, projectId: string) {
 	const rows = await database
 		.select()

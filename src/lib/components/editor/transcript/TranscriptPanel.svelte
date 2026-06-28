@@ -125,6 +125,8 @@
 	<div class="transcript-panel__body">
 		{#if isTranscribing}
 			<TranscriptTranscribingState stage={transcriptionStage} progress={transcriptionProgress} />
+		{:else if status === 'no-audio'}
+			<TranscriptUnavailableState variant="no-audio" />
 		{:else if status === 'unavailable'}
 			<TranscriptUnavailableState />
 		{:else}

@@ -12,18 +12,9 @@ import { findPrimaryMediaRow, getMediaAssetUrls } from '$lib/server/storage/medi
 import { getLatestProjectJob } from '$lib/server/jobs/job-store';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
 import type { MediaStatus } from '$lib/types/media-upload';
+import { parseWords } from '$lib/server/transcript/parse-transcript-words';
 import type { CaptionStyle, TranscriptSpeaker, Word } from '$lib/types/transcript';
 import { deriveUserInitials } from '$lib/utils/user-initials';
-
-function parseWords(raw: string | null | undefined): Word[] {
-	if (!raw) return [];
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		return Array.isArray(parsed) ? (parsed as Word[]) : [];
-	} catch {
-		return [];
-	}
-}
 
 function parseSpeakers(raw: string | null | undefined): TranscriptSpeaker[] {
 	if (!raw) return [];
@@ -64,6 +55,7 @@ export async function loadEditorProject(
 	const speakers = parseSpeakers(transcriptRow?.speakers);
 	const captionStyle = (transcriptRow?.captionStyle as CaptionStyle | undefined) ?? 'karaoke';
 
+	// Primary == earliest source upload; treated as A-roll for transcript/ingest (kind column unreliable — see #190).
 	const primaryMedia = await findPrimaryMediaRow(database, projectId);
 	let aRoll: EditorProjectLoad['aRoll'] = null;
 	let videoUrl: string | null = null;
@@ -73,7 +65,8 @@ export async function loadEditorProject(
 		aRoll = {
 			mediaId: primaryMedia.id,
 			status,
-			videoUrl: null
+			videoUrl: null,
+			hasAudio: primaryMedia.hasAudio
 		};
 
 		if (status === 'ready') {

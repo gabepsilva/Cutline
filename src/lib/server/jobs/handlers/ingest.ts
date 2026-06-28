@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
-import { media } from '$lib/server/db/domain.schema';
+import { media, transcript } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
 import type { JobRow } from '$lib/server/jobs/job-store';
+import { enqueueJob, getActiveProjectJob } from '$lib/server/jobs/job-store';
 import {
 	cleanupIngestOutputs,
 	cleanupTempPath,
@@ -11,18 +12,47 @@ import {
 } from '$lib/server/media/ffmpeg-ingest';
 import { buildDerivedMediaKeys, extensionFromFilename } from '$lib/server/storage/object-key';
 import { getObjectBytes, putObjectBytes, putObjectJson } from '$lib/server/storage/r2';
-import type { IngestJobPayload } from '$lib/types/job';
+import type { IngestJobPayload, TranscriptionJobPayload } from '$lib/types/job';
 import {
 	JobCanceledError,
 	registerJobHandler,
 	type JobHandlerContext
 } from '$lib/server/jobs/worker';
 import { event } from '$lib/server/log';
+import { parseWords } from '$lib/server/transcript/parse-transcript-words';
 
 async function assertNotCanceled(ctx: JobHandlerContext) {
 	if (await ctx.isCancelRequested()) {
 		throw new JobCanceledError();
 	}
+}
+
+async function maybeEnqueueTranscription(
+	database: Database,
+	projectId: string,
+	payload: IngestJobPayload
+): Promise<void> {
+	const [transcriptRow] = await database
+		.select({ words: transcript.words })
+		.from(transcript)
+		.where(eq(transcript.projectId, projectId))
+		.limit(1);
+
+	if (parseWords(transcriptRow?.words).length > 0) return;
+
+	const existing = await getActiveProjectJob(database, projectId, 'transcription');
+	if (existing) return;
+
+	const transcriptionPayload: TranscriptionJobPayload = {
+		projectId,
+		actorId: payload.actorId,
+		causationId: payload.causationId
+	};
+	await enqueueJob(database, {
+		type: 'transcription',
+		projectId,
+		payload: transcriptionPayload
+	});
 }
 
 /** Mark media failed when an ingest job exhausts retries. */
@@ -82,9 +112,14 @@ export async function runIngestJob(database: Database, ctx: JobHandlerContext): 
 				waveformKey: keys.waveformKey,
 				width: probe.width,
 				height: probe.height,
+				hasAudio: probe.hasAudio,
 				durationSeconds: Math.max(1, Math.round(probe.durationSeconds))
 			})
 			.where(eq(media.id, payload.mediaId));
+
+		if (row.kind === 'A-roll' && probe.hasAudio) {
+			await maybeEnqueueTranscription(database, row.projectId, payload);
+		}
 
 		event(ctx.log, 'media.ingested', {
 			actorId: payload.actorId,
