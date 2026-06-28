@@ -23,6 +23,7 @@ describe.runIf(ffmpegAvailable)('ffmpeg ingest pipeline', () => {
 			expect(probe.durationSeconds).toBeGreaterThan(1.5);
 			expect(probe.width).toBe(320);
 			expect(probe.height).toBe(240);
+			expect(probe.hasAudio).toBe(true);
 
 			const outputs = await runLocalIngestPipeline(sourcePath);
 			expect(outputs.waveform.length).toBeGreaterThanOrEqual(
@@ -32,6 +33,26 @@ describe.runIf(ffmpegAvailable)('ffmpeg ingest pipeline', () => {
 			expect(outputs.filmstripMeta.frameCount).toBeGreaterThan(0);
 			expect(outputs.filmstripMeta.cols).toBeGreaterThan(0);
 			expect(outputs.filmstripMeta.rows).toBeGreaterThan(0);
+
+			await cleanupIngestOutputs(outputs);
+		} finally {
+			await rm(workDir, { recursive: true, force: true });
+		}
+	}, 120_000);
+
+	it('ingests silent video with an empty waveform', async () => {
+		const workDir = await mkdtemp(join(tmpdir(), 'cutline-fixture-'));
+		const sourcePath = join(workDir, 'silent-fixture.mp4');
+
+		try {
+			await generateTestVideoFixture(sourcePath, { audio: false });
+			const probe = await ffprobeMedia(sourcePath);
+			expect(probe.hasAudio).toBe(false);
+
+			const outputs = await runLocalIngestPipeline(sourcePath);
+			expect(outputs.waveform.length).toBe(0);
+			expect(outputs.waveform.data).toEqual([]);
+			expect(outputs.filmstripMeta.frameCount).toBeGreaterThan(0);
 
 			await cleanupIngestOutputs(outputs);
 		} finally {

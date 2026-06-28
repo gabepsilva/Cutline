@@ -9,6 +9,7 @@ export interface FfprobeResult {
 	durationSeconds: number;
 	width: number;
 	height: number;
+	hasAudio: boolean;
 }
 
 export interface IngestOutputs {
@@ -85,7 +86,9 @@ export async function ffprobeMedia(inputPath: string): Promise<FfprobeResult> {
 		streams?: { codec_type?: string; width?: number; height?: number }[];
 	};
 	const durationSeconds = Number.parseFloat(parsed.format?.duration ?? '0');
-	const videoStream = parsed.streams?.find((stream) => stream.codec_type === 'video');
+	const streams = parsed.streams ?? [];
+	const videoStream = streams.find((stream) => stream.codec_type === 'video');
+	const hasAudio = streams.some((stream) => stream.codec_type === 'audio');
 	const width = videoStream?.width ?? 0;
 	const height = videoStream?.height ?? 0;
 
@@ -96,7 +99,16 @@ export async function ffprobeMedia(inputPath: string): Promise<FfprobeResult> {
 		throw new Error('Could not determine video dimensions');
 	}
 
-	return { durationSeconds, width, height };
+	return { durationSeconds, width, height, hasAudio };
+}
+
+function emptyWaveform() {
+	return {
+		version: 1 as const,
+		peaksPerSecond: WAVEFORM_PEAKS_PER_SECOND,
+		length: 0,
+		data: [] as number[]
+	};
 }
 
 function filmstripLayout(durationSeconds: number): {
@@ -233,7 +245,9 @@ export async function runLocalIngestPipeline(sourcePath: string): Promise<Ingest
 			probe.width,
 			probe.height
 		);
-		const waveform = await buildWaveformPeaks(sourcePath, probe.durationSeconds);
+		const waveform = probe.hasAudio
+			? await buildWaveformPeaks(sourcePath, probe.durationSeconds)
+			: emptyWaveform();
 
 		return {
 			transcodePath,
@@ -249,28 +263,23 @@ export async function runLocalIngestPipeline(sourcePath: string): Promise<Ingest
 }
 
 /** Create a tiny deterministic test video via lavfi (CI fixture generator). */
-export async function generateTestVideoFixture(outputPath: string): Promise<void> {
+export async function generateTestVideoFixture(
+	outputPath: string,
+	{ audio = true }: { audio?: boolean } = {}
+): Promise<void> {
 	await mkdir(join(outputPath, '..'), { recursive: true }).catch(() => undefined);
-	await runCommand([
-		'ffmpeg',
-		'-y',
-		'-f',
-		'lavfi',
-		'-i',
-		'testsrc=duration=2:size=320x240:rate=10',
-		'-f',
-		'lavfi',
-		'-i',
-		'sine=frequency=440:duration=2',
-		'-c:v',
-		'libx264',
-		'-pix_fmt',
-		'yuv420p',
-		'-c:a',
-		'aac',
-		'-shortest',
-		outputPath
-	]);
+	const args = ['ffmpeg', '-y', '-f', 'lavfi', '-i', 'testsrc=duration=2:size=320x240:rate=10'];
+	if (audio) {
+		args.push('-f', 'lavfi', '-i', 'sine=frequency=440:duration=2');
+	}
+	args.push('-c:v', 'libx264', '-pix_fmt', 'yuv420p');
+	if (audio) {
+		args.push('-c:a', 'aac', '-shortest');
+	} else {
+		args.push('-an');
+	}
+	args.push(outputPath);
+	await runCommand(args);
 }
 
 export async function readOutputFiles(outputs: IngestOutputs): Promise<{
