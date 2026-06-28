@@ -28,6 +28,10 @@ export function resolveTranscriptUiStatus(input: {
 }): TranscriptUiStatus {
 	if (input.wordCount > 0) return 'ready';
 
+	if (input.aRoll?.hasAudio === false && input.aRoll.status === 'ready') {
+		return 'no-audio';
+	}
+
 	const hasUploadedRoll = Boolean(
 		input.aRoll &&
 		(input.aRoll.status === 'uploaded' ||

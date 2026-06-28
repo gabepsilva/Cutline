@@ -73,7 +73,8 @@ export async function loadEditorProject(
 		aRoll = {
 			mediaId: primaryMedia.id,
 			status,
-			videoUrl: null
+			videoUrl: null,
+			hasAudio: primaryMedia.hasAudio
 		};
 
 		if (status === 'ready') {

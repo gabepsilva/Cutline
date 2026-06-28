@@ -12,6 +12,8 @@ export interface ARollMediaLoad {
 	mediaId: string;
 	status: MediaStatus;
 	videoUrl: string | null;
+	/** Null until ingest probe; false when the clip has no audio stream. */
+	hasAudio: boolean | null;
 }
 
 /** Server load shape for the editor route — consumed by `EditorWorkspace` / import shell. */

@@ -38,6 +38,14 @@ export async function runTranscriptionJob(
 	ctx: JobHandlerContext
 ): Promise<void> {
 	const payload = JSON.parse(ctx.job.payload) as TranscriptionJobPayload;
+	const mediaRow = await findPrimaryMediaRow(database, payload.projectId);
+
+	if (mediaRow?.hasAudio === false) {
+		await ctx.reportProgress(1);
+		await ctx.complete({ skipped: true, reason: 'no-audio' });
+		return;
+	}
+
 	const apiKey = readAssemblyAiApiKey();
 	const objectKey = await resolveTranscriptionAudioKey(database, payload.projectId);
 	const audioUrl = await presignGetObject(objectKey);
