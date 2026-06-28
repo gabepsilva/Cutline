@@ -90,7 +90,7 @@ export async function ffprobeMedia(inputPath: string): Promise<FfprobeResult> {
 	const streams = parsed.streams ?? [];
 	const videoStream = streams.find((stream) => stream.codec_type === 'video');
 	const hasAudio = streams.some((stream) => stream.codec_type === 'audio');
-	const hasVideo = streams.some((stream) => stream.codec_type === 'video');
+	const hasVideo = videoStream !== undefined;
 	const width = videoStream?.width ?? null;
 	const height = videoStream?.height ?? null;
 

@@ -136,9 +136,8 @@ export async function runIngestJob(database: Database, ctx: JobHandlerContext): 
 		await ctx.reportProgress(1);
 		await ctx.complete({
 			transcodeKey: keys.transcodeKey,
-			...(outputs.filmstripMeta
-				? { filmstripKey: keys.filmstripKey, waveformKey: keys.waveformKey }
-				: { waveformKey: keys.waveformKey })
+			waveformKey: keys.waveformKey,
+			...(outputs.filmstripMeta ? { filmstripKey: keys.filmstripKey } : {})
 		});
 	} finally {
 		await cleanupTempPath(sourcePath);
