@@ -71,14 +71,12 @@ export async function getMediaAssetUrls(
 	};
 }
 
-/** Primary uploaded A-roll for a project — earliest A-roll source upload with an object key. */
+/** Primary uploaded source clip for a project — earliest upload with an object key. */
 export async function findPrimaryMediaRow(database: Database, projectId: string) {
 	const rows = await database
 		.select()
 		.from(media)
-		.where(
-			and(eq(media.projectId, projectId), eq(media.kind, 'A-roll'), isNotNull(media.objectKey))
-		)
+		.where(and(eq(media.projectId, projectId), isNotNull(media.objectKey)))
 		.orderBy(asc(media.createdAt));
 
 	return rows[0] ?? null;

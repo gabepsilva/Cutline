@@ -55,6 +55,7 @@ export async function loadEditorProject(
 	const speakers = parseSpeakers(transcriptRow?.speakers);
 	const captionStyle = (transcriptRow?.captionStyle as CaptionStyle | undefined) ?? 'karaoke';
 
+	// Primary == earliest source upload; treated as A-roll for transcript/ingest (kind column unreliable — see #190).
 	const primaryMedia = await findPrimaryMediaRow(database, projectId);
 	let aRoll: EditorProjectLoad['aRoll'] = null;
 	let videoUrl: string | null = null;

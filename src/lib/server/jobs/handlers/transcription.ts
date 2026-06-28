@@ -36,6 +36,7 @@ export async function runTranscriptionJob(
 	ctx: JobHandlerContext
 ): Promise<void> {
 	const payload = JSON.parse(ctx.job.payload) as TranscriptionJobPayload;
+	// Primary == earliest source upload; treated as A-roll for STT (kind column unreliable — see #190).
 	const mediaRow = await findPrimaryMediaRow(database, payload.projectId);
 
 	if (mediaRow?.hasAudio === false) {
