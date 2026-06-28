@@ -16,11 +16,9 @@ import {
 } from '$lib/server/jobs/worker';
 import { event } from '$lib/server/log';
 
-async function resolveTranscriptionAudioKey(
-	database: Database,
-	projectId: string
-): Promise<string> {
-	const mediaRow = await findPrimaryMediaRow(database, projectId);
+function resolveTranscriptionAudioKey(
+	mediaRow: Awaited<ReturnType<typeof findPrimaryMediaRow>>
+): string {
 	if (!mediaRow) {
 		throw new Error('No source media found for transcription');
 	}
@@ -47,7 +45,7 @@ export async function runTranscriptionJob(
 	}
 
 	const apiKey = readAssemblyAiApiKey();
-	const objectKey = await resolveTranscriptionAudioKey(database, payload.projectId);
+	const objectKey = resolveTranscriptionAudioKey(mediaRow);
 	const audioUrl = await presignGetObject(objectKey);
 
 	await ctx.reportProgress(0.05);

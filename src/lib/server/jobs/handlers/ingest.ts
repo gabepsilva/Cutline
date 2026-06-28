@@ -19,6 +19,7 @@ import {
 	type JobHandlerContext
 } from '$lib/server/jobs/worker';
 import { event } from '$lib/server/log';
+import { parseWords } from '$lib/server/transcript/parse-transcript-words';
 
 async function assertNotCanceled(ctx: JobHandlerContext) {
 	if (await ctx.isCancelRequested()) {
@@ -37,17 +38,7 @@ async function maybeEnqueueTranscription(
 		.where(eq(transcript.projectId, projectId))
 		.limit(1);
 
-	let wordCount = 0;
-	if (transcriptRow?.words) {
-		try {
-			const parsed: unknown = JSON.parse(transcriptRow.words);
-			wordCount = Array.isArray(parsed) ? parsed.length : 0;
-		} catch {
-			wordCount = 0;
-		}
-	}
-
-	if (wordCount > 0) return;
+	if (parseWords(transcriptRow?.words).length > 0) return;
 
 	const existing = await getActiveProjectJob(database, projectId, 'transcription');
 	if (existing) return;

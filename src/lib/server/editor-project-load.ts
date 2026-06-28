@@ -12,18 +12,9 @@ import { findPrimaryMediaRow, getMediaAssetUrls } from '$lib/server/storage/medi
 import { getLatestProjectJob } from '$lib/server/jobs/job-store';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
 import type { MediaStatus } from '$lib/types/media-upload';
+import { parseWords } from '$lib/server/transcript/parse-transcript-words';
 import type { CaptionStyle, TranscriptSpeaker, Word } from '$lib/types/transcript';
 import { deriveUserInitials } from '$lib/utils/user-initials';
-
-function parseWords(raw: string | null | undefined): Word[] {
-	if (!raw) return [];
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		return Array.isArray(parsed) ? (parsed as Word[]) : [];
-	} catch {
-		return [];
-	}
-}
 
 function parseSpeakers(raw: string | null | undefined): TranscriptSpeaker[] {
 	if (!raw) return [];
