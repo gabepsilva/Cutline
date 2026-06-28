@@ -122,15 +122,16 @@ function createActionEvent(
 	const lines: Record<string, unknown>[] = [];
 	const log = pino({ level: 'info' }, { write: (s: string) => lines.push(JSON.parse(s)) });
 
-	return {
+	const event = {
 		request: new Request(`http://localhost/?/${action}`, { method: 'POST', body: formData }),
 		locals: {
 			...locals,
-			requestId: 'req-delete-test',
+			requestId: 'req-test',
 			log
-		},
-		lines
-	};
+		}
+	} as Parameters<NonNullable<typeof actions.delete>>[0];
+
+	return { event, lines };
 }
 
 describe('+page.server actions', () => {
@@ -145,10 +146,8 @@ describe('+page.server actions', () => {
 			message: 'Title is required'
 		});
 
-		const { request, locals } = createActionEvent('rename', { projectId: 'proj-1', title: '   ' });
-		const result = await actions.rename?.({ request, locals } as Parameters<
-			NonNullable<typeof actions.rename>
-		>[0]);
+		const { event } = createActionEvent('rename', { projectId: 'proj-1', title: '   ' });
+		const result = await actions.rename?.(event);
 
 		expect(result).toMatchObject({
 			status: 400,
@@ -159,13 +158,8 @@ describe('+page.server actions', () => {
 	it('rename succeeds for owned projects', async () => {
 		mockedRenameOwnedProject.mockResolvedValueOnce({ ok: true });
 
-		const { request, locals } = createActionEvent('rename', {
-			projectId: 'proj-1',
-			title: 'Renamed'
-		});
-		const result = await actions.rename?.({ request, locals } as Parameters<
-			NonNullable<typeof actions.rename>
-		>[0]);
+		const { event } = createActionEvent('rename', { projectId: 'proj-1', title: 'Renamed' });
+		const result = await actions.rename?.(event);
 
 		expect(result).toEqual({ success: true });
 	});
@@ -177,10 +171,8 @@ describe('+page.server actions', () => {
 			message: 'Project not found'
 		});
 
-		const { request, locals } = createActionEvent('delete', { projectId: 'proj-1' });
-		const result = await actions.delete?.({ request, locals } as Parameters<
-			NonNullable<typeof actions.delete>
-		>[0]);
+		const { event } = createActionEvent('delete', { projectId: 'proj-1' });
+		const result = await actions.delete?.(event);
 
 		expect(result).toMatchObject({
 			status: 404,
@@ -191,31 +183,22 @@ describe('+page.server actions', () => {
 	it('delete emits project.deleted for owned projects', async () => {
 		mockedDeleteOwnedProject.mockResolvedValueOnce({ ok: true });
 
-		const { request, locals, lines } = createActionEvent('delete', { projectId: 'proj-1' });
-		const result = await actions.delete?.({ request, locals } as Parameters<
-			NonNullable<typeof actions.delete>
-		>[0]);
+		const { event, lines } = createActionEvent('delete', { projectId: 'proj-1' });
+		const result = await actions.delete?.(event);
 
 		expect(result).toEqual({ success: true });
 		expect(lines[0]).toMatchObject({
 			event: 'project.deleted',
 			actorId: authUser.id,
 			target: { type: 'project', id: 'proj-1' },
-			causationId: 'req-delete-test',
 			msg: 'event'
 		});
 	});
 
 	it('rejects unauthenticated mutations with redirect to login', async () => {
-		const { request, locals } = createActionEvent(
-			'rename',
-			{ projectId: 'proj-1', title: 'x' },
-			{}
-		);
+		const { event } = createActionEvent('rename', { projectId: 'proj-1', title: 'x' }, {});
 		try {
-			await actions.rename?.({ request, locals } as Parameters<
-				NonNullable<typeof actions.rename>
-			>[0]);
+			await actions.rename?.(event);
 			expect.unreachable('expected redirect');
 		} catch (error) {
 			expect(error).toMatchObject({ status: 302, location: '/login' });

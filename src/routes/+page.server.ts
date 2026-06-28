@@ -63,8 +63,7 @@ export const actions: Actions = {
 
 		event(locals.log, 'project.deleted', {
 			actorId: user.id,
-			target: { type: 'project', id: projectId },
-			causationId: locals.requestId
+			target: { type: 'project', id: projectId }
 		});
 
 		return { success: true };
