@@ -20,17 +20,20 @@ const handleLogging: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
 	const durationMs = Date.now() - start;
 
-	// locals.user is populated by the downstream auth handle by the time resolve resolves.
-	event.locals.log.info(
-		{
-			method: event.request.method,
-			path: event.url.pathname,
-			status: response.status,
-			durationMs,
-			userId: event.locals.user?.id
-		},
-		'request'
-	);
+	// Per-request access lines are opt-in (LOG_ACCESS=true) until the log pipeline (#176) is ready.
+	if (process.env.LOG_ACCESS === 'true') {
+		// locals.user is populated by the downstream auth handle by the time resolve resolves.
+		event.locals.log.info(
+			{
+				method: event.request.method,
+				path: event.url.pathname,
+				status: response.status,
+				durationMs,
+				userId: event.locals.user?.id
+			},
+			'request'
+		);
+	}
 
 	response.headers.set('x-request-id', requestId);
 	return response;

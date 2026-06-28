@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { loadDashboardProjects } from '$lib/server/dashboard-load';
+import { event } from '$lib/server/log';
 import { deleteOwnedProject, renameOwnedProject } from '$lib/server/project-mutations';
 import { resolveSidebarUser } from '$lib/server/sidebar-user';
 import { resolveStorageUsage } from '$lib/server/storage-usage';
@@ -59,6 +60,11 @@ export const actions: Actions = {
 		if (!result.ok) {
 			return fail(result.status, { message: result.message });
 		}
+
+		event(locals.log, 'project.deleted', {
+			actorId: user.id,
+			target: { type: 'project', id: projectId }
+		});
 
 		return { success: true };
 	}
