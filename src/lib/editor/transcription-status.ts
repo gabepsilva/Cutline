@@ -25,6 +25,8 @@ export function resolveTranscriptUiStatus(input: {
 	jobStatus: JobStatusResponse | null;
 	/** Latest transcription job ended non-succeeded with none active (from server load). */
 	failed?: boolean;
+	/** Client-side POST failure or surfaced request error. */
+	clientError?: string | null;
 }): TranscriptUiStatus {
 	if (input.wordCount > 0) return 'ready';
 
@@ -32,12 +34,7 @@ export function resolveTranscriptUiStatus(input: {
 		return 'no-audio';
 	}
 
-	const hasUploadedRoll = Boolean(
-		input.aRoll &&
-		(input.aRoll.status === 'uploaded' ||
-			input.aRoll.status === 'ingesting' ||
-			input.aRoll.status === 'ready')
-	);
+	if (input.clientError) return 'unavailable';
 
 	if (input.jobStatus && !TERMINAL_STATUSES.has(input.jobStatus.status)) return 'transcribing';
 
@@ -45,9 +42,9 @@ export function resolveTranscriptUiStatus(input: {
 
 	if (input.failed) return 'unavailable';
 
-	if (hasUploadedRoll) return 'transcribing';
+	if (!input.aRoll || input.aRoll.status === 'failed') return 'unavailable';
 
-	return 'unavailable';
+	return 'idle';
 }
 
 /** Poll a transcription job until terminal, invoking `onUpdate` on each tick. */

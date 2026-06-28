@@ -279,8 +279,8 @@
 
 				<h2 id="import-gateway-heading" class="import-gateway__heading">Start your video</h2>
 				<p class="import-gateway__description">
-					Drop a clip here, or pick a source below. Cutline transcribes your footage automatically
-					so you can cut, trim, and caption just by editing the text.
+					Drop a clip here, or pick a source below. Transcribe when you are ready to edit by words —
+					cut, trim, and caption from the transcript.
 				</p>
 			</label>
 

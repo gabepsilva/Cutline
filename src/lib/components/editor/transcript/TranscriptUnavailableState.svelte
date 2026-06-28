@@ -2,9 +2,11 @@
 	interface Props {
 		class?: string;
 		variant?: 'unavailable' | 'no-audio';
+		/** Overrides the default body copy (e.g. surfaced POST or job error). */
+		errorMessage?: string | null;
 	}
 
-	let { class: className = '', variant = 'unavailable' }: Props = $props();
+	let { class: className = '', variant = 'unavailable', errorMessage = null }: Props = $props();
 
 	const copy = $derived(
 		variant === 'no-audio'
@@ -13,8 +15,8 @@
 					body: 'This footage has no audio track — there is nothing to transcribe.'
 				}
 			: {
-					title: 'Transcription not available',
-					body: 'Upload A-roll footage to generate a transcript, or retry if a previous job failed.'
+					title: 'Transcription failed',
+					body: errorMessage ?? 'Something went wrong. Press Transcribe to try again.'
 				}
 	);
 </script>

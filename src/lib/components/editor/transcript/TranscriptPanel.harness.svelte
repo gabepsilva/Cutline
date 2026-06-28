@@ -23,6 +23,10 @@
 		status = 'ready',
 		transcriptionProgress = 0,
 		transcriptionStage = 'Detecting speech…',
+		mediaProcessing = false,
+		transcribeDisabled = false,
+		transcribePending = false,
+		transcriptionError = null,
 		searchQuery = '',
 		fillerCount = 1,
 		hasSelection = false,
@@ -37,6 +41,7 @@
 		ondelete,
 		onsentenceclick,
 		onwordclick,
+		ontranscribe,
 		class: className = ''
 	}: Props = $props();
 </script>
@@ -48,6 +53,10 @@
 	{status}
 	{transcriptionProgress}
 	{transcriptionStage}
+	{mediaProcessing}
+	{transcribeDisabled}
+	{transcribePending}
+	{transcriptionError}
 	{searchQuery}
 	{fillerCount}
 	{hasSelection}
@@ -62,5 +71,6 @@
 	{ondelete}
 	{onsentenceclick}
 	{onwordclick}
+	{ontranscribe}
 	class={className}
 />

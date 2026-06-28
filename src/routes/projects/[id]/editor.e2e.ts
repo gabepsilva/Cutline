@@ -143,6 +143,15 @@ test.describe('editor route', () => {
 		await expect(page.getByRole('button', { name: 'Start recording' })).toBeVisible();
 	});
 
+	test('shows idle transcript UI with manual transcribe action', async ({ page }) => {
+		await page.goto('/projects/e2e-upload-ready');
+
+		await expect(page.getByTestId('editor-workspace')).toBeVisible();
+		await expect(page.getByText('No transcript yet')).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Transcribe' })).toBeEnabled();
+		await expect(page.getByRole('searchbox', { name: 'Search transcript' })).not.toBeVisible();
+	});
+
 	test('shows transcribing gated UI while a transcription job runs', async ({ page }) => {
 		await page.goto('/projects/e2e-transcribing');
 
