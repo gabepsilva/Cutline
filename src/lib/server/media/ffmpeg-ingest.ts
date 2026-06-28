@@ -9,6 +9,7 @@ export interface FfprobeResult {
 	durationSeconds: number;
 	width: number;
 	height: number;
+	hasAudio: boolean;
 }
 
 export interface IngestOutputs {
@@ -85,7 +86,9 @@ export async function ffprobeMedia(inputPath: string): Promise<FfprobeResult> {
 		streams?: { codec_type?: string; width?: number; height?: number }[];
 	};
 	const durationSeconds = Number.parseFloat(parsed.format?.duration ?? '0');
-	const videoStream = parsed.streams?.find((stream) => stream.codec_type === 'video');
+	const streams = parsed.streams ?? [];
+	const videoStream = streams.find((stream) => stream.codec_type === 'video');
+	const hasAudio = streams.some((stream) => stream.codec_type === 'audio');
 	const width = videoStream?.width ?? 0;
 	const height = videoStream?.height ?? 0;
 
@@ -96,7 +99,11 @@ export async function ffprobeMedia(inputPath: string): Promise<FfprobeResult> {
 		throw new Error('Could not determine video dimensions');
 	}
 
-	return { durationSeconds, width, height };
+	return { durationSeconds, width, height, hasAudio };
+}
+
+function emptyWaveform(peaksPerSecond = WAVEFORM_PEAKS_PER_SECOND) {
+	return { version: 1 as const, peaksPerSecond, length: 0, data: [] as number[] };
 }
 
 function filmstripLayout(durationSeconds: number): {
@@ -183,6 +190,8 @@ export async function buildWaveformPeaks(
 		'-y',
 		'-i',
 		inputPath,
+		'-map',
+		'a?',
 		'-ac',
 		'1',
 		'-ar',
@@ -233,7 +242,9 @@ export async function runLocalIngestPipeline(sourcePath: string): Promise<Ingest
 			probe.width,
 			probe.height
 		);
-		const waveform = await buildWaveformPeaks(sourcePath, probe.durationSeconds);
+		const waveform = probe.hasAudio
+			? await buildWaveformPeaks(sourcePath, probe.durationSeconds)
+			: emptyWaveform();
 
 		return {
 			transcodePath,
@@ -246,6 +257,25 @@ export async function runLocalIngestPipeline(sourcePath: string): Promise<Ingest
 		await rm(workDir, { recursive: true, force: true });
 		throw error;
 	}
+}
+
+/** Create a tiny silent test video via lavfi (no audio stream). */
+export async function generateSilentTestVideoFixture(outputPath: string): Promise<void> {
+	await mkdir(join(outputPath, '..'), { recursive: true }).catch(() => undefined);
+	await runCommand([
+		'ffmpeg',
+		'-y',
+		'-f',
+		'lavfi',
+		'-i',
+		'testsrc=duration=2:size=320x240:rate=10',
+		'-c:v',
+		'libx264',
+		'-pix_fmt',
+		'yuv420p',
+		'-an',
+		outputPath
+	]);
 }
 
 /** Create a tiny deterministic test video via lavfi (CI fixture generator). */
