@@ -16,7 +16,7 @@ import {
 	presignPutObject,
 	presignUploadPart
 } from '$lib/server/storage/r2';
-import { DEFAULT_RECORD_THUMB } from '$lib/types/media';
+import { DEFAULT_AUDIO_THUMB, DEFAULT_RECORD_THUMB } from '$lib/types/media';
 import { projectThumb } from '$lib/types/project';
 import type {
 	CompleteUploadBody,
@@ -166,6 +166,10 @@ async function presignUploadTarget(
 	};
 }
 
+function thumbForUpload(contentType: string): string {
+	return contentType.startsWith('audio/') ? DEFAULT_AUDIO_THUMB : DEFAULT_RECORD_THUMB;
+}
+
 /** Builds the first-upload `media` row (status `uploading`) shared by both create paths. */
 function buildMediaUploadRow(projectId: string, input: UploadUrlRequest, userId: string) {
 	const mediaId = crypto.randomUUID();
@@ -183,7 +187,7 @@ function buildMediaUploadRow(projectId: string, input: UploadUrlRequest, userId:
 		name: displayName,
 		durationSeconds: 0,
 		kind: 'B-roll',
-		thumb: DEFAULT_RECORD_THUMB,
+		thumb: thumbForUpload(input.contentType),
 		sizeBytes: input.size,
 		objectKey,
 		contentType: input.contentType,

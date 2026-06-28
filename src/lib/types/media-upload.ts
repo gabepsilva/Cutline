@@ -1,5 +1,14 @@
-/** Allowed source video MIME types for direct R2 upload (M8-01). */
-export const UPLOAD_CONTENT_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'] as const;
+/** Allowed source MIME types for direct R2 upload (M8-01). */
+export const UPLOAD_CONTENT_TYPES = [
+	'video/mp4',
+	'video/quicktime',
+	'video/webm',
+	'audio/mpeg',
+	'audio/wav',
+	'audio/mp4',
+	'audio/aac',
+	'audio/ogg'
+] as const;
 export type UploadContentType = (typeof UPLOAD_CONTENT_TYPES)[number];
 
 export const MEDIA_STATUSES = [
