@@ -1,0 +1,5 @@
+misconfigurations:
+  - id: AVD-DS-0002
+    paths:
+      - Dockerfile.dev
+    statement: Dev-only image; not deployed (#202)

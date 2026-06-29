@@ -1,7 +1,7 @@
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import type { Clip, Tick, WaveBar } from '$lib/types/timeline';
 import { formatTimecode } from '$lib/utils/format-timecode';
-import { buildEdl, editedWordAt, WORD_GAP } from './edl';
+import { buildEdl, editedToSource, editedWordAt, WORD_GAP } from './edl';
 
 export { WORD_GAP };
 
@@ -12,6 +12,11 @@ export function activeWords(words: Word[]): Word[] {
 /** Total edited duration in seconds — ignores soft-deleted words. */
 export function totalDuration(words: Word[]): number {
 	return buildEdl(words).editedDuration;
+}
+
+/** Map edited playhead time to source media time for preview video sync. */
+export function sourceTimeAt(words: Word[], editedTime: number): number | null {
+	return editedToSource(buildEdl(words), editedTime);
 }
 
 /** Map each active word id to its start time on the edited timeline. */

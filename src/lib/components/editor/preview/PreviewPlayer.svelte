@@ -4,9 +4,12 @@
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import type { PreviewPlayerProps } from './PreviewPlayer.types';
 
+	const SEEK_THRESHOLD_SEC = 0.05;
+
 	let {
 		playing,
 		currentTime,
+		sourceTime = null,
 		recLabel = 'REC 1080p',
 		videoUrl = null,
 		showSimulated = true,
@@ -15,17 +18,43 @@
 		class: className = ''
 	}: PreviewPlayerProps = $props();
 
+	let videoEl = $state<HTMLVideoElement | null>(null);
+
 	const timecodeLabel = $derived(formatTimecode(currentTime));
 	const playLabel = $derived(playing ? 'Pause preview' : 'Play preview');
 	const useSimulated = $derived(showSimulated && !videoUrl);
+
+	$effect(() => {
+		const video = videoEl;
+		if (!video || !videoUrl) return;
+
+		if (sourceTime == null) {
+			video.pause();
+			return;
+		}
+
+		if (!playing || Math.abs(video.currentTime - sourceTime) > SEEK_THRESHOLD_SEC) {
+			video.currentTime = sourceTime;
+		}
+
+		if (playing) {
+			void video.play().catch(() => {
+				// Browsers may block autoplay until the user interacts with play controls.
+			});
+		} else {
+			video.pause();
+		}
+	});
 </script>
 
 <div class={['preview-player', className]}>
 	{#if videoUrl}
+		<!-- svelte-ignore a11y_media_has_caption -->
 		<video
+			bind:this={videoEl}
 			class="preview-player__video"
 			src={videoUrl}
-			muted
+			preload="auto"
 			playsinline
 			aria-label="Project preview video"
 		></video>

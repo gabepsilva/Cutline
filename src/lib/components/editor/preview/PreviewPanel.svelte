@@ -8,6 +8,7 @@
 	let {
 		playing,
 		currentTime,
+		sourceTime = null,
 		totalLabel,
 		savedLabel,
 		deletedCount,
@@ -25,7 +26,15 @@
 </script>
 
 <section class={['preview-panel', className]} aria-label="Preview">
-	<PreviewPlayer {playing} {currentTime} {recLabel} {videoUrl} {showSimulated} {ontogglePlay}>
+	<PreviewPlayer
+		{playing}
+		{currentTime}
+		{sourceTime}
+		{recLabel}
+		{videoUrl}
+		{showSimulated}
+		{ontogglePlay}
+	>
 		{#snippet captions()}
 			<PreviewCaptions tokens={captionTokens} style={captionStyle} visible={showCaptions} />
 		{/snippet}
