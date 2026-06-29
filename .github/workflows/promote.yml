@@ -1,0 +1,69 @@
+name: Promote
+
+# Ship a staging-verified image artifact to production (issue #216). No rebuild and
+# no re-scan — pins the same version already running in cutline-stag onto deploy/prod.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to promote (default: current staging deploy/stag tag)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: promote-prod
+  cancel-in-progress: false
+
+jobs:
+  promote-prod:
+    name: Promote artifact to production
+    timeout-minutes: 20
+    runs-on: [self-hosted, Linux, X64]
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/cutline
+      STAG_KUSTOMIZE_FILE: infra/k8s/overlays/stag/kustomization.yaml
+      HOST: cutline.i.psilva.org
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image tag
+        run: |
+          set -eu
+          tag="${{ inputs.image_tag }}"
+          if [ -z "$tag" ]; then
+            # checkout@v4 fetches only the triggering ref; deploy/stag lands in FETCH_HEAD.
+            git fetch origin deploy/stag
+            tag="$(git show FETCH_HEAD:"$STAG_KUSTOMIZE_FILE" | awk '/newTag:/ { print $2; exit }')"
+            if [ -z "$tag" ]; then
+              echo "Could not read staging image tag from deploy/stag" >&2
+              exit 1
+            fi
+            echo "Using current staging tag: ${tag}"
+          fi
+          echo "IMAGE_TAG=${tag}" >> "$GITHUB_ENV"
+
+      - name: Roll out to production
+        uses: ./.github/actions/argo-rollout
+        with:
+          argo-app: cutline-prod
+          deploy-branch: deploy/prod
+          kustomize-file: infra/k8s/overlays/prod/kustomization.yaml
+          image-tag: ${{ env.IMAGE_TAG }}
+          pin-commit-message: 'deploy: promote prod image to ${{ env.IMAGE_TAG }}'
+          namespace: cutline
+          host: cutline.i.psilva.org
+
+      - name: Promotion summary
+        run: |
+          {
+            echo "### Production promotion"
+            echo "- **Artifact:** \`${IMAGE_NAME}:${IMAGE_TAG}\`"
+            echo "- **URL:** https://${HOST}"
+          } >> "$GITHUB_STEP_SUMMARY"

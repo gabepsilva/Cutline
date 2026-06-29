@@ -1,0 +1,13 @@
+{
+	"rules": [
+		{
+			"allowed": {
+				"origins": ["https://cutline-stag.i.psilva.org", "http://localhost:5173"],
+				"methods": ["PUT", "GET"],
+				"headers": ["content-type"]
+			},
+			"exposeHeaders": ["ETag"],
+			"maxAgeSeconds": 3600
+		}
+	]
+}

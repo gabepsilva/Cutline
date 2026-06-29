@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cutline-config
+data:
+  ORIGIN: https://cutline-stag.i.psilva.org
+  DATABASE_URL: libsql://cutline-stag-gabrielpe.aws-us-east-1.turso.io
+  R2_BUCKET: cutline-stag
+  R2_PUBLIC_BUCKET: cutline-stag-public
+  R2_PUBLIC_BASE_URL: https://pub-ca09009dccfd44f483894b0d653f8241.r2.dev

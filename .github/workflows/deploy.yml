@@ -1,11 +1,10 @@
 name: Deploy
 
-# Continuous delivery to the tk8s cluster (T-12 → T-13 GitOps). On merge to master:
-# build the image, scan it (gate), push to GHCR with a build-provenance attestation,
-# pin the prod image tag onto the CI-managed `deploy/prod` branch, then wait for Argo
-# CD to sync that revision (PreSync migrate → Deployment rollout) and verify the route.
-# `master` stays review-gated — CI only force-pushes the unprotected `deploy/prod`.
-# Production rollout is master-only; PRs never deploy.
+# Build-once, deploy-to-staging (issue #216). On merge to master: build a versioned
+# image artifact, scan it (gate), push to GHCR with provenance, pin that tag onto
+# the CI-managed `deploy/stag` branch, then wait for Argo CD `cutline-stag` to sync
+# and verify https://cutline-stag.i.psilva.org/healthz.
+# Production is promoted manually via `.github/workflows/promote.yml` (same artifact).
 
 on:
   push:
@@ -23,31 +22,28 @@ on:
       - 'vite.config.ts'
       - 'infra/k8s/**'
       - '.github/workflows/deploy.yml'
+      - '.github/workflows/promote.yml'
+      - '.github/actions/argo-rollout/**'
   workflow_dispatch:
 
 permissions:
   contents: write
   packages: write
-  id-token: write # mint the OIDC token for build-provenance attestation
-  attestations: write # write the attestation to the GHCR package
+  id-token: write
+  attestations: write
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-stag-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Build, push & roll out
+  deploy-stag:
+    name: Build artifact & deploy staging
     timeout-minutes: 30
-    # Self-hosted runner has kubectl access to tk8s; deploy triggers are trusted refs only.
     runs-on: [self-hosted, Linux, X64]
     env:
       IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/cutline
-      ARGO_APP: cutline-prod
-      DEPLOY_BRANCH: deploy/prod
-      NAMESPACE: cutline
-      INGRESS: cutline
-      HOST: cutline.i.psilva.org
+      HOST: cutline-stag.i.psilva.org
     steps:
       - name: Checkout
         uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4.2.2
@@ -75,8 +71,6 @@ jobs:
           docker build --provenance=false --sbom=false \
             -t "$DATE_TAG" -t "$LATEST_TAG" .
 
-      # Gate the rollout on the image we actually ship: nothing is pushed or
-      # deployed if the built image has a fixable HIGH/CRITICAL vulnerability.
       - name: Trivy image scan (gate)
         uses: aquasecurity/trivy-action@cf5c088a69634cd13ccddc735d7926162c31f9a6 # v0.28.0
         with:
@@ -91,7 +85,6 @@ jobs:
           set -eu
           docker push "$DATE_TAG"
           docker push "$LATEST_TAG"
-          # Capture the pushed manifest digest for the provenance attestation.
           digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$DATE_TAG" | cut -d@ -f2)"
           echo "IMAGE_DIGEST=${digest}" >> "$GITHUB_ENV"
 
@@ -102,53 +95,24 @@ jobs:
           subject-digest: ${{ env.IMAGE_DIGEST }}
           push-to-registry: true
 
-      - name: Pin prod image tag on deploy branch (GitOps)
-        run: |
-          set -eu
-          KUSTOMIZE_FILE=infra/k8s/overlays/prod/kustomization.yaml
-          sed -i "s|newTag: .*|newTag: ${IMAGE_TAG}|" "$KUSTOMIZE_FILE"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # deploy/prod is a CI-managed pointer branch: the triggering master commit
-          # plus the pinned image tag. `master` stays review-gated; Argo tracks this.
-          git checkout -B "$DEPLOY_BRANCH"
-          git add "$KUSTOMIZE_FILE"
-          git commit -m "deploy: pin prod image to ${IMAGE_TAG}"
-          git push --force origin "$DEPLOY_BRANCH"
-          echo "DEPLOY_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Roll out to staging
+        uses: ./.github/actions/argo-rollout
+        with:
+          argo-app: cutline-stag
+          deploy-branch: deploy/stag
+          kustomize-file: infra/k8s/overlays/stag/kustomization.yaml
+          image-tag: ${{ env.IMAGE_TAG }}
+          pin-commit-message: 'deploy: pin stag image to ${{ env.IMAGE_TAG }}'
+          namespace: cutline-stag
+          host: cutline-stag.i.psilva.org
 
-      - name: Wait for Argo CD sync
+      - name: Deployment summary
         run: |
-          set -eu
-          # Nudge Argo to pick up the new commit now instead of at the next reconcile,
-          # then gate on the *pushed* revision actually syncing — not stale status from
-          # a previous sync (which would still read Synced/Healthy on the old image).
-          kubectl -n argocd annotate application "$ARGO_APP" \
-            argocd.argoproj.io/refresh=hard --overwrite >/dev/null
-          deadline=$((SECONDS + 600))
-          while [ "$SECONDS" -lt "$deadline" ]; do
-            revision="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.revision}' 2>/dev/null || true)"
-            sync="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
-            health="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
-            phase="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.operationState.phase}' 2>/dev/null || true)"
-            echo "Argo CD ${ARGO_APP}: revision=${revision:0:7} sync=${sync:-Unknown} health=${health:-Unknown} op=${phase:-Unknown}"
-            if [ "$revision" = "$DEPLOY_SHA" ] && [ "$sync" = "Synced" ] && [ "$health" = "Healthy" ] && [ "$phase" = "Succeeded" ]; then
-              echo "OK: ${ARGO_APP} synced ${DEPLOY_SHA} (Synced + Healthy)"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "Timed out waiting for ${ARGO_APP} to sync ${DEPLOY_SHA} (Synced + Healthy)" >&2
-          kubectl -n argocd get application "$ARGO_APP" -o yaml >&2 || true
-          exit 1
-
-      - name: Verify route
-        run: |
-          set -eu
-          ingress_ip="$(kubectl -n "$NAMESPACE" get ingress "$INGRESS" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
-          if [ -z "$ingress_ip" ]; then
-            echo "Ingress ${NAMESPACE}/${INGRESS} has no load balancer IP yet." >&2
-            exit 1
-          fi
-          curl -fsS --resolve "${HOST}:443:${ingress_ip}" "https://${HOST}/healthz" >/dev/null
-          echo "OK: https://${HOST}/healthz reachable via ${ingress_ip}"
+          {
+            echo "### Staging deploy"
+            echo "- **Artifact:** \`${IMAGE_NAME}:${IMAGE_TAG}\`"
+            echo "- **Digest:** \`${IMAGE_DIGEST}\`"
+            echo "- **URL:** https://${HOST}"
+            echo ""
+            echo "Promote to prod: Actions → **Promote** → \`${IMAGE_TAG}\` (or leave blank for current staging)."
+          } >> "$GITHUB_STEP_SUMMARY"
