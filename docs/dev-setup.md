@@ -66,3 +66,20 @@ bunx wrangler r2 object get cutline-prod users/.../transcode.mp4 --file /tmp/tra
 ```
 
 Use the S3 access key (`R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` in `Cutline-PROD` dotenv) for app-side presigned URLs — not the Cloudflare API token.
+
+### Public staging bucket (AssemblyAI — #194)
+
+Manual transcription sends audio to AssemblyAI via a **temporary public URL**. The worker server-side-copies the project's primary media from the private bucket (`R2_BUCKET`) into a separate **public staging bucket** (`R2_PUBLIC_BUCKET`), submits `{R2_PUBLIC_BASE_URL}/{key}` to AssemblyAI, then deletes the staged object in a `finally` block.
+
+- Bucket name and base URL live in **`Cutline-PROD` → `dotenv`**: `R2_PUBLIC_BUCKET`, `R2_PUBLIC_BASE_URL` (also commented in `.env.example`).
+- Staged keys look like `transcription/{mediaId}/{jobId}.mp4` — unguessable UUID paths; no bucket listing.
+- **24h lifecycle** on the public bucket is the backstop if delete-on-done fails (e.g. worker crash). Config: `infra/r2/lifecycle-public.json`.
+
+Apply lifecycle (same Wrangler auth as above):
+
+```sh
+export R2_PUBLIC_BUCKET="$(op read 'op://…/R2_PUBLIC_BUCKET')"
+bunx wrangler r2 bucket lifecycle set "$R2_PUBLIC_BUCKET" --file infra/r2/lifecycle-public.json -y
+```
+
+Do **not** commit the public bucket URL — treat staged URLs as short-lived bearer capabilities.
