@@ -92,13 +92,29 @@ function segmentAtEditedTime(
 	edl: EditDecisionList,
 	editedTime: number
 ): { segment: EditedWordSegment; phase: 'word' | 'gap' } | null {
-	for (const segment of edl.segments) {
-		if (editedTime >= segment.editedStart && editedTime < segment.editedEnd) {
-			return { segment, phase: 'word' };
+	// Segments are sorted by `editedStart` and non-overlapping, so the only candidate is the
+	// last segment that starts at or before `editedTime` — binary-search it instead of scanning.
+	const segments = edl.segments;
+	let lo = 0;
+	let hi = segments.length - 1;
+	let idx = -1;
+	while (lo <= hi) {
+		const mid = (lo + hi) >> 1;
+		if (segments[mid]!.editedStart <= editedTime) {
+			idx = mid;
+			lo = mid + 1;
+		} else {
+			hi = mid - 1;
 		}
-		if (editedTime >= segment.editedEnd && editedTime < segment.editedEnd + edl.wordGap) {
-			return { segment, phase: 'gap' };
-		}
+	}
+	if (idx < 0) return null;
+
+	const segment = segments[idx]!;
+	if (editedTime >= segment.editedStart && editedTime < segment.editedEnd) {
+		return { segment, phase: 'word' };
+	}
+	if (editedTime >= segment.editedEnd && editedTime < segment.editedEnd + edl.wordGap) {
+		return { segment, phase: 'gap' };
 	}
 	return null;
 }
@@ -134,13 +150,12 @@ export function sourceToEdited(edl: EditDecisionList, sourceTime: number): numbe
 	return segment.editedStart + (sourceTime - segment.sourceStart);
 }
 
-/** Active word under the edited playhead (includes WORD_GAP tail per word). */
-export function editedWordAt(
+/** Active word under the edited playhead, given pre-filtered active words (hot path). */
+export function editedWordIdAt(
 	edl: EditDecisionList,
-	words: Word[],
+	active: Word[],
 	editedTime: number
 ): string | null {
-	const active = words.filter((word) => !word.deleted);
 	if (active.length === 0) return null;
 
 	const hit = segmentAtEditedTime(edl, editedTime);
@@ -148,4 +163,17 @@ export function editedWordAt(
 
 	if (editedTime <= 0) return active[0]!.id;
 	return active.at(-1)!.id;
+}
+
+/** Active word under the edited playhead (includes WORD_GAP tail per word). */
+export function editedWordAt(
+	edl: EditDecisionList,
+	words: Word[],
+	editedTime: number
+): string | null {
+	return editedWordIdAt(
+		edl,
+		words.filter((word) => !word.deleted),
+		editedTime
+	);
 }
