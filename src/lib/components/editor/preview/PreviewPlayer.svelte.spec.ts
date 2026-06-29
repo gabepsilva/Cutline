@@ -56,12 +56,14 @@ describe('PreviewPlayer.svelte', () => {
 	it('renders video element when videoUrl is provided', async () => {
 		render(PreviewPlayerHarness, {
 			videoUrl: 'https://example.com/preview.mp4',
+			sourceTime: 12.5,
 			showSimulated: false
 		});
 
 		const video = await page.getByLabelText('Project preview video').element();
 		expect(video.tagName).toBe('VIDEO');
 		expect(video.getAttribute('src')).toBe('https://example.com/preview.mp4');
+		expect(video.hasAttribute('muted')).toBe(false);
 	});
 
 	it('hides simulated placeholder when videoUrl is set', async () => {

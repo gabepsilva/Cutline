@@ -7,6 +7,7 @@ import {
 	currentWordId,
 	rulerTicks,
 	seekTimeFromTimelineClick,
+	sourceTimeAt,
 	totalDuration,
 	trackClips,
 	trimmedLabel,
@@ -35,6 +36,14 @@ describe('editor-derive', () => {
 
 		it('returns at least 0.001 for an empty transcript', () => {
 			expect(totalDuration([])).toBe(0.001);
+		});
+	});
+
+	describe('sourceTimeAt', () => {
+		it('maps edited playhead time to source media time', () => {
+			const words = fixtureTranscriptWords;
+			expect(sourceTimeAt(words, 0)).toBe(0);
+			expect(sourceTimeAt(words, words[0]!.dur / 2)).toBeCloseTo(words[0]!.dur / 2, 5);
 		});
 	});
 
