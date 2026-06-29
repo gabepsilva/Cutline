@@ -1,0 +1,54 @@
+# Development stack (#202): SvelteKit app + jobs worker with bind-mounted source and hot reload.
+# Production uses Dockerfile + k8s — this file is dev-only.
+#
+# Prerequisites: copy .env.example → .env (BETTER_AUTH_SECRET required for auth).
+#   make dev-up
+
+name: cutline-dev
+
+x-dev-service: &dev-service
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  env_file: .env
+  environment: &dev-env
+    DATABASE_URL: file:/data/local.db
+    INLINE_JOB_WORKER: 'false'
+    ORIGIN: http://localhost:5173
+  volumes:
+    - .:/app
+    - node_modules:/app/node_modules
+    - db_data:/data
+
+services:
+  migrate:
+    <<: *dev-service
+    command: ['bun', 'scripts/migrate.mjs']
+    restart: 'no'
+
+  app:
+    <<: *dev-service
+    command: ['bun', 'run', 'dev', '--', '--host', '0.0.0.0', '--port', '5173']
+    environment:
+      <<: *dev-env
+      DOCKER_DEV: '1'
+      CHOKIDAR_USEPOLLING: 'true'
+    ports:
+      - '5173:5173'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *dev-service
+    command: ['bun', '--watch', 'scripts/jobs-worker.ts']
+    environment:
+      <<: *dev-env
+      WORKER_ID: compose-worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  node_modules:
+  db_data:

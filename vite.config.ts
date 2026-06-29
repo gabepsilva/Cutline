@@ -8,8 +8,18 @@ import { failOnTeardownTimeout } from './src/lib/test/vitest-ci-reporter.ts';
 
 const appPathsMock = fileURLToPath(new URL('./src/lib/test/mocks/app-paths.ts', import.meta.url));
 const isCI = !!process.env.CI;
+const isDockerDev = !!process.env.DOCKER_DEV;
 
 export default defineConfig({
+	// Bind-mounted source in docker compose often misses inotify events (#202).
+	...(isDockerDev && {
+		server: {
+			host: '0.0.0.0',
+			port: 5173,
+			watch: { usePolling: true },
+			hmr: { clientPort: 5173 }
+		}
+	}),
 	// @libsql/client loads a native binding (@libsql/<platform> .node) via dynamic
 	// require — bundling it breaks that lookup at runtime. Keep it external so the
 	// adapter-node server requires it from node_modules. (T-10)
