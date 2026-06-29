@@ -20,14 +20,40 @@ bun x sv@0.16.1 create --template minimal --types ts --add prettier eslint vites
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Install dependencies and start the Vite dev server (app only — jobs run in-process unless `INLINE_JOB_WORKER=false`):
 
 ```sh
-npm run dev
+bun install
+bun run dev
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+# open the app in a new browser tab
+bun run dev -- --open
 ```
+
+For **production-like topology** (separate app + worker, ffmpeg ingest, shared DB), use the Docker Compose dev stack:
+
+```sh
+cp .env.example .env   # set BETTER_AUTH_SECRET (32+ chars) and any optional API keys
+make dev-up            # foreground; or make dev-up-d for detached
+```
+
+| Target                                         | Description                                                                                         |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `make dev-up` / `make dev-up-d`                | Start app (`:5173`) + worker + migrate                                                              |
+| `make dev-down`                                | Stop containers                                                                                     |
+| `make dev-logs`                                | Tail service logs                                                                                   |
+| `make dev-migrate`                             | Re-run schema migrations                                                                            |
+| `make dev-rebuild`                             | Rebuild images after `Dockerfile.dev` or lockfile changes                                           |
+| `make dev-ui`                                  | Open [lazydocker](https://github.com/jesseduffield/lazydocker) TUI (`pacman -S lazydocker` on Arch) |
+| `make dev-shell-app` / `make dev-shell-worker` | Shell into a running service                                                                        |
+
+**Prerequisites:** Docker Engine + Compose v2, `.env` from `.env.example`.
+
+**How it works:** `compose.yaml` bind-mounts the repo, keeps `node_modules` in a named volume (Linux-native `@libsql` bindings), and stores SQLite at `file:/data/local.db` in a shared volume. The app uses `DOCKER_DEV=1` for Vite polling so HMR works across bind mounts. `INLINE_JOB_WORKER=false` — the worker service polls the DB like production.
+
+**Pitfalls:** After `bun.lock` changes, restart compose or run `make dev-rebuild`. Upload/transcription need R2/AssemblyAI keys in `.env`; the UI loads without them.
+
+Keep lint, typecheck, and unit tests on the host: `bun run check`, `bun run test:unit -- --run`.
 
 ## Building
 
