@@ -62,6 +62,7 @@ for kind in "${MANAGED_KINDS[@]}"; do
 	api_lower="$(echo "$kind" | tr '[:upper:]' '[:lower:]')"
 	case "$kind" in
 		OnePasswordItem) resource_flag="onepassworditems" ;;
+		Ingress) resource_flag="ingresses" ;; # naive +s gives the invalid "ingresss"
 		*) resource_flag="${api_lower}s" ;;
 	esac
 	while IFS= read -r name; do
@@ -83,8 +84,12 @@ printf '  %s\n' "${orphans[@]}"
 
 if [[ "$DELETE" == true ]]; then
 	for resource in "${orphans[@]}"; do
-		echo "Deleting ${NAMESPACE}/${resource}..."
-		kubectl -n "$NAMESPACE" delete "$resource" --ignore-not-found
+		read -rp "Delete ${NAMESPACE}/${resource}? [y/N] " reply </dev/tty || reply=""
+		if [[ "$reply" =~ ^[Yy]$ ]]; then
+			kubectl -n "$NAMESPACE" delete "$resource" --ignore-not-found
+		else
+			echo "Skipped ${resource}"
+		fi
 	done
 	echo "Done."
 fi

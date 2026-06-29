@@ -174,7 +174,8 @@ which makes cert-manager's ingress-shim auto-create a `Certificate` named after
 `spec.tls.secretName`. Staging keeps the base `Certificate` name (`cutline-tls`) but patches
 `secretName` to `cutline-stag-tls` — without dropping the annotation, shim creates a second
 `Certificate/cutline-stag-tls` that fights over the same secret. The stag ingress overlay
-patch sets `cert-manager.io/cluster-issuer: null` so only the explicit `Certificate` remains.
+patch removes the `cert-manager.io/cluster-issuer` annotation (JSON6902 `op: remove`) so only
+the explicit `Certificate` remains.
 
 **Manual-apply leftovers:** resources created by `kubectl apply -k` before Argo registration
 carry no Argo tracking annotation, so `prune: true` will **not** remove renamed/dropped
@@ -184,7 +185,7 @@ resources. Audit and remove orphans so the overlay stays the single source of tr
 # List orphans (exit 1 if any found)
 bash scripts/k8s-audit-overlay.sh cutline-stag infra/k8s/overlays/stag
 
-# Delete orphans interactively flagged above
+# Delete orphans (prompts per resource before each delete)
 bash scripts/k8s-audit-overlay.sh cutline-stag infra/k8s/overlays/stag --delete
 ```
 
