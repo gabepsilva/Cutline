@@ -3,8 +3,7 @@ misconfigurations:
     paths:
       - Dockerfile.dev
     statement: Dev-only image; not deployed (#202)
-  - id: KSV-0118
-    paths:
+  - paths:
       - infra/k8s/overlays/stag/deployment-database-auth-patch.yaml
       - infra/k8s/overlays/stag/worker-database-auth-patch.yaml
       - infra/k8s/overlays/stag/migrate-database-env-patch.yaml
