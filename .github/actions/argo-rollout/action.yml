@@ -1,0 +1,101 @@
+name: Argo CD GitOps rollout
+description: >-
+  Pin images.newTag on a CI-managed deploy branch, wait for Argo CD to sync that
+  revision (Synced + Healthy + Succeeded), and verify /healthz via ingress IP.
+
+inputs:
+  argo-app:
+    description: Argo CD Application name (e.g. cutline-stag)
+    required: true
+  deploy-branch:
+    description: CI-managed Git branch Argo tracks (e.g. deploy/stag)
+    required: true
+  kustomize-file:
+    description: Path to kustomization.yaml whose images.newTag is pinned
+    required: true
+  image-tag:
+    description: Image tag to pin (without registry prefix)
+    required: true
+  pin-commit-message:
+    description: Git commit message for the deploy-branch pointer update
+    required: true
+  namespace:
+    description: Kubernetes namespace for ingress lookup
+    required: true
+  ingress:
+    description: Ingress resource name
+    required: false
+    default: cutline
+  host:
+    description: Public host for curl --resolve health check
+    required: true
+
+outputs:
+  deploy-sha:
+    description: Commit SHA force-pushed to the deploy branch
+    value: ${{ steps.pin.outputs.deploy_sha }}
+
+runs:
+  using: composite
+  steps:
+    - name: Pin image tag on deploy branch (GitOps)
+      id: pin
+      shell: bash
+      env:
+        DEPLOY_BRANCH: ${{ inputs.deploy-branch }}
+        KUSTOMIZE_FILE: ${{ inputs.kustomize-file }}
+        IMAGE_TAG: ${{ inputs.image-tag }}
+        PIN_COMMIT_MESSAGE: ${{ inputs.pin-commit-message }}
+      run: |
+        set -eu
+        sed -i "s|newTag: .*|newTag: ${IMAGE_TAG}|" "$KUSTOMIZE_FILE"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git checkout -B "$DEPLOY_BRANCH"
+        git add "$KUSTOMIZE_FILE"
+        git commit -m "$PIN_COMMIT_MESSAGE"
+        git push --force origin "$DEPLOY_BRANCH"
+        deploy_sha="$(git rev-parse HEAD)"
+        echo "DEPLOY_SHA=${deploy_sha}" >> "$GITHUB_ENV"
+        echo "deploy_sha=${deploy_sha}" >> "$GITHUB_OUTPUT"
+
+    - name: Wait for Argo CD sync
+      shell: bash
+      env:
+        ARGO_APP: ${{ inputs.argo-app }}
+      run: |
+        set -eu
+        kubectl -n argocd annotate application "$ARGO_APP" \
+          argocd.argoproj.io/refresh=hard --overwrite >/dev/null
+        deadline=$((SECONDS + 600))
+        while [ "$SECONDS" -lt "$deadline" ]; do
+          revision="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.revision}' 2>/dev/null || true)"
+          sync="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
+          health="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
+          phase="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.operationState.phase}' 2>/dev/null || true)"
+          echo "Argo CD ${ARGO_APP}: revision=${revision:0:7} sync=${sync:-Unknown} health=${health:-Unknown} op=${phase:-Unknown}"
+          if [ "$revision" = "$DEPLOY_SHA" ] && [ "$sync" = "Synced" ] && [ "$health" = "Healthy" ] && [ "$phase" = "Succeeded" ]; then
+            echo "OK: ${ARGO_APP} synced ${DEPLOY_SHA} (Synced + Healthy)"
+            exit 0
+          fi
+          sleep 10
+        done
+        echo "Timed out waiting for ${ARGO_APP} to sync ${DEPLOY_SHA} (Synced + Healthy)" >&2
+        kubectl -n argocd get application "$ARGO_APP" -o yaml >&2 || true
+        exit 1
+
+    - name: Verify route
+      shell: bash
+      env:
+        NAMESPACE: ${{ inputs.namespace }}
+        INGRESS: ${{ inputs.ingress }}
+        HOST: ${{ inputs.host }}
+      run: |
+        set -eu
+        ingress_ip="$(kubectl -n "$NAMESPACE" get ingress "$INGRESS" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+        if [ -z "$ingress_ip" ]; then
+          echo "Ingress ${NAMESPACE}/${INGRESS} has no load balancer IP yet." >&2
+          exit 1
+        fi
+        curl -fsS --resolve "${HOST}:443:${ingress_ip}" "https://${HOST}/healthz" >/dev/null
+        echo "OK: https://${HOST}/healthz reachable via ${ingress_ip}"

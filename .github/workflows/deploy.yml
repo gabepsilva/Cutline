@@ -22,6 +22,8 @@ on:
       - 'vite.config.ts'
       - 'infra/k8s/**'
       - '.github/workflows/deploy.yml'
+      - '.github/workflows/promote.yml'
+      - '.github/actions/argo-rollout/**'
   workflow_dispatch:
 
 permissions:
@@ -41,11 +43,6 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     env:
       IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/cutline
-      ARGO_APP: cutline-stag
-      DEPLOY_BRANCH: deploy/stag
-      KUSTOMIZE_FILE: infra/k8s/overlays/stag/kustomization.yaml
-      NAMESPACE: cutline-stag
-      INGRESS: cutline
       HOST: cutline-stag.i.psilva.org
     steps:
       - name: Checkout
@@ -98,50 +95,16 @@ jobs:
           subject-digest: ${{ env.IMAGE_DIGEST }}
           push-to-registry: true
 
-      - name: Pin stag image tag on deploy branch (GitOps)
-        run: |
-          set -eu
-          sed -i "s|newTag: .*|newTag: ${IMAGE_TAG}|" "$KUSTOMIZE_FILE"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$DEPLOY_BRANCH"
-          git add "$KUSTOMIZE_FILE"
-          git commit -m "deploy: pin stag image to ${IMAGE_TAG}"
-          git push --force origin "$DEPLOY_BRANCH"
-          echo "DEPLOY_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-
-      - name: Wait for Argo CD sync
-        run: |
-          set -eu
-          kubectl -n argocd annotate application "$ARGO_APP" \
-            argocd.argoproj.io/refresh=hard --overwrite >/dev/null
-          deadline=$((SECONDS + 600))
-          while [ "$SECONDS" -lt "$deadline" ]; do
-            revision="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.revision}' 2>/dev/null || true)"
-            sync="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
-            health="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
-            phase="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.operationState.phase}' 2>/dev/null || true)"
-            echo "Argo CD ${ARGO_APP}: revision=${revision:0:7} sync=${sync:-Unknown} health=${health:-Unknown} op=${phase:-Unknown}"
-            if [ "$revision" = "$DEPLOY_SHA" ] && [ "$sync" = "Synced" ] && [ "$health" = "Healthy" ] && [ "$phase" = "Succeeded" ]; then
-              echo "OK: ${ARGO_APP} synced ${DEPLOY_SHA} (Synced + Healthy)"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "Timed out waiting for ${ARGO_APP} to sync ${DEPLOY_SHA} (Synced + Healthy)" >&2
-          kubectl -n argocd get application "$ARGO_APP" -o yaml >&2 || true
-          exit 1
-
-      - name: Verify route
-        run: |
-          set -eu
-          ingress_ip="$(kubectl -n "$NAMESPACE" get ingress "$INGRESS" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
-          if [ -z "$ingress_ip" ]; then
-            echo "Ingress ${NAMESPACE}/${INGRESS} has no load balancer IP yet." >&2
-            exit 1
-          fi
-          curl -fsS --resolve "${HOST}:443:${ingress_ip}" "https://${HOST}/healthz" >/dev/null
-          echo "OK: https://${HOST}/healthz reachable via ${ingress_ip}"
+      - name: Roll out to staging
+        uses: ./.github/actions/argo-rollout
+        with:
+          argo-app: cutline-stag
+          deploy-branch: deploy/stag
+          kustomize-file: infra/k8s/overlays/stag/kustomization.yaml
+          image-tag: ${{ env.IMAGE_TAG }}
+          pin-commit-message: 'deploy: pin stag image to ${{ env.IMAGE_TAG }}'
+          namespace: cutline-stag
+          host: cutline-stag.i.psilva.org
 
       - name: Deployment summary
         run: |
