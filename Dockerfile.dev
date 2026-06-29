@@ -19,9 +19,5 @@ RUN bun install --frozen-lockfile --ignore-scripts
 COPY docker-entrypoint.dev.sh /usr/local/bin/docker-entrypoint.dev.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.dev.sh
 
-# oven/bun ships an unprivileged `bun` user (uid/gid 1000) — same as production Dockerfile.
-RUN chown -R bun:bun /app
-USER bun
-
 ENTRYPOINT ["docker-entrypoint.dev.sh"]
 CMD ["bun", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
