@@ -9,3 +9,12 @@ spec:
       secretName: cutline-stag-tls
   rules:
     - host: cutline-stag.i.psilva.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cutline
+                port:
+                  number: 80
