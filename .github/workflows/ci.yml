@@ -40,8 +40,11 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Unit and component tests
-        # Normally ~45s. scripts/ci/test-unit.sh adds a hard timeout if Vitest stalls.
-        timeout-minutes: 2.5
+        # Normally ~45s locally; self-hosted runners can exceed 120s under load.
+        # scripts/ci/test-unit.sh adds a hard timeout if Vitest stalls.
+        timeout-minutes: 4
+        env:
+          VITEST_CI_TIMEOUT_SECS: 180
         run: bash scripts/ci/test-unit.sh
 
       - name: E2E tests
