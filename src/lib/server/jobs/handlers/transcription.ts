@@ -5,7 +5,11 @@ import {
 } from '$lib/server/stt/assemblyai-client';
 import { buildSpeakers, mapAssemblyAiWords } from '$lib/server/stt/assemblyai-map';
 import { findPrimaryMediaRow } from '$lib/server/storage/media-assets';
-import { presignGetObject } from '$lib/server/storage/r2';
+import {
+	buildPublicUrl,
+	copyObjectToPublicBucket,
+	deletePublicObject
+} from '$lib/server/storage/r2';
 import { writeTranscript } from '$lib/server/transcript/write-transcript-words';
 import type { Database } from '$lib/server/db/types';
 import type { TranscriptionJobPayload } from '$lib/types/job';
@@ -47,41 +51,57 @@ export async function runTranscriptionJob(
 
 	const apiKey = readAssemblyAiApiKey();
 	const objectKey = resolveTranscriptionAudioKey(mediaRow);
-	const audioUrl = await presignGetObject(objectKey);
+	// mediaId + job id are both UUIDs → unguessable; keep the .mp4 extension.
+	const destKey = `transcription/${mediaRow!.id}/${ctx.job.id}.mp4`;
+	await copyObjectToPublicBucket(objectKey, destKey);
 
-	await ctx.reportProgress(0.05);
+	try {
+		const audioUrl = buildPublicUrl(destKey);
 
-	const transcriptId = await submitAssemblyAiTranscript(audioUrl, apiKey);
-	await ctx.reportProgress(0.1);
+		await ctx.reportProgress(0.05);
 
-	const completed = await pollAssemblyAiTranscript(
-		transcriptId,
-		apiKey,
-		(progress) => ctx.reportProgress(progress),
-		ctx.isCancelRequested
-	);
+		const transcriptId = await submitAssemblyAiTranscript(audioUrl, apiKey);
+		await ctx.reportProgress(0.1);
 
-	if (!completed.words?.length) {
-		throw new Error('AssemblyAI returned no words');
+		const completed = await pollAssemblyAiTranscript(
+			transcriptId,
+			apiKey,
+			(progress) => ctx.reportProgress(progress),
+			ctx.isCancelRequested
+		);
+
+		if (!completed.words?.length) {
+			throw new Error('AssemblyAI returned no words');
+		}
+
+		const words = mapAssemblyAiWords(completed.words);
+		const speakers = buildSpeakers(completed.words);
+		const wordCount = await writeTranscript(database, payload.projectId, words, speakers);
+		event(ctx.log, 'transcript.produced', {
+			actorId: payload.actorId,
+			target: { type: 'project', id: payload.projectId },
+			causationId: payload.causationId,
+			provider: 'assemblyai',
+			wordCount,
+			speakerCount: speakers.length
+		});
+		await ctx.complete({
+			provider: 'assemblyai',
+			transcriptId,
+			wordCount,
+			speakerCount: speakers.length
+		});
+	} finally {
+		try {
+			await deletePublicObject(destKey);
+		} catch (err) {
+			event(ctx.log, 'transcript.cleanup_failed', {
+				target: { type: 'job', id: ctx.job.id },
+				destKey,
+				error: err instanceof Error ? err.message : 'unknown'
+			});
+		}
 	}
-
-	const words = mapAssemblyAiWords(completed.words);
-	const speakers = buildSpeakers(completed.words);
-	const wordCount = await writeTranscript(database, payload.projectId, words, speakers);
-	event(ctx.log, 'transcript.produced', {
-		actorId: payload.actorId,
-		target: { type: 'project', id: payload.projectId },
-		causationId: payload.causationId,
-		provider: 'assemblyai',
-		wordCount,
-		speakerCount: speakers.length
-	});
-	await ctx.complete({
-		provider: 'assemblyai',
-		transcriptId,
-		wordCount,
-		speakerCount: speakers.length
-	});
 }
 
 export function registerTranscriptionHandler(database: Database): void {
