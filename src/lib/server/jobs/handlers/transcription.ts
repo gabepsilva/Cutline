@@ -94,10 +94,11 @@ export async function runTranscriptionJob(
 	} finally {
 		try {
 			await deletePublicObject(destKey);
-		} catch {
+		} catch (err) {
 			event(ctx.log, 'transcript.cleanup_failed', {
 				target: { type: 'job', id: ctx.job.id },
-				destKey
+				destKey,
+				error: err instanceof Error ? err.message : 'unknown'
 			});
 		}
 	}
