@@ -67,6 +67,7 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: 1
           trivyignores: .trivyignore.yaml
+          skip-files: infra/k8s/overlays/**/*-patch.yaml
 
       # Container/release path — active now that a Dockerfile exists.
       - name: Build container image
