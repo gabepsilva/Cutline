@@ -1,0 +1,11 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cutline
+spec:
+  tls:
+    - hosts:
+        - cutline-stag.i.psilva.org
+      secretName: cutline-stag-tls
+  rules:
+    - host: cutline-stag.i.psilva.org

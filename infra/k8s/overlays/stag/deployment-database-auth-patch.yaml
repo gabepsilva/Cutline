@@ -1,0 +1,16 @@
+# Staging Turso token (per-DB). Env wins over dotenv mount for DATABASE_AUTH_TOKEN.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cutline
+spec:
+  template:
+    spec:
+      containers:
+        - name: cutline
+          env:
+            - name: DATABASE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cutline-app
+                  key: stag-db-token

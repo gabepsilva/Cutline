@@ -1,0 +1,30 @@
+# One-time registration on tk8s:
+#   kubectl apply -f infra/k8s/argocd/cutline-stag-app.yaml
+#
+# Public repo — no repo-creds required. Argo tracks the CI-managed `deploy/stag`
+# branch (not `master`, which stays review-gated): deploy.yml force-pushes
+# `master` + the pinned images.newTag to `deploy/stag`, and Argo syncs.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cutline-stag
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/gabepsilva/Cutline
+    targetRevision: deploy/stag
+    path: infra/k8s/overlays/stag
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cutline-stag
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true

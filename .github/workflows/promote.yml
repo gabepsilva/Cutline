@@ -1,0 +1,107 @@
+name: Promote
+
+# Ship a staging-verified image artifact to production (issue #216). No rebuild and
+# no re-scan — pins the same version already running in cutline-stag onto deploy/prod.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to promote (default: current staging deploy/stag tag)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: promote-prod
+  cancel-in-progress: false
+
+jobs:
+  promote-prod:
+    name: Promote artifact to production
+    timeout-minutes: 20
+    runs-on: [self-hosted, Linux, X64]
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/cutline
+      ARGO_APP: cutline-prod
+      DEPLOY_BRANCH: deploy/prod
+      KUSTOMIZE_FILE: infra/k8s/overlays/prod/kustomization.yaml
+      STAG_KUSTOMIZE_FILE: infra/k8s/overlays/stag/kustomization.yaml
+      NAMESPACE: cutline
+      INGRESS: cutline
+      HOST: cutline.i.psilva.org
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image tag
+        run: |
+          set -eu
+          tag="${{ inputs.image_tag }}"
+          if [ -z "$tag" ]; then
+            git fetch origin deploy/stag
+            tag="$(git show origin/deploy/stag:"$STAG_KUSTOMIZE_FILE" | awk '/newTag:/ { print $2; exit }')"
+            if [ -z "$tag" ]; then
+              echo "Could not read staging image tag from deploy/stag" >&2
+              exit 1
+            fi
+            echo "Using current staging tag: ${tag}"
+          fi
+          echo "IMAGE_TAG=${tag}" >> "$GITHUB_ENV"
+
+      - name: Pin prod image tag on deploy branch (GitOps)
+        run: |
+          set -eu
+          sed -i "s|newTag: .*|newTag: ${IMAGE_TAG}|" "$KUSTOMIZE_FILE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$DEPLOY_BRANCH"
+          git add "$KUSTOMIZE_FILE"
+          git commit -m "deploy: promote prod image to ${IMAGE_TAG}"
+          git push --force origin "$DEPLOY_BRANCH"
+          echo "DEPLOY_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Wait for Argo CD sync
+        run: |
+          set -eu
+          kubectl -n argocd annotate application "$ARGO_APP" \
+            argocd.argoproj.io/refresh=hard --overwrite >/dev/null
+          deadline=$((SECONDS + 600))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            revision="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.revision}' 2>/dev/null || true)"
+            sync="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.sync.status}' 2>/dev/null || true)"
+            health="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.health.status}' 2>/dev/null || true)"
+            phase="$(kubectl -n argocd get application "$ARGO_APP" -o jsonpath='{.status.operationState.phase}' 2>/dev/null || true)"
+            echo "Argo CD ${ARGO_APP}: revision=${revision:0:7} sync=${sync:-Unknown} health=${health:-Unknown} op=${phase:-Unknown}"
+            if [ "$revision" = "$DEPLOY_SHA" ] && [ "$sync" = "Synced" ] && [ "$health" = "Healthy" ] && [ "$phase" = "Succeeded" ]; then
+              echo "OK: ${ARGO_APP} synced ${DEPLOY_SHA} (Synced + Healthy)"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for ${ARGO_APP} to sync ${DEPLOY_SHA} (Synced + Healthy)" >&2
+          kubectl -n argocd get application "$ARGO_APP" -o yaml >&2 || true
+          exit 1
+
+      - name: Verify route
+        run: |
+          set -eu
+          ingress_ip="$(kubectl -n "$NAMESPACE" get ingress "$INGRESS" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+          if [ -z "$ingress_ip" ]; then
+            echo "Ingress ${NAMESPACE}/${INGRESS} has no load balancer IP yet." >&2
+            exit 1
+          fi
+          curl -fsS --resolve "${HOST}:443:${ingress_ip}" "https://${HOST}/healthz" >/dev/null
+          echo "OK: https://${HOST}/healthz reachable via ${ingress_ip}"
+
+      - name: Promotion summary
+        run: |
+          {
+            echo "### Production promotion"
+            echo "- **Artifact:** \`${IMAGE_NAME}:${IMAGE_TAG}\`"
+            echo "- **URL:** https://${HOST}"
+          } >> "$GITHUB_STEP_SUMMARY"

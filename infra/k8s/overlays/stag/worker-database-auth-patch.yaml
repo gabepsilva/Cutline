@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cutline-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: worker
+          env:
+            - name: DATABASE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cutline-app
+                  key: stag-db-token

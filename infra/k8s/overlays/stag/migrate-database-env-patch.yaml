@@ -1,0 +1,22 @@
+# Migrate pods mount dotenv only (prod DATABASE_URL). Override URL from ConfigMap so
+# PreSync / manual migrations hit the staging Turso DB, not prod.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cutline-migrate-hook
+spec:
+  template:
+    spec:
+      containers:
+        - name: migrate
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: cutline-config
+                  key: DATABASE_URL
+            - name: DATABASE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cutline-app
+                  key: stag-db-token
