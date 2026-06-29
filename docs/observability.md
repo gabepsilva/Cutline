@@ -29,14 +29,14 @@ Pod stdout is collected by **Grafana Alloy** (DaemonSet) and stored in **Loki** 
 
 ### Querying logs
 
-| Goal | LogQL (Grafana → Explore → Loki) |
-| ---- | -------------------------------- |
-| All cutline logs | `{namespace="cutline"} \| json` |
-| One HTTP request | `{namespace="cutline",container="cutline"} \| json \| requestId="<uuid>"` |
-| Trace async work | `{namespace="cutline"} \| json \| causationId="<requestId>"` |
-| Unhandled errors | `{namespace="cutline"} \| json \| msg="unhandled server error"` |
-| Job failures | `{namespace="cutline",container="worker"} \| json \| msg=~"job failed; no retries left\|ingest job dead-lettered"` |
-| Access / 5xx | `{namespace="cutline",container="cutline"} \| json \| msg="request" \| status >= 500` |
+| Goal             | LogQL (Grafana → Explore → Loki)                                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| All cutline logs | `{namespace="cutline"} \| json`                                                                                    |
+| One HTTP request | `{namespace="cutline",container="cutline"} \| json \| requestId="<uuid>"`                                          |
+| Trace async work | `{namespace="cutline"} \| json \| causationId="<requestId>"`                                                       |
+| Unhandled errors | `{namespace="cutline"} \| json \| msg="unhandled server error"`                                                    |
+| Job failures     | `{namespace="cutline",container="worker"} \| json \| msg=~"job failed; no retries left\|ingest job dead-lettered"` |
+| Access / 5xx     | `{namespace="cutline",container="cutline"} \| json \| msg="request" \| status >= 500`                              |
 
 `requestId` is returned on 500 responses (`x-request-id` header on all responses) and stamped on job payloads as `causationId` for worker events.
 
