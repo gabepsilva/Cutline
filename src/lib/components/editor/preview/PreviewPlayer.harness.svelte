@@ -4,6 +4,7 @@
 	interface Props {
 		playing?: boolean;
 		currentTime?: number;
+		sourceTime?: number | null;
 		recLabel?: string;
 		videoUrl?: string | null;
 		showSimulated?: boolean;
@@ -14,6 +15,7 @@
 	let {
 		playing = false,
 		currentTime = 65,
+		sourceTime = null,
 		recLabel = 'REC 1080p',
 		videoUrl = null,
 		showSimulated = true,
@@ -26,6 +28,7 @@
 	<PreviewPlayer
 		{playing}
 		{currentTime}
+		{sourceTime}
 		{recLabel}
 		{videoUrl}
 		{showSimulated}

@@ -4,6 +4,7 @@ import type { CaptionStyle } from '$lib/types/transcript';
 export interface PreviewPanelProps {
 	playing: boolean;
 	currentTime: number;
+	sourceTime?: number | null;
 	totalLabel: string;
 	savedLabel: string;
 	deletedCount: number;
