@@ -10,3 +10,5 @@ data:
   # cookies/redirects and adapter-node accepts the request origin.
   ORIGIN: 'https://cutline.i.psilva.org'
   PORT: '3000'
+  # Structured access lines (method/path/status/durationMs) — consumed by Loki/Grafana (#176).
+  LOG_ACCESS: 'true'
