@@ -10,7 +10,7 @@ resources:
 # Argo CD syncs this overlay and rolls the Deployment.
 images:
   - name: ghcr.io/gabepsilva/cutline
-    newTag: bootstrap
+    newTag: 2026-06-29_78
 
 patches:
   - path: configmap-patch.yaml
@@ -37,7 +37,7 @@ patches:
     target:
       kind: Job
       name: cutline-migrate-hook
-  - path: migrate-database-env-patch.yaml
+  - path: migrate-cronjob-database-env-patch.yaml
     target:
       kind: CronJob
       name: cutline-migrate
