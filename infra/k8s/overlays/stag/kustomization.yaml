@@ -41,3 +41,11 @@ patches:
     target:
       kind: CronJob
       name: cutline-migrate
+  - patch: |
+      - op: remove
+        path: /metadata/annotations/cert-manager.io~1cluster-issuer
+    target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: cutline
