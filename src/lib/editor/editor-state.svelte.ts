@@ -1,11 +1,5 @@
-import {
-	activeWords,
-	buildStartMap,
-	clampTime,
-	currentWordId as deriveCurrentWordId,
-	seekTimeFromTimelineClick,
-	totalDuration
-} from '$lib/editor/editor-derive';
+import { activeWords, clampTime, seekTimeFromTimelineClick } from '$lib/editor/editor-derive';
+import { buildEdl, editedToSource, editedWordIdAt } from '$lib/editor/edl';
 import type { ExportPhase, RecordPhase } from '$lib/types/editor';
 import type { MediaResource } from '$lib/types/media';
 import type { Overlay } from '$lib/types/timeline';
@@ -49,13 +43,20 @@ export class EditorState {
 		if (init.overlays) this.overlays = init.overlays;
 	}
 
+	// Single EDL rebuilt only when `words` changes — reused by every derivation below so the
+	// rAF playback loop no longer rebuilds it on each frame (see perf issue: choppy playback).
+	edl = $derived.by(() => buildEdl(this.words));
 	active = $derived.by(() => activeWords(this.words));
-	startMap = $derived.by(() => buildStartMap(this.active));
-	duration = $derived.by(() => totalDuration(this.words));
+	startMap = $derived.by(() => {
+		const map: Record<string, number> = {};
+		for (const segment of this.edl.segments) map[segment.wordId] = segment.editedStart;
+		return map;
+	});
+	duration = $derived.by(() => this.edl.editedDuration);
 	clampedTime = $derived.by(() => clampTime(this.currentTime, this.duration));
-	currentWordId = $derived.by(() =>
-		deriveCurrentWordId(this.active, this.startMap, this.clampedTime)
-	);
+	currentWordId = $derived.by(() => editedWordIdAt(this.edl, this.active, this.clampedTime));
+	/** Source media time under the playhead — reuses the memoized EDL (no per-frame rebuild). */
+	sourceTime = $derived.by(() => editedToSource(this.edl, this.clampedTime));
 	timecode = $derived.by(() => formatTimecode(this.clampedTime));
 	playheadPct = $derived.by(() => (this.clampedTime / this.duration) * 100);
 	fillerCount = $derived.by(() => this.active.filter((w) => w.filler).length);

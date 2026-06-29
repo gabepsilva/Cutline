@@ -8,11 +8,7 @@
 	import Timeline from '$lib/components/editor/timeline/Timeline.svelte';
 	import ReTranscribeConfirmModal from '$lib/components/editor/transcript/ReTranscribeConfirmModal.svelte';
 	import TranscriptPanel from '$lib/components/editor/transcript/TranscriptPanel.svelte';
-	import {
-		captionWordsForCurrentSentence,
-		sourceTimeAt,
-		trimmedLabel
-	} from '$lib/editor/editor-derive';
+	import { captionWordsForCurrentSentence, trimmedLabel } from '$lib/editor/editor-derive';
 	import {
 		createEditorAutosave,
 		editorSaveMeta,
@@ -158,7 +154,7 @@
 
 	const totalLabel = $derived(formatTimecode(editor.duration));
 	const savedLabel = $derived(trimmedLabel(editor.deletedCount));
-	const previewSourceTime = $derived(sourceTimeAt(editor.words, editor.clampedTime));
+	const previewSourceTime = $derived(editor.sourceTime);
 
 	function handleTranscribeRequest() {
 		if (words.length > 0) {
