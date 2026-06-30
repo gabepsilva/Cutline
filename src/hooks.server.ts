@@ -20,7 +20,7 @@ const handleLogging: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
 	const durationMs = Date.now() - start;
 
-	// Per-request access lines are opt-in (LOG_ACCESS=true) until the log pipeline (#176) is ready.
+	// Per-request access lines when LOG_ACCESS=true (see cutline-config ConfigMap).
 	if (process.env.LOG_ACCESS === 'true') {
 		// locals.user is populated by the downstream auth handle by the time resolve resolves.
 		event.locals.log.info(
