@@ -10,7 +10,7 @@ resources:
 # Argo CD syncs this overlay and rolls the Deployment.
 images:
   - name: ghcr.io/gabepsilva/cutline
-    newTag: 2026-06-29_78
+    newTag: 2026-06-30_81
 
 patches:
   - path: configmap-patch.yaml
