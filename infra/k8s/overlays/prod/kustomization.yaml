@@ -10,4 +10,4 @@ resources:
 # build; Argo CD syncs this overlay and rolls the Deployment.
 images:
   - name: ghcr.io/gabepsilva/cutline
-    newTag: bootstrap
+    newTag: 2026-06-30_81
