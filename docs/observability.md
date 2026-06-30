@@ -9,7 +9,7 @@ Cutline observability is delivered in two phases:
 
 Pod stdout is collected by **Grafana Alloy** (DaemonSet) and stored in **Loki** (14d retention on `rook-ceph-block`). Grafana (`https://grafana.i.psilva.org`) has a **Loki** datasource, the **Cutline / Logs** dashboard, and Grafana-managed alert rules.
 
-**This repo does not own the collector/store** — manifests live in Forgejo [`argoCD-apps`](https://forgejo.i.psilva.org/gabepsilva/argoCD-apps) (`loki/`, `alloy/`, `kube-prometheus-stack/manifests/cutline-*`). See that repo's `DEPLOYMENT_ORDER.md` steps 8–9 and `scripts/deploy-cutline-log-pipeline.sh`.
+**This repo does not own the collector/store** — manifests live in Forgejo [`argoCD-apps`](https://forgejo.i.psilva.org/gabepsilva/argoCD-apps) (`loki/`, `alloy/`, `kube-prometheus-stack/manifests/cutline-*`). See that repo's [`OBSERVABILITY.md`](https://forgejo.i.psilva.org/gabepsilva/argoCD-apps/src/branch/main/OBSERVABILITY.md) and `scripts/deploy-cutline-log-pipeline.sh`.
 
 ### Deploy order (tk8s)
 
