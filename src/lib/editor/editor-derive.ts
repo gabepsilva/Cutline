@@ -1,7 +1,8 @@
 import type { CaptionStyle, Word } from '$lib/types/transcript';
 import type { Clip, Tick, WaveBar } from '$lib/types/timeline';
 import { formatTimecode } from '$lib/utils/format-timecode';
-import { buildEdl, editedToSource, editedWordAt, WORD_GAP } from './edl';
+import type { EditDecisionList } from '$lib/types/edl';
+import { buildEdl, editedToSource, editedWordIdAt, WORD_GAP } from './edl';
 
 export { WORD_GAP };
 
@@ -10,20 +11,24 @@ export function activeWords(words: Word[]): Word[] {
 }
 
 /** Total edited duration in seconds — ignores soft-deleted words. */
-export function totalDuration(words: Word[]): number {
-	return buildEdl(words).editedDuration;
+export function totalDuration(words: Word[], edl?: EditDecisionList): number {
+	return (edl ?? buildEdl(words)).editedDuration;
 }
 
 /** Map edited playhead time to source media time for preview video sync. */
-export function sourceTimeAt(words: Word[], editedTime: number): number | null {
-	return editedToSource(buildEdl(words), editedTime);
+export function sourceTimeAt(
+	words: Word[],
+	editedTime: number,
+	edl?: EditDecisionList
+): number | null {
+	return editedToSource(edl ?? buildEdl(words), editedTime);
 }
 
 /** Map each active word id to its start time on the edited timeline. */
-export function buildStartMap(active: Word[]): Record<string, number> {
-	const edl = buildEdl(active);
+export function buildStartMap(active: Word[], edl?: EditDecisionList): Record<string, number> {
+	const list = edl ?? buildEdl(active);
 	const startMap: Record<string, number> = {};
-	for (const segment of edl.segments) {
+	for (const segment of list.segments) {
 		startMap[segment.wordId] = segment.editedStart;
 	}
 	return startMap;
@@ -48,10 +53,11 @@ export function seekTimeFromTimelineClick(event: MouseEvent, duration: number): 
 export function currentWordId(
 	active: Word[],
 	startMap: Record<string, number>,
-	currentTime: number
+	currentTime: number,
+	edl?: EditDecisionList
 ): string | null {
 	void startMap;
-	return editedWordAt(buildEdl(active), active, currentTime);
+	return editedWordIdAt(edl ?? buildEdl(active), active, currentTime);
 }
 
 /** A1 waveform bars positioned along the edited timeline. */

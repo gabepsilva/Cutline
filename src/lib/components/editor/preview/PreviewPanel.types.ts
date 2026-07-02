@@ -17,5 +17,9 @@ export interface PreviewPanelProps {
 	showSimulated?: boolean;
 	ontogglePlay?: () => void;
 	oncaptionstylechange?: (style: CaptionStyle) => void;
+	/** Map `<video>` source clock back to edited playhead time (#214). */
+	onsourceclock?: (sourceTime: number) => void;
+	onvideoclockdrive?: (active: boolean) => void;
+	onplaybackended?: () => void;
 	class?: string;
 }

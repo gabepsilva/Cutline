@@ -4,7 +4,9 @@
 	import { formatTimecode } from '$lib/utils/format-timecode';
 	import type { PreviewPlayerProps } from './PreviewPlayer.types';
 
+	/** Snap when paused or on explicit user seek — not for playback clock drift (#214). */
 	const SEEK_THRESHOLD_SEC = 0.05;
+	const USER_SEEK_THRESHOLD_SEC = 0.35;
 
 	let {
 		playing,
@@ -13,16 +15,25 @@
 		recLabel = 'REC 1080p',
 		videoUrl = null,
 		showSimulated = true,
+		onsourceclock,
+		onvideoclockdrive,
+		onplaybackended,
 		captions,
 		ontogglePlay,
 		class: className = ''
 	}: PreviewPlayerProps = $props();
 
 	let videoEl = $state<HTMLVideoElement | null>(null);
+	let lastSyncedSourceTime: number | null = null;
 
 	const timecodeLabel = $derived(formatTimecode(currentTime));
 	const playLabel = $derived(playing ? 'Pause preview' : 'Play preview');
 	const useSimulated = $derived(showSimulated && !videoUrl);
+	const useVideoClock = $derived(Boolean(videoUrl && playing && onsourceclock));
+
+	$effect(() => {
+		onvideoclockdrive?.(useVideoClock);
+	});
 
 	$effect(() => {
 		const video = videoEl;
@@ -30,20 +41,64 @@
 
 		if (sourceTime == null) {
 			video.pause();
+			lastSyncedSourceTime = null;
 			return;
 		}
 
-		if (!playing || Math.abs(video.currentTime - sourceTime) > SEEK_THRESHOLD_SEC) {
-			video.currentTime = sourceTime;
+		const drift = Math.abs(video.currentTime - sourceTime);
+		const prior = lastSyncedSourceTime;
+		const explicitSeek = prior !== null && Math.abs(sourceTime - prior) > USER_SEEK_THRESHOLD_SEC;
+
+		if (!playing) {
+			if (drift > SEEK_THRESHOLD_SEC) {
+				video.currentTime = sourceTime;
+			}
+			lastSyncedSourceTime = sourceTime;
+			video.pause();
+			return;
 		}
 
-		if (playing) {
-			void video.play().catch(() => {
-				// Browsers may block autoplay until the user interacts with play controls.
-			});
-		} else {
-			video.pause();
+		// Playing: snap once at start or on user seek — never fight the video clock on drift.
+		if (drift > SEEK_THRESHOLD_SEC && (prior === null || explicitSeek)) {
+			video.currentTime = sourceTime;
 		}
+		lastSyncedSourceTime = sourceTime;
+
+		void video.play().catch(() => {
+			// Browsers may block autoplay until the user interacts with play controls.
+		});
+	});
+
+	$effect(() => {
+		const video = videoEl;
+		if (!video || !useVideoClock || !onsourceclock) return;
+
+		let rvfHandle = 0;
+		const report = () => {
+			onsourceclock(video.currentTime);
+		};
+
+		const onTimeUpdate = () => report();
+		const onEnded = () => onplaybackended?.();
+
+		video.addEventListener('timeupdate', onTimeUpdate);
+		video.addEventListener('ended', onEnded);
+
+		if ('requestVideoFrameCallback' in video) {
+			const onFrame = () => {
+				report();
+				rvfHandle = video.requestVideoFrameCallback(onFrame);
+			};
+			rvfHandle = video.requestVideoFrameCallback(onFrame);
+		}
+
+		return () => {
+			video.removeEventListener('timeupdate', onTimeUpdate);
+			video.removeEventListener('ended', onEnded);
+			if (rvfHandle && 'cancelVideoFrameCallback' in video) {
+				video.cancelVideoFrameCallback(rvfHandle);
+			}
+		};
 	});
 </script>
 

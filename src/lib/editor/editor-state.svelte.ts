@@ -1,5 +1,5 @@
 import { activeWords, clampTime, seekTimeFromTimelineClick } from '$lib/editor/editor-derive';
-import { buildEdl, editedToSource, editedWordIdAt } from '$lib/editor/edl';
+import { buildEdl, editedToSource, editedWordIdAt, sourceToEdited } from '$lib/editor/edl';
 import type { ExportPhase, RecordPhase } from '$lib/types/editor';
 import type { MediaResource } from '$lib/types/media';
 import type { Overlay } from '$lib/types/timeline';
@@ -19,6 +19,8 @@ export class EditorState {
 	sentences = $state.raw<Sentence[]>([]);
 	currentTime = $state(0);
 	playing = $state(false);
+	/** When true, `<video>` drives `currentTime` — rAF wall-clock tick is suppressed (#214). */
+	videoClockDrive = $state(false);
 	selectedId = $state<string | null>(null);
 	showCaptions = $state(true);
 	captionStyle = $state<CaptionStyle>('karaoke');
@@ -77,6 +79,12 @@ export class EditorState {
 		this.currentTime = time;
 	};
 
+	/** Stop at the end without rewinding — used when `<video>` fires `ended` (#214). */
+	pauseAtEnd = () => {
+		this.currentTime = this.duration;
+		this.playing = false;
+	};
+
 	toStart = () => {
 		this.currentTime = 0;
 	};
@@ -94,9 +102,20 @@ export class EditorState {
 		this.seek(seekTimeFromTimelineClick(event, this.duration));
 	};
 
+	setVideoClockDrive = (active: boolean) => {
+		this.videoClockDrive = active;
+	};
+
+	/** Map source media time from `<video>` back to the edited playhead (#214). */
+	syncFromSourceMediaTime = (sourceTime: number) => {
+		const edited = sourceToEdited(this.edl, sourceTime);
+		if (edited === null) return;
+		this.currentTime = clampTime(edited, this.duration);
+	};
+
 	/** Advance playback — call from `startEditorPlaybackLoop` (M5-11). */
 	tick = (deltaSeconds: number) => {
-		if (!this.playing) return;
+		if (!this.playing || this.videoClockDrive) return;
 
 		const next = this.currentTime + deltaSeconds;
 		if (next >= this.duration) {

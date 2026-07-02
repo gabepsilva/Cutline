@@ -70,6 +70,21 @@ describe('EditorState', () => {
 		expect(editor.currentTime).toBe(0);
 	});
 
+	it('does not advance time when the video element drives the clock (#214)', () => {
+		const editor = createEditor();
+		editor.playing = true;
+		editor.setVideoClockDrive(true);
+		editor.tick(0.5);
+		expect(editor.currentTime).toBe(0);
+	});
+
+	it('maps source media time back to edited playhead (#214)', () => {
+		const editor = createEditor();
+		const first = editor.words[0]!;
+		editor.syncFromSourceMediaTime(first.start + first.dur / 2);
+		expect(editor.currentTime).toBeCloseTo(first.dur / 2, 5);
+	});
+
 	it('selects a word and seeks to its start', () => {
 		const editor = createEditor();
 		const word = editor.words[1]!;
