@@ -11,6 +11,7 @@ import {
 } from '$lib/server/media/ffmpeg-ingest';
 import { buildDerivedMediaKeys, extensionFromFilename } from '$lib/server/storage/object-key';
 import { getObjectBytes, putObjectBytes, putObjectJson } from '$lib/server/storage/r2';
+import { enqueueTranscriptionAfterIngest } from '$lib/server/transcription/enqueue-transcription';
 import type { IngestJobPayload } from '$lib/types/job';
 import {
 	JobCanceledError,
@@ -18,6 +19,7 @@ import {
 	type JobHandlerContext
 } from '$lib/server/jobs/worker';
 import { event } from '$lib/server/log';
+
 async function assertNotCanceled(ctx: JobHandlerContext) {
 	if (await ctx.isCancelRequested()) {
 		throw new JobCanceledError();
@@ -95,6 +97,11 @@ export async function runIngestJob(database: Database, ctx: JobHandlerContext): 
 		event(ctx.log, 'media.ingested', {
 			actorId: payload.actorId,
 			target: { type: 'media', id: payload.mediaId },
+			causationId: payload.causationId
+		});
+
+		await enqueueTranscriptionAfterIngest(database, ctx.job.projectId, payload.mediaId, {
+			actorId: payload.actorId,
 			causationId: payload.causationId
 		});
 

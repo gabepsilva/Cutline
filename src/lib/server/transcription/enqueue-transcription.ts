@@ -7,6 +7,46 @@ import type { TranscriptionJobPayload } from '$lib/types/job';
 
 export type EnqueueManualTranscriptionResult = { ok: true; jobId: string } | ServerError;
 
+/** Auto-chain transcription when primary media ingest finishes (#212). */
+export async function enqueueTranscriptionAfterIngest(
+	database: Database,
+	projectId: string,
+	mediaId: string,
+	options?: { actorId?: string; causationId?: string }
+): Promise<string | null> {
+	const primaryMedia = await findPrimaryMediaRow(database, projectId);
+	if (!primaryMedia || primaryMedia.id !== mediaId) {
+		return null;
+	}
+
+	if (primaryMedia.status !== 'ready') {
+		return null;
+	}
+
+	if (primaryMedia.hasAudio === false) {
+		return null;
+	}
+
+	const existing = await getActiveProjectJob(database, projectId, 'transcription');
+	if (existing) {
+		return null;
+	}
+
+	const payload: TranscriptionJobPayload = {
+		projectId,
+		actorId: options?.actorId,
+		causationId: options?.causationId
+	};
+
+	const { id } = await enqueueJob(database, {
+		type: 'transcription',
+		projectId,
+		payload
+	});
+
+	return id;
+}
+
 /** User-triggered transcription for the project's primary source clip (#191). */
 export async function enqueueManualTranscription(
 	database: Database,

@@ -47,7 +47,7 @@ function ingestContext(job: JobRow, log: pino.Logger): JobHandlerContext {
 }
 
 describe('runIngestJob transcription enqueue', () => {
-	it('does not auto-enqueue transcription after ingest (#191)', async () => {
+	it('auto-enqueues transcription after ingest for primary media with audio (#212)', async () => {
 		const { db } = await createTestDb();
 		const { log } = capture();
 
@@ -123,7 +123,13 @@ describe('runIngestJob transcription enqueue', () => {
 		await runIngestJob(db, ingestContext(jobRow, log));
 
 		const jobs = await db.select().from(job).where(eq(job.projectId, 'proj-1'));
-		expect(jobs).toHaveLength(0);
+		expect(jobs).toHaveLength(1);
+		expect(jobs[0]?.type).toBe('transcription');
+		expect(JSON.parse(jobs[0]!.payload)).toMatchObject({
+			projectId: 'proj-1',
+			actorId: 'user-a',
+			causationId: 'req-xyz'
+		});
 
 		const [updated] = await db.select().from(media).where(eq(media.id, 'media-1'));
 		expect(updated?.hasAudio).toBe(true);
