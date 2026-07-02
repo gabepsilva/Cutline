@@ -3,6 +3,7 @@ import type { MediaResource } from '$lib/types/media';
 import type { MediaStatus } from '$lib/types/media-upload';
 import type { Project } from '$lib/types/project';
 import type { Overlay } from '$lib/types/timeline';
+import type { ARollSegment } from '$lib/types/segment';
 import type { CaptionStyle, Sentence, TranscriptSpeaker, Word } from '$lib/types/transcript';
 
 export type ProjectRouteMode = 'import' | 'editor';
@@ -32,6 +33,10 @@ export interface EditorProjectLoad {
 	aRoll: ARollMediaLoad | null;
 	resources: MediaResource[];
 	overlays: Overlay[];
+	/** Ordered A-roll storyline segments (empty until migration / first upload). */
+	segments: ARollSegment[];
+	/** Sum of segment durations — drives timeline length when > 0 (#205). */
+	sequenceDurationSeconds: number;
 	/** Active transcription job id when STT is in flight (#137 / #141). */
 	transcriptionJobId: string | null;
 	/** True when the latest transcription job ended non-succeeded and none is active (show "unavailable" on reload). */

@@ -40,7 +40,8 @@
 		resources,
 		overlays,
 		transcriptionJobId,
-		transcriptionFailed
+		transcriptionFailed,
+		sequenceDurationSeconds
 	}: Props = $props();
 
 	let trackedMediaId = $state<string | null>(null);
@@ -101,7 +102,15 @@
 	);
 
 	const editor = $derived.by(
-		() => new EditorState({ words, sentences, resources, captionStyle, overlays })
+		() =>
+			new EditorState({
+				words,
+				sentences,
+				resources,
+				captionStyle,
+				overlays,
+				sequenceDurationSeconds
+			})
 	);
 
 	const speakersByLabel = $derived(

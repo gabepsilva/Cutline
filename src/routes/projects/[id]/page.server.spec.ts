@@ -43,6 +43,8 @@ const editorLoadFixture: EditorProjectLoad = {
 	aRoll: null,
 	resources: [],
 	overlays: [],
+	segments: [],
+	sequenceDurationSeconds: 0,
 	transcriptionJobId: null,
 	transcriptionFailed: false
 };

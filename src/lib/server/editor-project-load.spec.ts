@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMockTranscript, mockEditorResources } from '$lib/mocks/editor.mock';
-import { job, media, overlay, project, transcript } from '$lib/server/db/domain.schema';
+import { job, media, overlay, project, segment, transcript } from '$lib/server/db/domain.schema';
 import { fixtureTimelineOverlay } from '$lib/test/fixtures/timeline-overlay';
 import { user } from '$lib/server/db/auth.schema';
 import { loadEditorProject } from '$lib/server/editor-project-load';
@@ -217,28 +217,44 @@ describe('loadEditorProject', () => {
 		}
 	});
 
-	it('maps media resources with duration, kind, and thumb', async () => {
+	it('exposes sequence duration for ingested video without a transcript', async () => {
 		const { db, client } = await createTestDb();
 		try {
 			await seedEditorProject(db, {
-				projectId: 'proj-hero',
-				ownerId: authUser.id,
-				withMedia: true
+				projectId: 'proj-ingested',
+				ownerId: authUser.id
+			});
+			await db.insert(media).values({
+				id: 'media-ready',
+				projectId: 'proj-ingested',
+				name: 'clip.mp4',
+				durationSeconds: 120,
+				kind: 'A-roll',
+				thumb: 'repeating-linear-gradient(135deg,#1c1c20 0 12px,#191920 12px 24px)',
+				sizeBytes: 1024,
+				objectKey: 'uploads/clip.mp4',
+				status: 'ready',
+				createdAt: new Date('2026-06-01T00:00:00.000Z')
+			});
+			await db.insert(segment).values({
+				projectId: 'proj-ingested',
+				segmentOrder: 0,
+				type: 'video',
+				mediaId: 'media-ready',
+				durationSeconds: 120
 			});
 
-			const data = await loadEditorProject(db, authUser, 'proj-hero');
-			expect(data?.resources[0]).toMatchObject({
-				id: 'r1',
-				name: 'City timelapse',
-				dur: 6,
-				kind: 'B-roll'
-			});
+			const data = await loadEditorProject(db, authUser, 'proj-ingested');
+			expect(data?.words).toEqual([]);
+			expect(data?.sequenceDurationSeconds).toBe(120);
+			expect(data?.segments).toHaveLength(1);
+			expect(data?.aRoll?.mediaId).toBe('media-ready');
 		} finally {
 			client.close();
 		}
 	});
 
-	it('maps overlay rows to timeline overlays', async () => {
+	it('maps media resources with duration, kind, and thumb', async () => {
 		const { db, client } = await createTestDb();
 		try {
 			await seedEditorProject(db, {

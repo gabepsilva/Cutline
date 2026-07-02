@@ -3,6 +3,7 @@ import { media } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
 import { assertProjectOwned } from '$lib/server/project-access';
 import type { ServerError } from '$lib/server/result';
+import { findHeadSegmentRow } from '$lib/server/segments/segment-store';
 import { presignGetObject } from '$lib/server/storage/r2';
 import type { MediaStatus } from '$lib/types/media-upload';
 
@@ -71,8 +72,18 @@ export async function getMediaAssetUrls(
 	};
 }
 
-/** Primary uploaded source clip for a project — earliest upload with an object key. */
+/** Primary A-roll source clip — head of the segment sequence, or legacy earliest upload. */
 export async function findPrimaryMediaRow(database: Database, projectId: string) {
+	const headSegment = await findHeadSegmentRow(database, projectId);
+	if (headSegment?.mediaId) {
+		const [row] = await database
+			.select()
+			.from(media)
+			.where(eq(media.id, headSegment.mediaId))
+			.limit(1);
+		if (row) return row;
+	}
+
 	const rows = await database
 		.select()
 		.from(media)

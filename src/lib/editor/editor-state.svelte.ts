@@ -12,6 +12,8 @@ export interface EditorStateInit {
 	captionStyle?: CaptionStyle;
 	resources?: MediaResource[];
 	overlays?: Overlay[];
+	/** When > 0, timeline duration follows the A-roll segment sequence (#205). */
+	sequenceDurationSeconds?: number;
 }
 
 export class EditorState {
@@ -34,6 +36,8 @@ export class EditorState {
 	showMedia = $state(false);
 	resources = $state.raw<MediaResource[]>([]);
 	overlays = $state.raw<Overlay[]>([]);
+	/** Segment-owned timeline length; when > 0, overrides EDL duration (#205). */
+	sequenceDurationSeconds = $state(0);
 
 	constructor(init: EditorStateInit) {
 		this.words = init.words;
@@ -41,6 +45,9 @@ export class EditorState {
 		if (init.captionStyle) this.captionStyle = init.captionStyle;
 		if (init.resources) this.resources = init.resources;
 		if (init.overlays) this.overlays = init.overlays;
+		if (init.sequenceDurationSeconds != null) {
+			this.sequenceDurationSeconds = init.sequenceDurationSeconds;
+		}
 	}
 
 	// Single EDL rebuilt only when `words` changes — reused by every derivation below so the
@@ -52,7 +59,9 @@ export class EditorState {
 		for (const segment of this.edl.segments) map[segment.wordId] = segment.editedStart;
 		return map;
 	});
-	duration = $derived.by(() => this.edl.editedDuration);
+	duration = $derived.by(() =>
+		this.sequenceDurationSeconds > 0 ? this.sequenceDurationSeconds : this.edl.editedDuration
+	);
 	clampedTime = $derived.by(() => clampTime(this.currentTime, this.duration));
 	currentWordId = $derived.by(() => editedWordIdAt(this.edl, this.active, this.clampedTime));
 	/** Source media time under the playhead — reuses the memoized EDL (no per-frame rebuild). */

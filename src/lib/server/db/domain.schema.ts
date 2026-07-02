@@ -74,6 +74,32 @@ export const media = sqliteTable(
 	(table) => [index('media_projectId_idx').on(table.projectId)]
 );
 
+/** Ordered A-roll storyline segment (video / image / audio). */
+export const segment = sqliteTable(
+	'segment',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		projectId: text('project_id')
+			.notNull()
+			.references(() => project.id, { onDelete: 'cascade' }),
+		segmentOrder: integer('segment_order').notNull(),
+		type: text('type').notNull(),
+		mediaId: text('media_id').references(() => media.id, { onDelete: 'set null' }),
+		durationSeconds: real('duration_seconds').notNull(),
+		trimIn: real('trim_in'),
+		trimOut: real('trim_out'),
+		createdAt: integer('created_at', { mode: 'timestamp_ms' })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull()
+	},
+	(table) => [
+		index('segment_projectId_idx').on(table.projectId),
+		index('segment_projectId_order_idx').on(table.projectId, table.segmentOrder)
+	]
+);
+
 export const overlay = sqliteTable(
 	'overlay',
 	{
@@ -147,8 +173,20 @@ export const projectRelations = relations(project, ({ one, many }) => ({
 		references: [transcript.projectId]
 	}),
 	media: many(media),
+	segments: many(segment),
 	overlays: many(overlay),
 	jobs: many(job)
+}));
+
+export const segmentRelations = relations(segment, ({ one }) => ({
+	project: one(project, {
+		fields: [segment.projectId],
+		references: [project.id]
+	}),
+	media: one(media, {
+		fields: [segment.mediaId],
+		references: [media.id]
+	})
 }));
 
 export const jobRelations = relations(job, ({ one }) => ({
@@ -170,6 +208,7 @@ export const mediaRelations = relations(media, ({ one, many }) => ({
 		fields: [media.projectId],
 		references: [project.id]
 	}),
+	segments: many(segment),
 	overlays: many(overlay)
 }));
 

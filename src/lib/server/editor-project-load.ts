@@ -9,6 +9,7 @@ import { resolveProjectRouteMode } from '$lib/server/project-route-mode';
 import { ownedProjectFilter } from '$lib/server/project-access';
 import { isServerError } from '$lib/server/result';
 import { findPrimaryMediaRow, getMediaAssetUrls } from '$lib/server/storage/media-assets';
+import { listProjectSegments, totalSegmentDuration } from '$lib/server/segments/segment-store';
 import { getLatestProjectJob } from '$lib/server/jobs/job-store';
 import type { EditorProjectLoad } from '$lib/types/editor-load';
 import type { MediaStatus } from '$lib/types/media-upload';
@@ -55,8 +56,11 @@ export async function loadEditorProject(
 	const speakers = parseSpeakers(transcriptRow?.speakers);
 	const captionStyle = (transcriptRow?.captionStyle as CaptionStyle | undefined) ?? 'karaoke';
 
-	// Primary == earliest source upload; treated as A-roll for transcript/ingest (kind column unreliable — see #190).
-	const primaryMedia = await findPrimaryMediaRow(database, projectId);
+	// Primary == head of the A-roll segment sequence (order 0); falls back to earliest upload (#190).
+	const [primaryMedia, segments] = await Promise.all([
+		findPrimaryMediaRow(database, projectId),
+		listProjectSegments(database, projectId)
+	]);
 	let aRoll: EditorProjectLoad['aRoll'] = null;
 	let videoUrl: string | null = null;
 
@@ -104,6 +108,8 @@ export async function loadEditorProject(
 		aRoll,
 		resources: mediaRows.map(mapMediaRow),
 		overlays: overlayRows.map(mapOverlayRow),
+		segments,
+		sequenceDurationSeconds: totalSegmentDuration(segments),
 		transcriptionJobId: transcriptionActive ? (latestTranscriptionJob?.id ?? null) : null,
 		transcriptionFailed
 	};
