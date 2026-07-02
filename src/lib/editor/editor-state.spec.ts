@@ -85,6 +85,15 @@ describe('EditorState', () => {
 		expect(editor.currentTime).toBeCloseTo(first.dur / 2, 5);
 	});
 
+	it('pauses at end without rewinding when video ends (#214)', () => {
+		const editor = createEditor();
+		editor.playing = true;
+		editor.currentTime = editor.duration - 0.01;
+		editor.pauseAtEnd();
+		expect(editor.playing).toBe(false);
+		expect(editor.currentTime).toBe(editor.duration);
+	});
+
 	it('selects a word and seeks to its start', () => {
 		const editor = createEditor();
 		const word = editor.words[1]!;
