@@ -65,4 +65,16 @@ describe('startEditorPlaybackLoop', () => {
 
 		expect(cancelAnimationFrame).toHaveBeenCalled();
 	});
+
+	it('does not advance when video clock drive is active (#214)', () => {
+		const editor = createEditor();
+		editor.playing = true;
+		editor.videoClockDrive = true;
+		startEditorPlaybackLoop(editor);
+
+		rafCallbacks[0]?.(0);
+		rafCallbacks[1]?.(100);
+
+		expect(editor.currentTime).toBe(0);
+	});
 });

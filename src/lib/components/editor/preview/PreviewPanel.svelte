@@ -21,6 +21,9 @@
 		showSimulated = true,
 		ontogglePlay,
 		oncaptionstylechange,
+		onsourceclock,
+		onvideoclockdrive,
+		onplaybackended,
 		class: className = ''
 	}: PreviewPanelProps = $props();
 </script>
@@ -34,6 +37,9 @@
 		{videoUrl}
 		{showSimulated}
 		{ontogglePlay}
+		{onsourceclock}
+		{onvideoclockdrive}
+		{onplaybackended}
 	>
 		{#snippet captions()}
 			<PreviewCaptions tokens={captionTokens} style={captionStyle} visible={showCaptions} />

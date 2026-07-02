@@ -8,7 +8,7 @@
 	import Timeline from '$lib/components/editor/timeline/Timeline.svelte';
 	import ReTranscribeConfirmModal from '$lib/components/editor/transcript/ReTranscribeConfirmModal.svelte';
 	import TranscriptPanel from '$lib/components/editor/transcript/TranscriptPanel.svelte';
-	import { captionWordsForCurrentSentence, trimmedLabel } from '$lib/editor/editor-derive';
+	import { captionWords, trimmedLabel } from '$lib/editor/editor-derive';
 	import {
 		createEditorAutosave,
 		editorSaveMeta,
@@ -146,11 +146,15 @@
 		editor.selectedId ? editor.words.find((word) => word.id === editor.selectedId) : null
 	);
 
-	const captionTokens = $derived(
-		transcriptUi.status === 'ready'
-			? captionWordsForCurrentSentence(editor.words, editor.currentWordId, editor.captionStyle)
-			: []
-	);
+	const captionTokens = $derived.by(() => {
+		if (transcriptUi.status !== 'ready') return [];
+		const wordId = editor.currentWordId;
+		if (!wordId) return [];
+		const current = editor.words.find((word) => word.id === wordId);
+		if (!current) return [];
+		const sentenceWords = editor.words.filter((word) => word.sid === current.sid);
+		return captionWords(sentenceWords, wordId, editor.captionStyle);
+	});
 
 	const totalLabel = $derived(formatTimecode(editor.duration));
 	const savedLabel = $derived(trimmedLabel(editor.deletedCount));
@@ -247,6 +251,9 @@
 					showCaptions={editor.showCaptions}
 					videoUrl={playbackUrl}
 					ontogglePlay={() => editor.togglePlay()}
+					onsourceclock={(sourceTime) => editor.syncFromSourceMediaTime(sourceTime)}
+					onvideoclockdrive={(active) => editor.setVideoClockDrive(active)}
+					onplaybackended={() => editor.pauseAtEnd()}
 					oncaptionstylechange={(style) => (editor.captionStyle = style)}
 				/>
 			</div>
