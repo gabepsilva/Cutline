@@ -210,11 +210,15 @@ export async function buildWaveformPeaks(
 	peaksPerSecond = WAVEFORM_PEAKS_PER_SECOND
 ): Promise<{ version: number; peaksPerSecond: number; length: number; data: number[] }> {
 	const sampleRate = 8_000;
+	// Pin the first audio stream — ffmpeg's implicit pick is undefined with 2+ tracks and
+	// `-map a?` would fan multiple streams into one f32le pipe (see #185 / #188).
 	const pcm = await runCommandOutput([
 		'ffmpeg',
 		'-y',
 		'-i',
 		inputPath,
+		'-map',
+		'0:a:0?',
 		'-ac',
 		'1',
 		'-ar',
@@ -327,6 +331,41 @@ export async function generateTestVideoFixture(
 	}
 	args.push(outputPath);
 	await runCommand(args);
+}
+
+/** Video with two audio tracks (440 Hz + 880 Hz) for multi-stream ingest tests (#188). */
+export async function generateMultiAudioTestVideoFixture(outputPath: string): Promise<void> {
+	await mkdir(join(outputPath, '..'), { recursive: true }).catch(() => undefined);
+	await runCommand([
+		'ffmpeg',
+		'-y',
+		'-f',
+		'lavfi',
+		'-i',
+		'testsrc=duration=2:size=320x240:rate=10',
+		'-f',
+		'lavfi',
+		'-i',
+		'sine=frequency=440:duration=2',
+		'-f',
+		'lavfi',
+		'-i',
+		'sine=frequency=880:duration=2',
+		'-map',
+		'0:v',
+		'-map',
+		'1:a',
+		'-map',
+		'2:a',
+		'-c:v',
+		'libx264',
+		'-pix_fmt',
+		'yuv420p',
+		'-c:a',
+		'aac',
+		'-shortest',
+		outputPath
+	]);
 }
 
 export async function readOutputFiles(outputs: IngestOutputs): Promise<{

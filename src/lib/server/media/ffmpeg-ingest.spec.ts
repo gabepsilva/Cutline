@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -7,6 +7,7 @@ import {
 	cleanupIngestOutputs,
 	ffprobeMedia,
 	generateAudioOnlyTestFixture,
+	generateMultiAudioTestVideoFixture,
 	generateTestVideoFixture,
 	runLocalIngestPipeline
 } from '$lib/server/media/ffmpeg-ingest';
@@ -81,6 +82,44 @@ describe.runIf(ffmpegAvailable)('ffmpeg ingest pipeline', () => {
 			expect(outputs.waveform.length).toBeGreaterThanOrEqual(
 				Math.floor(probe.durationSeconds * outputs.waveform.peaksPerSecond) - 1
 			);
+
+			await cleanupIngestOutputs(outputs);
+		} finally {
+			await rm(workDir, { recursive: true, force: true });
+		}
+	}, 120_000);
+
+	it('ingests multi-audio video and builds waveform from the first audio track (#188)', async () => {
+		const workDir = await mkdtemp(join(tmpdir(), 'cutline-fixture-'));
+		const sourcePath = join(workDir, 'multi-audio-fixture.mp4');
+
+		try {
+			await generateMultiAudioTestVideoFixture(sourcePath);
+
+			const probeJson = spawnSync(
+				'ffprobe',
+				['-v', 'quiet', '-print_format', 'json', '-show_streams', sourcePath],
+				{ encoding: 'utf8' }
+			);
+			expect(probeJson.status).toBe(0);
+			const streams = (JSON.parse(probeJson.stdout) as { streams?: { codec_type?: string }[] })
+				.streams;
+			expect(streams?.filter((stream) => stream.codec_type === 'audio')).toHaveLength(2);
+
+			const probe = await ffprobeMedia(sourcePath);
+			expect(probe.hasAudio).toBe(true);
+			expect(probe.hasVideo).toBe(true);
+
+			const outputs = await runLocalIngestPipeline(sourcePath);
+			expect(outputs.waveform.length).toBeGreaterThanOrEqual(
+				Math.floor(probe.durationSeconds * outputs.waveform.peaksPerSecond) - 1
+			);
+			expect(outputs.waveform.data.every((value) => value >= 0 && value <= 1)).toBe(true);
+			expect(outputs.waveform.data.some((value) => value > 0)).toBe(true);
+			expect(outputs.filmstripMeta?.frameCount).toBeGreaterThan(0);
+
+			const transcode = await readFile(outputs.transcodePath);
+			expect(transcode.byteLength).toBeGreaterThan(0);
 
 			await cleanupIngestOutputs(outputs);
 		} finally {
