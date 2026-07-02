@@ -17,6 +17,7 @@ import {
 	registerJobHandler,
 	type JobHandlerContext
 } from '$lib/server/jobs/worker';
+import { syncSegmentDurationForMedia } from '$lib/server/segments/segment-store';
 import { event } from '$lib/server/log';
 async function assertNotCanceled(ctx: JobHandlerContext) {
 	if (await ctx.isCancelRequested()) {
@@ -91,6 +92,12 @@ export async function runIngestJob(database: Database, ctx: JobHandlerContext): 
 				durationSeconds: Math.max(1, Math.round(probe.durationSeconds))
 			})
 			.where(eq(media.id, payload.mediaId));
+
+		await syncSegmentDurationForMedia(
+			database,
+			payload.mediaId,
+			Math.max(1, Math.round(probe.durationSeconds))
+		);
 
 		event(ctx.log, 'media.ingested', {
 			actorId: payload.actorId,

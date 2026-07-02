@@ -99,6 +99,11 @@ describe('EditorState', () => {
 		expect(editor.words.find((w) => w.id === 'w1')?.deleted).toBe(false);
 	});
 
+	it('uses sequence duration when provided instead of transcript EDL length', () => {
+		const editor = createEditor({ sequenceDurationSeconds: 90 });
+		expect(editor.duration).toBe(90);
+	});
+
 	it('soft-deletes all filler words', () => {
 		const editor = createEditor();
 		editor.removeFillers();

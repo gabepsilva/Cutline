@@ -2,6 +2,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { media, project, transcript } from '$lib/server/db/domain.schema';
 import type { Database } from '$lib/server/db/types';
 import { enqueueJob } from '$lib/server/jobs/job-store';
+import { insertVideoSegmentForMedia } from '$lib/server/segments/segment-store';
 import { assertProjectOwned } from '$lib/server/project-access';
 import { normalizeProjectTitle } from '$lib/server/project-mutations';
 import type { ServerError, ServerResult } from '$lib/server/result';
@@ -243,6 +244,8 @@ export async function initProjectMediaUpload(
 		}),
 		database.insert(media).values(mediaRow.values)
 	]);
+
+	await insertVideoSegmentForMedia(database, projectId, mediaRow.mediaId, 0);
 
 	const upload = await presignUploadTarget(mediaRow.objectKey, input.contentType, input.size);
 
