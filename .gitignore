@@ -26,8 +26,14 @@ test-results
 coverage
 osv-scanner
 .ci-bin/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Agent loop
 scripts/agent-loop/abort
+scripts/agent-loop/loop_controls/
 
 # SQLite (local dev + CI throwaway DBs)
 *.db
