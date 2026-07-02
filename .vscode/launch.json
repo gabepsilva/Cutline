@@ -1,0 +1,32 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Agent loop",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceFolder}/scripts/agent-loop/run.py",
+			"cwd": "${workspaceFolder}/scripts/agent-loop",
+			"console": "integratedTerminal",
+			"justMyCode": true
+		},
+		{
+			"name": "Agent loop: solve issue",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceFolder}/scripts/agent-loop/run.py",
+			"args": ["--solve-issue", "${input:issueNumber}"],
+			"cwd": "${workspaceFolder}/scripts/agent-loop",
+			"console": "integratedTerminal",
+			"justMyCode": true
+		}
+	],
+	"inputs": [
+		{
+			"id": "issueNumber",
+			"type": "promptString",
+			"description": "GitHub issue number to solve",
+			"default": "1"
+		}
+	]
+}

@@ -25,7 +25,7 @@ def run_dev_agent(str_prompt: str, new_session = False):
 	
 	print("")
 	print("--------------------------------")
-	print(f"Running dev agent with prompt: {str_prompt}")
+	print(f"🖥️🖥️🖥️  Running dev agent with prompt: {str_prompt}")
 	print("--------------------------------")
 	print("")
 	subprocess.run(
@@ -50,7 +50,7 @@ def run_lead_agent(str_prompt: str, new_session = False):
 	
 	print("")
 	print("--------------------------------")
-	print(f"Running lead agent with prompt: {str_prompt}")
+	print(f"👨‍⚖️👨‍⚖️👨‍⚖️  Running lead agent with prompt: {str_prompt}")
 	print("--------------------------------")
 	print("")
 	subprocess.run(
