@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { job, media, project, transcript } from '$lib/server/db/domain.schema';
 import { user as authUserTable } from '$lib/server/db/auth.schema';
-import { enqueueManualTranscription } from '$lib/server/transcription/enqueue-transcription';
+import {
+	enqueueManualTranscription,
+	enqueueTranscriptionAfterIngest
+} from '$lib/server/transcription/enqueue-transcription';
 import { createTestDb } from '$lib/test/test-db';
 
 const authUser = {
@@ -102,5 +105,77 @@ describe('enqueueManualTranscription', () => {
 
 		const result = await enqueueManualTranscription(db, authUser.id, 'proj-1');
 		expect(result).toMatchObject({ ok: false, status: 400 });
+	});
+});
+
+describe('enqueueTranscriptionAfterIngest', () => {
+	it('enqueues transcription when ingested media is primary and has audio', async () => {
+		const { db } = await createTestDb();
+		await seedProject(db, { mediaStatus: 'ready', hasAudio: true });
+
+		const jobId = await enqueueTranscriptionAfterIngest(db, 'proj-1', 'media-1', {
+			actorId: authUser.id,
+			causationId: 'ingest-1'
+		});
+		expect(jobId).toEqual(expect.any(String));
+
+		const jobs = await db.select().from(job).where(eq(job.projectId, 'proj-1'));
+		expect(jobs).toHaveLength(1);
+		expect(jobs[0]?.type).toBe('transcription');
+	});
+
+	it('skips when ingested media is not primary', async () => {
+		const { db } = await createTestDb();
+		await seedProject(db, { mediaStatus: 'ready', hasAudio: true });
+		await db.insert(media).values({
+			id: 'media-2',
+			projectId: 'proj-1',
+			name: 'broll.mp4',
+			durationSeconds: 60,
+			kind: 'B-roll',
+			thumb: 'thumb',
+			sizeBytes: 50,
+			objectKey: 'users/user-a/projects/proj-1/media/media-2/source.mp4',
+			contentType: 'video/mp4',
+			status: 'ready',
+			hasAudio: true,
+			transcodeKey: 'users/user-a/projects/proj-1/media/media-2/transcode.mp4',
+			createdAt: new Date('2026-05-01T00:00:00.000Z')
+		});
+
+		const jobId = await enqueueTranscriptionAfterIngest(db, 'proj-1', 'media-1');
+		expect(jobId).toBeNull();
+
+		const jobs = await db.select().from(job).where(eq(job.projectId, 'proj-1'));
+		expect(jobs).toHaveLength(0);
+	});
+
+	it('skips when source media has no audio', async () => {
+		const { db } = await createTestDb();
+		await seedProject(db, { mediaStatus: 'ready', hasAudio: false });
+
+		const jobId = await enqueueTranscriptionAfterIngest(db, 'proj-1', 'media-1');
+		expect(jobId).toBeNull();
+	});
+
+	it('skips when a transcription job is already active', async () => {
+		const { db } = await createTestDb();
+		await seedProject(db, { mediaStatus: 'ready', hasAudio: true });
+		await db.insert(job).values({
+			id: 'job-active',
+			type: 'transcription',
+			projectId: 'proj-1',
+			status: 'running',
+			progress: 0.2,
+			payload: JSON.stringify({ projectId: 'proj-1' }),
+			priority: 0,
+			maxAttempts: 3,
+			runAfter: new Date(),
+			createdAt: new Date(),
+			updatedAt: new Date()
+		});
+
+		const jobId = await enqueueTranscriptionAfterIngest(db, 'proj-1', 'media-1');
+		expect(jobId).toBeNull();
 	});
 });
