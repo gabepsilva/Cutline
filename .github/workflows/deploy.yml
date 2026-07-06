@@ -72,7 +72,7 @@ jobs:
             -t "$DATE_TAG" -t "$LATEST_TAG" .
 
       - name: Trivy image scan (gate)
-        uses: aquasecurity/trivy-action@cf5c088a69634cd13ccddc735d7926162c31f9a6 # v0.28.0
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8 # v0.28.0
         with:
           scan-type: image
           image-ref: ${{ env.DATE_TAG }}
