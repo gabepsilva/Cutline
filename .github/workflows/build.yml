@@ -38,7 +38,7 @@ jobs:
           retention-days: 7
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@5dd6ac9278f372ca3f8480f05a1ed38534773086 # v0.17.10
+        uses: anchore/sbom-action@0a33c98da4a4d9e35761d803bdde100295ae53d8 # v0.17.10
         with:
           path: .
           format: cyclonedx-json
