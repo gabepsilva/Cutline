@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@6a61c0375d66246de94630495909f12cf8dac84d # v4.4.0
+        uses: actions/setup-node@7c2c68d20d402ed6a201ada70a81341941093140 # v4.4.0
         with:
           # CodeQL JS/TS extractor invokes node for TypeScript parsing.
           node-version: '22'
